@@ -1,19 +1,19 @@
 <x-public-layout>
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-cream">
         {{-- Hero Section --}}
-        <div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white py-16">
+        <div class="bg-ink-900 text-cream-50 py-16">
             <div class="container mx-auto px-4 text-center">
-                <h1 class="text-4xl md:text-5xl font-black mb-4">
+                <h1 class="font-serif text-4xl md:text-5xl font-medium mb-4">
                     <x-app-icon name="lock" class="w-9 h-9 inline-block align-middle" /> Politique de Confidentialité
                 </h1>
-                <p class="text-lg text-blue-100">
+                <p class="text-lg text-cream-100/70">
                     Dernière mise à jour : {{ date('d/m/Y') }}
                 </p>
             </div>
         </div>
 
         <div class="container mx-auto px-4 py-12">
-            <div class="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-lg prose prose-lg max-w-none">
+            <div class="max-w-4xl mx-auto bg-cream-50 border border-ink-100 rounded-xl p-8 md:p-12 prose prose-lg max-w-none">
                 
                 <p class="lead">
                     Chez Azohub, nous prenons très au sérieux la protection de vos données personnelles. 
@@ -242,7 +242,7 @@
                 </p>
                 <ul>
                     <li><strong>Email :</strong> privacy@azohub.com</li>
-                    <li><strong>Formulaire de contact :</strong> <a href="{{ route('contact') }}" class="text-blue-600 hover:text-blue-800 font-bold">Nous contacter</a></li>
+                    <li><strong>Formulaire de contact :</strong> <a href="{{ route('contact') }}" class="text-terracotta-600 hover:text-terracotta-700 font-bold">Nous contacter</a></li>
                 </ul>
 
                 <h2>13. Réclamation</h2>
@@ -251,19 +251,19 @@
                     réclamation auprès de l'autorité de protection des données compétente au Bénin.
                 </p>
 
-                <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded mt-8">
-                    <p class="font-bold text-green-900 mb-2"><x-app-icon name="check-circle" class="w-5 h-5 inline-block" /> Notre engagement</p>
-                    <p class="text-green-800">
-                        Nous nous engageons à protéger vos données personnelles et à respecter votre vie privée. 
+                <div class="bg-forest-600/10 border-l-4 border-forest-600 p-6 rounded mt-8">
+                    <p class="font-bold text-forest-700 mb-2"><x-app-icon name="check-circle" class="w-5 h-5 inline-block" /> Notre engagement</p>
+                    <p class="text-forest-700">
+                        Nous nous engageons à protéger vos données personnelles et à respecter votre vie privée.
                         La confiance que vous nous accordez est notre priorité.
                     </p>
                 </div>
 
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded mt-4">
-                    <p class="font-bold text-blue-900 mb-2"><x-app-icon name="book" class="w-5 h-5 inline-block" /> Documents connexes</p>
+                <div class="bg-terracotta-50 border-l-4 border-terracotta-600 p-6 rounded mt-4">
+                    <p class="font-bold text-terracotta-700 mb-2"><x-app-icon name="book" class="w-5 h-5 inline-block" /> Documents connexes</p>
                     <ul class="mb-0">
-                        <li><a href="{{ route('terms') }}" class="text-blue-600 hover:text-blue-800 font-bold">Conditions Générales d'Utilisation</a></li>
-                        <li><a href="{{ route('faq') }}" class="text-blue-600 hover:text-blue-800 font-bold">Foire Aux Questions</a></li>
+                        <li><a href="{{ route('terms') }}" class="text-terracotta-600 hover:text-terracotta-700 font-bold">Conditions Générales d'Utilisation</a></li>
+                        <li><a href="{{ route('faq') }}" class="text-terracotta-600 hover:text-terracotta-700 font-bold">Foire Aux Questions</a></li>
                     </ul>
                 </div>
             </div>

@@ -1,19 +1,19 @@
 <x-public-layout>
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-cream">
         {{-- Hero Section --}}
-        <div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white py-16">
+        <div class="bg-ink-900 text-cream-50 py-16">
             <div class="container mx-auto px-4 text-center">
-                <h1 class="text-4xl md:text-5xl font-black mb-4">
+                <h1 class="font-serif text-4xl md:text-5xl font-medium mb-4">
                     <x-app-icon name="clipboard" class="w-8 h-8 inline-block" /> Conditions Générales d'Utilisation
                 </h1>
-                <p class="text-lg text-blue-100">
+                <p class="text-lg text-cream-100/70">
                     Dernière mise à jour : {{ date('d/m/Y') }}
                 </p>
             </div>
         </div>
 
         <div class="container mx-auto px-4 py-12">
-            <div class="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-lg prose prose-lg max-w-none">
+            <div class="max-w-4xl mx-auto bg-cream-50 border border-ink-100 rounded-xl p-8 md:p-12 prose prose-lg max-w-none">
                 
                 <h2>1. Présentation de la plateforme</h2>
                 <p>
@@ -170,7 +170,7 @@
                 <h2>13. Protection des données</h2>
                 <p>
                     Vos données personnelles sont traitées conformément à notre 
-                    <a href="{{ route('privacy') }}" class="text-blue-600 hover:text-blue-800 font-bold">
+                    <a href="{{ route('privacy') }}" class="text-terracotta-600 hover:text-terracotta-700 font-bold">
                         Politique de Confidentialité
                     </a>.
                 </p>
@@ -190,10 +190,10 @@
                     <li><strong>Adresse :</strong> Cotonou, Bénin</li>
                 </ul>
 
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded mt-8">
-                    <p class="font-bold text-blue-900 mb-2"><x-app-icon name="lightbulb" class="w-5 h-5 inline-block align-text-bottom" /> Besoin d'aide ?</p>
-                    <p class="text-blue-800">
-                        Consultez notre <a href="{{ route('faq') }}" class="underline font-bold">FAQ</a> 
+                <div class="bg-terracotta-50 border-l-4 border-terracotta-600 p-6 rounded mt-8">
+                    <p class="font-bold text-terracotta-700 mb-2"><x-app-icon name="lightbulb" class="w-5 h-5 inline-block align-text-bottom" /> Besoin d'aide ?</p>
+                    <p class="text-terracotta-700">
+                        Consultez notre <a href="{{ route('faq') }}" class="underline font-bold">FAQ</a>
                         ou <a href="{{ route('contact') }}" class="underline font-bold">contactez notre support</a>.
                     </p>
                 </div>

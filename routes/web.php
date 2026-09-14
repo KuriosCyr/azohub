@@ -14,6 +14,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
@@ -125,6 +126,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/orders/{order}', [ReviewController::class, 'store'])->name('store');
         Route::get('/{review}', [ReviewController::class, 'show'])->name('show');
     });
+
+    // ============================================
+    // SIGNALEMENTS
+    // ============================================
+
+    Route::post('/services/{service}/report', [ReportController::class, 'store'])->name('reports.store');
 
     // ============================================
     // TÉLÉCHARGEMENT PIÈCES JOINTES MESSAGES
