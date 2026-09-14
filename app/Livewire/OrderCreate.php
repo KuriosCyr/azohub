@@ -14,10 +14,14 @@ class OrderCreate extends Component
     public string $requirements = '';
     public string $paymentMethod = 'mtn_momo';
 
-    public function mount(int $service, string $package = 'basic')
+    public function mount()
     {
-        $this->service = Service::with(['prestataire', 'category'])->findOrFail($service);
-        $this->package = $package;
+        $serviceId = request()->query('service');
+
+        abort_if(!$serviceId, 404);
+
+        $this->service = Service::with(['prestataire', 'category'])->findOrFail($serviceId);
+        $this->package = request()->query('package', 'basic');
 
         // Vérifier que le service est actif
         if (!$this->service->is_active) {
