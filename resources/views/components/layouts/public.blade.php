@@ -26,9 +26,9 @@
                         <span class="text-2xl font-black text-blue-900">Azo</span><span class="text-2xl font-black text-yellow-400">hub</span>
                         <span class="ml-1 inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden">
                             <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                                <rect width="15" height="30" fill="#008751"/>
-                                <rect x="15" width="15" height="30" fill="#FCD116"/>
-                                <rect x="30" width="15" height="30" fill="#E8112D"/>
+                                <rect width="45" height="30" fill="#E8112D"/>
+                                <rect width="45" height="15" fill="#FCD116"/>
+                                <rect width="18" height="30" fill="#008751"/>
                             </svg>
                         </span>
                     </a>
@@ -378,9 +378,9 @@
                         <span class="text-xl font-black text-white">Azo</span><span class="text-xl font-black text-yellow-400">hub</span>
                         <span class="inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden ml-1">
                             <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                                <rect width="15" height="30" fill="#008751"/>
-                                <rect x="15" width="15" height="30" fill="#FCD116"/>
-                                <rect x="30" width="15" height="30" fill="#E8112D"/>
+                                <rect width="45" height="30" fill="#E8112D"/>
+                                <rect width="45" height="15" fill="#FCD116"/>
+                                <rect width="18" height="30" fill="#008751"/>
                             </svg>
                         </span>
                     </div>
