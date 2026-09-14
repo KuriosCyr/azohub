@@ -1,8 +1,28 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
+import intersect from '@alpinejs/intersect';
 
 window.Alpine = Alpine;
+
+Alpine.plugin(intersect);
+
+// Compteur animé : x-data="counter(1234)" x-intersect.once="start()" x-text="display"
+Alpine.data('counter', (target = 0, duration = 1200) => ({
+    display: '0',
+    start() {
+        const startTime = performance.now();
+        const end = Number(target) || 0;
+        const step = (now) => {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            this.display = Math.floor(eased * end).toLocaleString('fr-FR');
+            if (progress < 1) requestAnimationFrame(step);
+            else this.display = end.toLocaleString('fr-FR');
+        };
+        requestAnimationFrame(step);
+    },
+}));
 
 Alpine.start();
 

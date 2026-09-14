@@ -139,6 +139,20 @@ class ServiceSeeder extends Seeder
             ],
         ];
 
+        // Photos Unsplash vérifiées, une par catégorie (URLs directes, stables)
+        $categoryPhotos = [
+            'BTP & Travaux' => 'https://images.unsplash.com/photo-1765378025221-3ed7eadc6def',
+            'Digital & Tech' => 'https://images.unsplash.com/photo-1618477388954-7852f32655ec',
+            'Maison & Jardinage' => 'https://images.unsplash.com/photo-1740657254989-42fe9c3b8cce',
+            'Éducation & Formation' => 'https://images.unsplash.com/photo-1589206946274-929e4da3996b',
+            'Événementiel' => 'https://images.unsplash.com/photo-1653821355736-0c2598d0a63e',
+            'Transport & Livraison' => 'https://images.unsplash.com/photo-1586781383963-8e66f88077ec',
+            'Beauté & Bien-être' => 'https://images.unsplash.com/photo-1629397685944-7073f5589754',
+            'Mécanique & Automobile' => 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e',
+            'Administration & Juridique' => 'https://images.unsplash.com/photo-1622295023825-6e319464b810',
+            'Santé & Social' => 'https://images.unsplash.com/photo-1783408355447-b01a88767e6a',
+        ];
+
         $count = 0;
 
         foreach ($servicesData as $categoryName => $services) {
@@ -160,6 +174,7 @@ class ServiceSeeder extends Seeder
                     'price_type' => rand(0, 10) > 3 ? 'a_partir_de' : 'fixe',
                     'delivery_time' => rand(1, 14),
                     'city' => $prestataire->city,
+                    'cover_image' => ($categoryPhotos[$categoryName] ?? null) . '?w=800&h=600&fit=crop&q=80',
                     'rating' => rand(35, 50) / 10,
                     'total_orders' => rand(0, 100),
                     'total_reviews' => rand(0, 50),

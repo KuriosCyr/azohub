@@ -15,6 +15,7 @@
     <!-- Scripts (Alpine.js est déjà bundlé et démarré dans resources/js/app.js) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    <noscript><style>.reveal{opacity:1!important;transform:none!important;}</style></noscript>
 </head>
 <body class="font-sans antialiased bg-cream text-ink-900">
     <!-- Navigation -->

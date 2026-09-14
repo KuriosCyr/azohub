@@ -6,7 +6,9 @@
         <div class="container mx-auto px-4 relative py-16 md:py-24">
             <div class="grid md:grid-cols-2 gap-16 items-end">
                 {{-- Colonne Texte --}}
-                <div>
+                <div x-data="{ shown: false }" x-init="setTimeout(() => shown = true, 50)"
+                     :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
+                     class="transition-all duration-700 ease-out">
                     <div class="inline-flex items-center gap-2 mb-7">
                         <div class="w-7 h-0.5 bg-terracotta-600"></div>
                         <span class="text-xs font-semibold tracking-widest uppercase text-terracotta-600">Services locaux au Bénin</span>
@@ -85,17 +87,19 @@
 
                 {{-- Colonne décorative --}}
                 <div class="hidden md:grid grid-cols-2 gap-4">
-                    <div class="h-56 rounded-lg bg-forest-600 flex items-end p-5">
-                        <x-app-icon name="wrench" class="w-8 h-8 text-cream-50" />
+                    <div class="h-56 rounded-lg bg-forest-600 flex items-end p-5 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1765378025221-3ed7eadc6def?w=500&h=600&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy">
+                        <x-app-icon name="wrench" class="w-8 h-8 text-cream-50 relative" />
                     </div>
-                    <div class="h-40 mt-16 rounded-lg bg-ochre-600 flex items-end p-5">
+                    <div class="h-40 mt-16 rounded-lg bg-ochre-600 flex items-end p-5" style="animation: float 7s ease-in-out infinite; animation-delay: .3s;">
                         <x-app-icon name="home" class="w-7 h-7 text-cream-50" />
                     </div>
-                    <div class="h-40 rounded-lg bg-clay-500 flex items-end p-5">
+                    <div class="h-40 rounded-lg bg-clay-500 flex items-end p-5" style="animation: float 8s ease-in-out infinite; animation-delay: 1s;">
                         <x-app-icon name="laptop" class="w-7 h-7 text-cream-50" />
                     </div>
-                    <div class="h-56 -mt-16 rounded-lg bg-ink-900 flex items-end p-5">
-                        <x-app-icon name="sparkles" class="w-8 h-8 text-cream-50" />
+                    <div class="h-56 -mt-16 rounded-lg bg-ink-900 flex items-end p-5 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1653821355736-0c2598d0a63e?w=500&h=600&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy">
+                        <x-app-icon name="sparkles" class="w-8 h-8 text-cream-50 relative" />
                     </div>
                 </div>
             </div>
@@ -118,7 +122,9 @@
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 @foreach($categories as $category)
                     <a href="{{ route('services.index', ['category' => $category->slug]) }}"
-                       class="bg-cream-50 rounded-lg p-6 text-center hover:shadow-md transition-all duration-300 group border border-ink-100">
+                       x-data x-intersect.once="$el.classList.add('revealed')"
+                       style="transition-delay: {{ $loop->index * 60 }}ms"
+                       class="reveal bg-cream-50 rounded-lg p-6 text-center hover:shadow-md hover:-translate-y-1 transition-all duration-300 group border border-ink-100">
                         <div class="w-12 h-12 mx-auto mb-4 rounded-lg bg-terracotta-50 group-hover:bg-terracotta-100 flex items-center justify-center text-terracotta-700 transition">
                             @php
                                 $catIcons = [
@@ -171,7 +177,9 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 @forelse($popularServices as $service)
                     <a href="{{ route('services.show', $service) }}"
-                       class="bg-cream-50 rounded-lg overflow-hidden border border-ink-100 hover:shadow-md transition-all duration-300 group">
+                       x-data x-intersect.once="$el.classList.add('revealed')"
+                       style="transition-delay: {{ $loop->index * 80 }}ms"
+                       class="reveal bg-cream-50 rounded-lg overflow-hidden border border-ink-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
                         {{-- Cover Image --}}
                         <div class="relative h-44 overflow-hidden">
                             <x-service-cover :service="$service" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
@@ -246,18 +254,21 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                <div class="bg-cream-50/5 border border-cream-50/10 rounded-lg p-8">
-                    <p class="font-serif text-4xl font-medium text-ochre-500 mb-2">{{ number_format($stats['services']) }}+</p>
+                <div class="bg-cream-50/5 border border-cream-50/10 rounded-lg p-8"
+                     x-data="counter({{ (int) $stats['services'] }})" x-intersect.once="start()">
+                    <p class="font-serif text-4xl font-medium text-ochre-500 mb-2"><span x-text="display">0</span>+</p>
                     <p class="text-base font-medium mb-1">Services disponibles</p>
                     <p class="text-cream-100/40 text-sm">Dans toutes les catégories</p>
                 </div>
-                <div class="bg-cream-50/5 border border-cream-50/10 rounded-lg p-8">
-                    <p class="font-serif text-4xl font-medium text-ochre-500 mb-2">{{ number_format($stats['prestataires']) }}+</p>
+                <div class="bg-cream-50/5 border border-cream-50/10 rounded-lg p-8"
+                     x-data="counter({{ (int) $stats['prestataires'] }})" x-intersect.once="start()">
+                    <p class="font-serif text-4xl font-medium text-ochre-500 mb-2"><span x-text="display">0</span>+</p>
                     <p class="text-base font-medium mb-1">Prestataires qualifiés</p>
                     <p class="text-cream-100/40 text-sm">Vérifiés et notés</p>
                 </div>
-                <div class="bg-cream-50/5 border border-cream-50/10 rounded-lg p-8">
-                    <p class="font-serif text-4xl font-medium text-ochre-500 mb-2">{{ number_format($stats['orders']) }}+</p>
+                <div class="bg-cream-50/5 border border-cream-50/10 rounded-lg p-8"
+                     x-data="counter({{ (int) $stats['orders'] }})" x-intersect.once="start()">
+                    <p class="font-serif text-4xl font-medium text-ochre-500 mb-2"><span x-text="display">0</span>+</p>
                     <p class="text-base font-medium mb-1">Missions réussies</p>
                     <p class="text-cream-100/40 text-sm">Avec satisfaction garantie</p>
                 </div>
@@ -274,7 +285,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-4xl mx-auto">
-                <div class="text-center">
+                <div class="text-center reveal" x-data x-intersect.once="$el.classList.add('revealed')">
                     <div class="w-14 h-14 rounded-lg bg-forest-600 text-cream-50 flex items-center justify-center mx-auto mb-5">
                         <x-app-icon name="search" class="w-6 h-6" />
                     </div>
@@ -282,7 +293,7 @@
                     <h3 class="text-lg font-semibold text-ink-900 mb-2">Cherchez</h3>
                     <p class="text-ink-500 text-sm leading-relaxed">Parcourez nos catégories ou utilisez la recherche pour trouver le service dont vous avez besoin.</p>
                 </div>
-                <div class="text-center">
+                <div class="text-center reveal" x-data x-intersect.once="$el.classList.add('revealed')" style="transition-delay: 120ms">
                     <div class="w-14 h-14 rounded-lg bg-ochre-600 text-cream-50 flex items-center justify-center mx-auto mb-5">
                         <x-app-icon name="check-circle" class="w-6 h-6" />
                     </div>
@@ -290,7 +301,7 @@
                     <h3 class="text-lg font-semibold text-ink-900 mb-2">Commandez</h3>
                     <p class="text-ink-500 text-sm leading-relaxed">Choisissez votre prestataire, passez commande et payez en toute sécurité via notre plateforme.</p>
                 </div>
-                <div class="text-center">
+                <div class="text-center reveal" x-data x-intersect.once="$el.classList.add('revealed')" style="transition-delay: 240ms">
                     <div class="w-14 h-14 rounded-lg bg-clay-500 text-cream-50 flex items-center justify-center mx-auto mb-5">
                         <x-app-icon name="check" class="w-6 h-6" />
                     </div>
@@ -305,7 +316,7 @@
     {{-- CTA Section --}}
     <section class="py-20 bg-terracotta-600 relative overflow-hidden">
         <div class="container mx-auto px-4 text-center relative">
-            <div class="max-w-2xl mx-auto">
+            <div class="max-w-2xl mx-auto reveal" x-data x-intersect.once="$el.classList.add('revealed')">
                 <h2 class="font-serif text-4xl md:text-5xl font-medium text-cream-50 mb-5">
                     Vous êtes un professionnel&nbsp;?
                 </h2>
