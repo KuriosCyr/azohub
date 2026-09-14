@@ -2,20 +2,20 @@
 
 @php
 $categoryStyles = [
-    'BTP & Travaux' => ['icon' => 'wrench', 'from' => 'from-blue-500', 'to' => 'to-blue-700'],
-    'Digital & Tech' => ['icon' => 'laptop', 'from' => 'from-indigo-500', 'to' => 'to-purple-600'],
-    'Maison & Jardinage' => ['icon' => 'home', 'from' => 'from-green-500', 'to' => 'to-emerald-600'],
-    'Éducation & Formation' => ['icon' => 'academic-cap', 'from' => 'from-yellow-400', 'to' => 'to-orange-500'],
-    'Événementiel' => ['icon' => 'sparkles', 'from' => 'from-pink-500', 'to' => 'to-rose-600'],
-    'Transport & Livraison' => ['icon' => 'truck', 'from' => 'from-cyan-500', 'to' => 'to-sky-600'],
-    'Beauté & Bien-être' => ['icon' => 'heart', 'from' => 'from-rose-400', 'to' => 'to-pink-600'],
-    'Mécanique & Automobile' => ['icon' => 'wrench', 'from' => 'from-slate-500', 'to' => 'to-gray-700'],
-    'Administration & Juridique' => ['icon' => 'briefcase', 'from' => 'from-blue-700', 'to' => 'to-slate-800'],
-    'Santé & Social' => ['icon' => 'shield-check', 'from' => 'from-teal-500', 'to' => 'to-emerald-700'],
+    'BTP & Travaux' => ['icon' => 'wrench', 'bg' => 'bg-forest-600'],
+    'Digital & Tech' => ['icon' => 'laptop', 'bg' => 'bg-ink-700'],
+    'Maison & Jardinage' => ['icon' => 'home', 'bg' => 'bg-clay-500'],
+    'Éducation & Formation' => ['icon' => 'academic-cap', 'bg' => 'bg-ochre-600'],
+    'Événementiel' => ['icon' => 'sparkles', 'bg' => 'bg-terracotta-600'],
+    'Transport & Livraison' => ['icon' => 'truck', 'bg' => 'bg-stone-600'],
+    'Beauté & Bien-être' => ['icon' => 'heart', 'bg' => 'bg-rose-800'],
+    'Mécanique & Automobile' => ['icon' => 'wrench', 'bg' => 'bg-stone-700'],
+    'Administration & Juridique' => ['icon' => 'briefcase', 'bg' => 'bg-ink-900'],
+    'Santé & Social' => ['icon' => 'shield-check', 'bg' => 'bg-emerald-800'],
 ];
 
 $categoryName = $service->category->name ?? null;
-$style = $categoryStyles[$categoryName] ?? ['icon' => 'box', 'from' => 'from-blue-500', 'to' => 'to-blue-700'];
+$style = $categoryStyles[$categoryName] ?? ['icon' => 'box', 'bg' => 'bg-terracotta-600'];
 
 $hasRealImage = filled($service->cover_image);
 $imageUrl = $hasRealImage
@@ -29,12 +29,12 @@ $imageUrl = $hasRealImage
     <img src="{{ $imageUrl }}" alt="{{ $service->title }}" class="{{ $class }}" loading="lazy"
          onerror="this.onerror=null;this.replaceWith(document.getElementById('{{ $service->id }}-cover-fallback').content.cloneNode(true).firstElementChild);">
     <template id="{{ $service->id }}-cover-fallback">
-        <div class="{{ $class }} bg-gradient-to-br {{ $style['from'] }} {{ $style['to'] }} flex items-center justify-center">
-            <x-app-icon name="{{ $style['icon'] }}" class="w-1/3 h-1/3 text-white/90" />
+        <div class="{{ $class }} {{ $style['bg'] }} flex items-center justify-center">
+            <x-app-icon name="{{ $style['icon'] }}" class="w-1/3 h-1/3 text-cream-50/90" />
         </div>
     </template>
 @else
-    <div class="{{ $class }} bg-gradient-to-br {{ $style['from'] }} {{ $style['to'] }} flex items-center justify-center">
-        <x-app-icon name="{{ $style['icon'] }}" class="w-1/3 h-1/3 text-white/90" />
+    <div class="{{ $class }} {{ $style['bg'] }} flex items-center justify-center">
+        <x-app-icon name="{{ $style['icon'] }}" class="w-1/3 h-1/3 text-cream-50/90" />
     </div>
 @endif

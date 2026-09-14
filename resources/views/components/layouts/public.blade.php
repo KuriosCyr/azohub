@@ -8,22 +8,23 @@
     <title>{{ config('app.name', 'Azohub') }} - Plateforme de services au Bénin</title>
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800,900&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <!-- Scripts (Alpine.js est déjà bundlé et démarré dans resources/js/app.js) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="font-sans antialiased bg-gray-50">
+<body class="font-sans antialiased bg-cream text-ink-900">
     <!-- Navigation -->
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <nav class="bg-cream-50 border-b border-ink-100 sticky top-0 z-50">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex items-center">
                     <a href="{{ route('home') }}" class="flex items-center gap-1">
-                        <span class="text-2xl font-black text-blue-900">Azo</span><span class="text-2xl font-black text-yellow-400">hub</span>
+                        <span class="font-serif text-2xl font-medium text-ink-900">Azo</span><span class="font-serif text-2xl font-medium text-terracotta-600">hub</span>
                         <span class="ml-1 inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden">
                             <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
                                 <rect width="45" height="30" fill="#E8112D"/>
@@ -36,13 +37,13 @@
 
                 <!-- Navigation principale (desktop) -->
                 <div class="hidden md:flex items-center space-x-8">
-                    <a href="{{ route('home') }}" class="text-gray-700 hover:text-blue-900 font-semibold transition {{ request()->routeIs('home') ? 'text-blue-900 border-b-2 border-blue-900' : '' }}">
+                    <a href="{{ route('home') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('home') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                         Accueil
                     </a>
 
                     <!-- Dropdown Catégories -->
                     <div x-data="{ open: false }" @click.away="open = false" class="relative">
-                        <button @click="open = !open" class="text-gray-700 hover:text-blue-900 font-semibold flex items-center gap-1 transition">
+                        <button @click="open = !open" class="text-sm font-medium text-ink-500 hover:text-ink-900 flex items-center gap-1 transition">
                             Catégories
                             <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -51,7 +52,7 @@
 
                         <div x-show="open"
                              x-transition
-                             class="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl py-3 z-50 border border-gray-100"
+                             class="absolute top-full left-0 mt-2 w-80 bg-cream-50 rounded-lg shadow-lg py-3 z-50 border border-ink-100"
                              style="display: none;">
                             @php
                                 $categories = \App\Models\Category::where('is_active', true)->get();
@@ -60,9 +61,9 @@
                             <div class="max-h-96 overflow-y-auto">
                                 @foreach($categories as $category)
                                     <a href="{{ route('services.index', ['category' => $category->slug]) }}"
-                                       class="flex items-center justify-between px-4 py-3 hover:bg-blue-50 transition group">
+                                       class="flex items-center justify-between px-4 py-3 hover:bg-terracotta-50 transition group">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-9 h-9 rounded-xl bg-blue-50 group-hover:bg-blue-100 flex items-center justify-center text-blue-700 transition">
+                                            <div class="w-9 h-9 rounded-lg bg-terracotta-50 group-hover:bg-terracotta-100 flex items-center justify-center text-terracotta-700 transition">
                                                 @php
                                                     $catIcons = [
                                                         'Hammer'      => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"/>',
@@ -81,40 +82,40 @@
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $svgPath !!}</svg>
                                             </div>
                                             <div>
-                                                <p class="font-semibold text-gray-800 group-hover:text-blue-900">{{ $category->name }}</p>
-                                                <p class="text-xs text-gray-500">{{ Str::limit($category->description ?? '', 40) }}</p>
+                                                <p class="font-semibold text-ink-900 group-hover:text-terracotta-700">{{ $category->name }}</p>
+                                                <p class="text-xs text-ink-400">{{ Str::limit($category->description ?? '', 40) }}</p>
                                             </div>
                                         </div>
-                                        <svg class="w-4 h-4 text-gray-300 group-hover:text-blue-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-4 h-4 text-ink-300 group-hover:text-terracotta-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                         </svg>
                                     </a>
                                 @endforeach
                             </div>
 
-                            <div class="border-t border-gray-100 mt-2 pt-2">
-                                <a href="{{ route('services.index') }}" class="block px-4 py-3 text-blue-600 font-bold hover:bg-blue-50 transition">
-                                    Voir toutes les catégories →
+                            <div class="border-t border-ink-100 mt-2 pt-2">
+                                <a href="{{ route('services.index') }}" class="block px-4 py-3 text-terracotta-600 font-semibold hover:bg-terracotta-50 transition">
+                                    Voir toutes les catégories &rarr;
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <a href="{{ route('services.index') }}" class="text-gray-700 hover:text-blue-900 font-semibold transition {{ request()->routeIs('services.*') && !request()->routeIs('prestataire.services.*') ? 'text-blue-900 border-b-2 border-blue-900' : '' }}">
+                    <a href="{{ route('services.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('services.*') && !request()->routeIs('prestataire.services.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                         Tous les services
                     </a>
 
-                    <a href="{{ route('how-it-works') }}" class="text-gray-700 hover:text-blue-900 font-semibold transition {{ request()->routeIs('how-it-works') ? 'text-blue-900 border-b-2 border-blue-900' : '' }}">
+                    <a href="{{ route('how-it-works') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('how-it-works') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                         Comment ça marche
                     </a>
 
                     @auth
-                        <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-blue-900 font-semibold transition {{ request()->routeIs('*.dashboard') ? 'text-blue-900 border-b-2 border-blue-900' : '' }}">
+                        <a href="{{ route('dashboard') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('*.dashboard') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                             Dashboard
                         </a>
 
                         @if(Auth::user()->isPrestataire())
-                            <a href="{{ route('prestataire.services.index') }}" class="text-gray-700 hover:text-blue-900 font-semibold transition {{ request()->routeIs('prestataire.services.*') ? 'text-blue-900 border-b-2 border-blue-900' : '' }}">
+                            <a href="{{ route('prestataire.services.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('prestataire.services.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                                 Mes services
                             </a>
                         @endif
@@ -126,15 +127,15 @@
                     @auth
                         <!-- User Dropdown -->
                         <div x-data="{ open: false }" @click.away="open = false" class="relative">
-                            <button @click="open = !open" class="flex items-center gap-3 hover:bg-gray-50 rounded-2xl px-4 py-2 transition">
+                            <button @click="open = !open" class="flex items-center gap-3 hover:bg-ink-100/40 rounded-lg px-3 py-2 transition">
                                 <img src="{{ Auth::user()->avatar ? Storage::url(Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) }}"
                                      alt="{{ Auth::user()->name }}"
-                                     class="w-9 h-9 rounded-full border-2 border-blue-100">
+                                     class="w-9 h-9 rounded-full border border-ink-200">
                                 <div class="text-left">
-                                    <p class="text-sm font-bold text-gray-900">{{ Str::limit(Auth::user()->name, 18) }}</p>
-                                    <p class="text-xs text-gray-500">{{ ucfirst(Auth::user()->role) }}</p>
+                                    <p class="text-sm font-semibold text-ink-900">{{ Str::limit(Auth::user()->name, 18) }}</p>
+                                    <p class="text-xs text-ink-400">{{ ucfirst(Auth::user()->role) }}</p>
                                 </div>
-                                <svg class="w-4 h-4 text-gray-400 transition-transform" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 text-ink-300 transition-transform" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
@@ -142,21 +143,21 @@
                             <!-- Dropdown Menu -->
                             <div x-show="open"
                                  x-transition
-                                 class="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl py-2 z-50 border border-gray-100"
+                                 class="absolute right-0 top-full mt-2 w-64 bg-cream-50 rounded-lg shadow-lg py-2 z-50 border border-ink-100"
                                  style="display: none;">
 
                                 <!-- User Info -->
-                                <div class="px-4 py-3 border-b border-gray-100">
-                                    <p class="font-bold text-gray-900">{{ Auth::user()->name }}</p>
-                                    <p class="text-sm text-gray-500">{{ Auth::user()->email }}</p>
+                                <div class="px-4 py-3 border-b border-ink-100">
+                                    <p class="font-semibold text-ink-900">{{ Auth::user()->name }}</p>
+                                    <p class="text-sm text-ink-400">{{ Auth::user()->email }}</p>
 
                                     @if(Auth::user()->isPrestataire())
                                         <div class="mt-2 flex items-center gap-2">
-                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
+                                            <span class="px-2 py-1 bg-terracotta-50 text-terracotta-700 text-xs font-semibold rounded-full">
                                                 {{ ucfirst(Auth::user()->level) }}
                                             </span>
                                             @if(Auth::user()->identity_verified)
-                                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
+                                                <span class="px-2 py-1 bg-forest-600/10 text-forest-700 text-xs font-semibold rounded-full">
                                                     Vérifié
                                                 </span>
                                             @endif
@@ -167,44 +168,44 @@
                                 <!-- Menu Links -->
                                 <div class="py-2">
                                     @if(Auth::user()->isPrestataire())
-                                        <a href="{{ route('prestataire.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition text-gray-700 font-semibold">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                        <a href="{{ route('prestataire.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                            <x-app-icon name="cog" class="w-4 h-4 text-ink-300" />
                                             Dashboard
                                         </a>
-                                        <a href="{{ route('prestataire.profile', Auth::user()->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition text-gray-700 font-semibold">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        <a href="{{ route('prestataire.profile', Auth::user()->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                            <x-app-icon name="user" class="w-4 h-4 text-ink-300" />
                                             Mon profil public
                                         </a>
-                                        <a href="{{ route('prestataire.services.index') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition text-gray-700 font-semibold">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                        <a href="{{ route('prestataire.services.index') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                            <x-app-icon name="briefcase" class="w-4 h-4 text-ink-300" />
                                             Mes services
                                         </a>
-                                        <a href="#" class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition text-gray-700 font-semibold">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                                        <a href="#" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                            <x-app-icon name="banknotes" class="w-4 h-4 text-ink-300" />
                                             Portefeuille
-                                            <span class="text-xs text-gray-500 ml-auto">{{ number_format(Auth::user()->wallet_balance ?? 0, 0) }} F</span>
+                                            <span class="text-xs text-ink-400 ml-auto">{{ number_format(Auth::user()->wallet_balance ?? 0, 0) }} F</span>
                                         </a>
                                     @else
-                                        <a href="{{ route('client.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition text-gray-700 font-semibold">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                        <a href="{{ route('client.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                            <x-app-icon name="home" class="w-4 h-4 text-ink-300" />
                                             Dashboard
                                         </a>
-                                        <a href="{{ route('client.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition text-gray-700 font-semibold">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                        <a href="{{ route('client.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                            <x-app-icon name="cart" class="w-4 h-4 text-ink-300" />
                                             Mes commandes
                                         </a>
                                     @endif
                                 </div>
 
-                                <div class="border-t border-gray-100 py-2">
-                                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition text-gray-700 font-semibold">
-                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <div class="border-t border-ink-100 py-2">
+                                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                        <x-app-icon name="cog" class="w-4 h-4 text-ink-300" />
                                         Paramètres
                                     </a>
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
-                                        <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition text-red-600 font-semibold">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                        <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition text-red-700 font-medium">
+                                            <x-app-icon name="logout" class="w-4 h-4" />
                                             Déconnexion
                                         </button>
                                     </form>
@@ -213,10 +214,10 @@
                         </div>
                     @else
                         <!-- Non connecté -->
-                        <a href="{{ route('login') }}" class="text-gray-700 hover:text-blue-900 font-semibold transition">
+                        <a href="{{ route('login') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition">
                             Connexion
                         </a>
-                        <a href="{{ route('register') }}" class="bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-black px-5 py-2.5 rounded-full transition shadow-md text-sm">
+                        <a href="{{ route('register') }}" class="bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-semibold px-5 py-2.5 rounded-lg transition text-sm">
                             S'inscrire gratuitement
                         </a>
                     @endauth
@@ -224,7 +225,7 @@
 
                 <!-- Mobile menu button -->
                 <div class="md:hidden flex items-center">
-                    <button x-data @click="$dispatch('toggle-mobile-menu')" class="text-gray-700 hover:text-blue-900 p-2 rounded-lg hover:bg-gray-100 transition">
+                    <button x-data @click="$dispatch('toggle-mobile-menu')" class="text-ink-700 hover:text-ink-900 p-2 rounded-lg hover:bg-ink-100/40 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
@@ -250,7 +251,7 @@
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0"
              @click="open = false"
-             class="fixed inset-0 bg-black/50 z-40"
+             class="fixed inset-0 bg-ink-900/50 z-40"
              style="display:none;"></div>
 
         <!-- Drawer -->
@@ -261,77 +262,77 @@
              x-transition:leave="transition ease-in duration-150 transform"
              x-transition:leave-start="translate-x-0"
              x-transition:leave-end="-translate-x-full"
-             class="fixed top-0 left-0 h-full w-72 bg-white z-50 shadow-2xl flex flex-col overflow-y-auto"
+             class="fixed top-0 left-0 h-full w-72 bg-cream-50 z-50 shadow-2xl flex flex-col overflow-y-auto"
              style="display:none;">
 
             <!-- Header -->
-            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-ink-100">
                 <a href="{{ route('home') }}" class="flex items-center gap-1">
-                    <span class="text-xl font-black text-blue-900">Azo</span><span class="text-xl font-black text-yellow-400">hub</span>
+                    <span class="font-serif text-xl font-medium text-ink-900">Azo</span><span class="font-serif text-xl font-medium text-terracotta-600">hub</span>
                 </a>
-                <button @click="open = false" class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-500">
+                <button @click="open = false" class="p-2 rounded-lg hover:bg-ink-100/40 transition text-ink-400">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
 
             <!-- Nav links -->
             <nav class="flex-1 px-4 py-6 space-y-1">
-                <a href="{{ route('home') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition {{ request()->routeIs('home') ? 'bg-blue-50 text-blue-900' : '' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <a href="{{ route('home') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition {{ request()->routeIs('home') ? 'bg-terracotta-50 text-terracotta-700' : '' }}">
+                    <x-app-icon name="home" class="w-4 h-4" />
                     Accueil
                 </a>
-                <a href="{{ route('services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition {{ request()->routeIs('services.*') ? 'bg-blue-50 text-blue-900' : '' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <a href="{{ route('services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition {{ request()->routeIs('services.*') ? 'bg-terracotta-50 text-terracotta-700' : '' }}">
+                    <x-app-icon name="box" class="w-4 h-4" />
                     Tous les services
                 </a>
-                <a href="{{ route('how-it-works') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition {{ request()->routeIs('how-it-works') ? 'bg-blue-50 text-blue-900' : '' }}">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <a href="{{ route('how-it-works') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition {{ request()->routeIs('how-it-works') ? 'bg-terracotta-50 text-terracotta-700' : '' }}">
+                    <x-app-icon name="question-circle" class="w-4 h-4" />
                     Comment ça marche
                 </a>
 
                 @auth
-                    <div class="border-t border-gray-100 my-3"></div>
-                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+                    <div class="border-t border-ink-100 my-3"></div>
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                        <x-app-icon name="cog" class="w-4 h-4" />
                         Dashboard
                     </a>
                     @if(Auth::user()->isPrestataire())
-                        <a href="{{ route('prestataire.services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        <a href="{{ route('prestataire.services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                            <x-app-icon name="briefcase" class="w-4 h-4" />
                             Mes services
                         </a>
                     @endif
-                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                        <x-app-icon name="cog" class="w-4 h-4" />
                         Paramètres
                     </a>
                 @else
-                    <div class="border-t border-gray-100 my-3"></div>
-                    <a href="{{ route('login') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition">
+                    <div class="border-t border-ink-100 my-3"></div>
+                    <a href="{{ route('login') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
                         Connexion
                     </a>
                 @endauth
             </nav>
 
             <!-- Bottom -->
-            <div class="px-4 py-4 border-t border-gray-100">
+            <div class="px-4 py-4 border-t border-ink-100">
                 @auth
                     <div class="flex items-center gap-3 mb-4">
-                        <img src="{{ Auth::user()->avatar ? Storage::url(Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) }}" alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-full border-2 border-blue-100">
+                        <img src="{{ Auth::user()->avatar ? Storage::url(Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) }}" alt="{{ Auth::user()->name }}" class="w-10 h-10 rounded-full border border-ink-200">
                         <div class="min-w-0">
-                            <p class="text-sm font-bold text-gray-900 truncate">{{ Auth::user()->name }}</p>
-                            <p class="text-xs text-gray-500">{{ ucfirst(Auth::user()->role) }}</p>
+                            <p class="text-sm font-semibold text-ink-900 truncate">{{ Auth::user()->name }}</p>
+                            <p class="text-xs text-ink-400">{{ ucfirst(Auth::user()->role) }}</p>
                         </div>
                     </div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-xl transition text-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-medium rounded-lg transition text-sm">
+                            <x-app-icon name="logout" class="w-4 h-4" />
                             Déconnexion
                         </button>
                     </form>
                 @else
-                    <a href="{{ route('register') }}" class="block w-full text-center bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-black px-4 py-3 rounded-xl transition text-sm">
+                    <a href="{{ route('register') }}" class="block w-full text-center bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-semibold px-4 py-3 rounded-lg transition text-sm">
                         S'inscrire gratuitement
                     </a>
                 @endauth
@@ -343,21 +344,21 @@
     @if(session('success') || session('error') || session('info'))
     <div class="container mx-auto px-4 pt-4">
         @if(session('success'))
-            <div class="flex items-center gap-3 bg-green-50 border border-green-200 p-4 mb-3 rounded-xl">
-                <svg class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p class="text-green-700 font-semibold">{{ session('success') }}</p>
+            <div class="flex items-center gap-3 bg-forest-600/10 border border-forest-600/30 p-4 mb-3 rounded-lg">
+                <svg class="w-5 h-5 text-forest-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-forest-700 font-medium">{{ session('success') }}</p>
             </div>
         @endif
         @if(session('error'))
-            <div class="flex items-center gap-3 bg-red-50 border border-red-200 p-4 mb-3 rounded-xl">
+            <div class="flex items-center gap-3 bg-red-50 border border-red-200 p-4 mb-3 rounded-lg">
                 <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p class="text-red-700 font-semibold">{{ session('error') }}</p>
+                <p class="text-red-700 font-medium">{{ session('error') }}</p>
             </div>
         @endif
         @if(session('info'))
-            <div class="flex items-center gap-3 bg-blue-50 border border-blue-200 p-4 mb-3 rounded-xl">
-                <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <p class="text-blue-700 font-semibold">{{ session('info') }}</p>
+            <div class="flex items-center gap-3 bg-terracotta-50 border border-terracotta-600/30 p-4 mb-3 rounded-lg">
+                <svg class="w-5 h-5 text-terracotta-700 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-terracotta-700 font-medium">{{ session('info') }}</p>
             </div>
         @endif
     </div>
@@ -369,13 +370,13 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white pt-14 pb-8">
+    <footer class="bg-ink-900 text-cream-100 pt-14 pb-8">
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
                 <!-- About -->
                 <div>
                     <div class="flex items-center gap-1.5 mb-4">
-                        <span class="text-xl font-black text-white">Azo</span><span class="text-xl font-black text-yellow-400">hub</span>
+                        <span class="font-serif text-xl font-medium text-cream-50">Azo</span><span class="font-serif text-xl font-medium text-ochre-500">hub</span>
                         <span class="inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden ml-1">
                             <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
                                 <rect width="45" height="30" fill="#E8112D"/>
@@ -384,41 +385,41 @@
                             </svg>
                         </span>
                     </div>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-5">
+                    <p class="text-cream-100/60 text-sm leading-relaxed mb-5">
                         La plateforme n°1 pour trouver des prestataires de confiance au Bénin.
                     </p>
                     <div class="flex gap-3">
                         <!-- Facebook -->
-                        <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-full flex items-center justify-center transition">
-                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        <a href="#" class="w-9 h-9 bg-cream-50/10 hover:bg-terracotta-600 rounded-full flex items-center justify-center transition">
+                            <svg class="w-4 h-4 text-cream-50" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                         </a>
                         <!-- Instagram -->
-                        <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-pink-600 rounded-full flex items-center justify-center transition">
-                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                        <a href="#" class="w-9 h-9 bg-cream-50/10 hover:bg-terracotta-600 rounded-full flex items-center justify-center transition">
+                            <svg class="w-4 h-4 text-cream-50" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                         </a>
                         <!-- Twitter/X -->
-                        <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-sky-500 rounded-full flex items-center justify-center transition">
-                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        <a href="#" class="w-9 h-9 bg-cream-50/10 hover:bg-terracotta-600 rounded-full flex items-center justify-center transition">
+                            <svg class="w-4 h-4 text-cream-50" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                         </a>
                     </div>
                 </div>
 
                 <!-- Quick Links -->
                 <div>
-                    <h4 class="font-bold mb-4 text-white">Liens rapides</h4>
-                    <ul class="space-y-2.5 text-gray-400 text-sm">
-                        <li><a href="{{ route('home') }}" class="hover:text-white transition">Accueil</a></li>
-                        <li><a href="{{ route('services.index') }}" class="hover:text-white transition">Services</a></li>
-                        <li><a href="{{ route('how-it-works') }}" class="hover:text-white transition">Comment ça marche</a></li>
-                        <li><a href="{{ route('faq') }}" class="hover:text-white transition">FAQ</a></li>
-                        <li><a href="{{ route('contact') }}" class="hover:text-white transition">Contact</a></li>
+                    <h4 class="font-semibold mb-4 text-cream-50">Liens rapides</h4>
+                    <ul class="space-y-2.5 text-cream-100/60 text-sm">
+                        <li><a href="{{ route('home') }}" class="hover:text-cream-50 transition">Accueil</a></li>
+                        <li><a href="{{ route('services.index') }}" class="hover:text-cream-50 transition">Services</a></li>
+                        <li><a href="{{ route('how-it-works') }}" class="hover:text-cream-50 transition">Comment ça marche</a></li>
+                        <li><a href="{{ route('faq') }}" class="hover:text-cream-50 transition">FAQ</a></li>
+                        <li><a href="{{ route('contact') }}" class="hover:text-cream-50 transition">Contact</a></li>
                     </ul>
                 </div>
 
                 <!-- Categories populaires -->
                 <div>
-                    <h4 class="font-bold mb-4 text-white">Catégories populaires</h4>
-                    <ul class="space-y-2.5 text-gray-400 text-sm">
+                    <h4 class="font-semibold mb-4 text-cream-50">Catégories populaires</h4>
+                    <ul class="space-y-2.5 text-cream-100/60 text-sm">
                         @php
                             $popularCategories = \App\Models\Category::where('is_active', true)
                                 ->withCount('services')
@@ -428,7 +429,7 @@
                         @endphp
                         @foreach($popularCategories as $cat)
                             <li>
-                                <a href="{{ route('services.index', ['category' => $cat->slug]) }}" class="hover:text-white transition">
+                                <a href="{{ route('services.index', ['category' => $cat->slug]) }}" class="hover:text-cream-50 transition">
                                     {{ $cat->name }}
                                 </a>
                             </li>
@@ -438,29 +439,29 @@
 
                 <!-- Contact -->
                 <div>
-                    <h4 class="font-bold mb-4 text-white">Contact & Support</h4>
-                    <ul class="space-y-3 text-gray-400 text-sm">
+                    <h4 class="font-semibold mb-4 text-cream-50">Contact &amp; Support</h4>
+                    <ul class="space-y-3 text-cream-100/60 text-sm">
                         <li class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            <x-app-icon name="envelope" class="w-4 h-4 text-ochre-500 flex-shrink-0" />
                             contact@azohub.bj
                         </li>
                         <li class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            <x-app-icon name="phone" class="w-4 h-4 text-ochre-500 flex-shrink-0" />
                             +229 XX XX XX XX
                         </li>
                         <li class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <x-app-icon name="map-pin" class="w-4 h-4 text-ochre-500 flex-shrink-0" />
                             Cotonou, Bénin
                         </li>
                     </ul>
                     <div class="mt-5">
                         @guest
-                            <a href="{{ route('register') }}" class="inline-block bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold px-4 py-2 rounded-full transition text-sm">
+                            <a href="{{ route('register') }}" class="inline-block bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-semibold px-4 py-2 rounded-lg transition text-sm">
                                 Devenir prestataire
                             </a>
                         @else
                             @if(!Auth::user()->isPrestataire())
-                                <a href="{{ route('register') }}?role=prestataire" class="inline-block bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-bold px-4 py-2 rounded-full transition text-sm">
+                                <a href="{{ route('register') }}?role=prestataire" class="inline-block bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-semibold px-4 py-2 rounded-lg transition text-sm">
                                     Devenir prestataire
                                 </a>
                             @endif
@@ -469,16 +470,16 @@
                 </div>
             </div>
 
-            <div class="border-t border-gray-800 pt-6 text-center text-gray-500 text-sm">
+            <div class="border-t border-cream-50/10 pt-6 text-center text-cream-100/50 text-sm">
                 <p>&copy; {{ date('Y') }} Azohub. Tous droits réservés.</p>
                 <div class="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
-                    <a href="{{ route('terms') }}" class="hover:text-white transition">Conditions d'utilisation</a>
-                    <span class="text-gray-700">•</span>
-                    <a href="{{ route('privacy') }}" class="hover:text-white transition">Politique de confidentialité</a>
-                    <span class="text-gray-700">•</span>
-                    <a href="{{ route('faq') }}" class="hover:text-white transition">FAQ</a>
-                    <span class="text-gray-700">•</span>
-                    <a href="{{ route('contact') }}" class="hover:text-white transition">Contact</a>
+                    <a href="{{ route('terms') }}" class="hover:text-cream-50 transition">Conditions d'utilisation</a>
+                    <span class="text-cream-100/20">•</span>
+                    <a href="{{ route('privacy') }}" class="hover:text-cream-50 transition">Politique de confidentialité</a>
+                    <span class="text-cream-100/20">•</span>
+                    <a href="{{ route('faq') }}" class="hover:text-cream-50 transition">FAQ</a>
+                    <span class="text-cream-100/20">•</span>
+                    <a href="{{ route('contact') }}" class="hover:text-cream-50 transition">Contact</a>
                 </div>
             </div>
         </div>
