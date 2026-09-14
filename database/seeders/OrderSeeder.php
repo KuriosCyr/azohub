@@ -3,9 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\User;
 use App\Models\Service;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class OrderSeeder extends Seeder
@@ -50,8 +52,18 @@ class OrderSeeder extends Seeder
                 // Dates selon le statut
                 $createdAt = Carbon::now()->subDays(rand(1, 90));
                 $expectedDelivery = $createdAt->copy()->addDays($service->delivery_time);
+                $paidAt = null;
+                $acceptedAt = null;
                 $deliveredAt = null;
                 $validatedAt = null;
+
+                if (in_array($status, ['paid', 'in_progress', 'delivered', 'completed'])) {
+                    $paidAt = $createdAt->copy()->addMinutes(rand(5, 120));
+                }
+
+                if (in_array($status, ['in_progress', 'delivered', 'completed'])) {
+                    $acceptedAt = $paidAt->copy()->addHours(rand(1, 24));
+                }
 
                 if (in_array($status, ['delivered', 'completed'])) {
                     $deliveredAt = $createdAt->copy()->addDays(rand(1, $service->delivery_time + 2));
@@ -72,7 +84,7 @@ class OrderSeeder extends Seeder
                     $paymentStatus = 'refunded';
                 }
 
-                Order::create([
+                $order = Order::create([
                     'order_number' => 'AZH-' . date('Y') . '-' . str_pad($orderNumber, 5, '0', STR_PAD_LEFT),
                     'client_id' => $client->id,
                     'prestataire_id' => $prestataire->id,
@@ -83,6 +95,7 @@ class OrderSeeder extends Seeder
                     'prestataire_amount' => $prestataireAmount,
                     'delivery_time' => $service->delivery_time,
                     'expected_delivery_at' => $expectedDelivery,
+                    'accepted_at' => $acceptedAt,
                     'delivered_at' => $deliveredAt,
                     'validated_at' => $validatedAt,
                     'status' => $status,
@@ -90,6 +103,23 @@ class OrderSeeder extends Seeder
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,
                 ]);
+
+                // Créer le paiement correspondant pour les commandes effectivement payées
+                if ($paidAt !== null) {
+                    Payment::create([
+                        'order_id' => $order->id,
+                        'user_id' => $client->id,
+                        'transaction_id' => 'DEMO-' . Str::upper(Str::random(12)),
+                        'payment_method' => collect(['mtn_momo', 'moov_money', 'celtiis_cash'])->random(),
+                        'phone_number' => $client->phone,
+                        'amount' => $amount,
+                        'status' => 'success',
+                        'type' => 'order_payment',
+                        'paid_at' => $paidAt,
+                        'created_at' => $paidAt,
+                        'updated_at' => $paidAt,
+                    ]);
+                }
 
                 $orderNumber++;
                 $count++;

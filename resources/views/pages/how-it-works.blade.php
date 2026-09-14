@@ -17,7 +17,7 @@
             <div class="container mx-auto px-4">
                 <div class="text-center mb-16">
                     <h2 class="text-4xl font-black text-gray-900 mb-4">
-                        👤 Pour les Clients
+                        <x-app-icon name="user" class="w-8 h-8 inline-block align-middle" /> Pour les Clients
                     </h2>
                     <p class="text-xl text-gray-600">
                         Trouvez le prestataire parfait en quelques clics
@@ -27,8 +27,8 @@
                 <div class="grid md:grid-cols-3 gap-12 max-w-6xl mx-auto">
                     {{-- Étape 1 --}}
                     <div class="text-center">
-                        <div class="bg-gradient-to-br from-blue-100 to-blue-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl transform hover:scale-110 transition">
-                            🔍
+                        <div class="bg-gradient-to-br from-blue-100 to-blue-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 transform hover:scale-110 transition">
+                            <x-app-icon name="search" class="w-14 h-14 text-blue-600" />
                         </div>
                         <div class="bg-blue-900 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black">
                             1
@@ -41,8 +41,8 @@
 
                     {{-- Étape 2 --}}
                     <div class="text-center">
-                        <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl transform hover:scale-110 transition">
-                            💳
+                        <div class="bg-gradient-to-br from-yellow-100 to-yellow-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 transform hover:scale-110 transition">
+                            <x-app-icon name="card" class="w-14 h-14 text-yellow-600" />
                         </div>
                         <div class="bg-blue-900 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black">
                             2
@@ -55,8 +55,8 @@
 
                     {{-- Étape 3 --}}
                     <div class="text-center">
-                        <div class="bg-gradient-to-br from-green-100 to-green-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl transform hover:scale-110 transition">
-                            ✅
+                        <div class="bg-gradient-to-br from-green-100 to-green-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 transform hover:scale-110 transition">
+                            <x-app-icon name="check-circle" class="w-14 h-14 text-green-600" />
                         </div>
                         <div class="bg-blue-900 text-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black">
                             3
@@ -75,7 +75,7 @@
             <div class="container mx-auto px-4">
                 <div class="text-center mb-16">
                     <h2 class="text-4xl font-black text-gray-900 mb-4">
-                        💼 Pour les Prestataires
+                        <x-app-icon name="briefcase" class="w-8 h-8 inline-block align-middle" /> Pour les Prestataires
                     </h2>
                     <p class="text-xl text-gray-600">
                         Transformez vos compétences en revenus
@@ -85,8 +85,8 @@
                 <div class="grid md:grid-cols-3 gap-12 max-w-6xl mx-auto">
                     {{-- Étape 1 --}}
                     <div class="text-center">
-                        <div class="bg-gradient-to-br from-purple-100 to-purple-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl transform hover:scale-110 transition">
-                            📝
+                        <div class="bg-gradient-to-br from-purple-100 to-purple-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 transform hover:scale-110 transition">
+                            <x-app-icon name="pencil-square" class="w-14 h-14 text-purple-600" />
                         </div>
                         <div class="bg-yellow-400 text-blue-900 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black">
                             1
@@ -99,8 +99,8 @@
 
                     {{-- Étape 2 --}}
                     <div class="text-center">
-                        <div class="bg-gradient-to-br from-blue-100 to-blue-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl transform hover:scale-110 transition">
-                            🚀
+                        <div class="bg-gradient-to-br from-blue-100 to-blue-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 transform hover:scale-110 transition">
+                            <x-app-icon name="rocket" class="w-14 h-14 text-blue-600" />
                         </div>
                         <div class="bg-yellow-400 text-blue-900 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black">
                             2
@@ -113,8 +113,8 @@
 
                     {{-- Étape 3 --}}
                     <div class="text-center">
-                        <div class="bg-gradient-to-br from-green-100 to-green-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl transform hover:scale-110 transition">
-                            💰
+                        <div class="bg-gradient-to-br from-green-100 to-green-200 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-6 transform hover:scale-110 transition">
+                            <x-app-icon name="banknotes" class="w-14 h-14 text-green-600" />
                         </div>
                         <div class="bg-yellow-400 text-blue-900 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-black">
                             3
@@ -133,7 +133,7 @@
             <div class="container mx-auto px-4">
                 <div class="text-center mb-16">
                     <h2 class="text-4xl font-black text-gray-900 mb-4">
-                        🛡️ Nos Garanties
+                        <x-app-icon name="shield-check" class="w-8 h-8 inline-block align-middle" /> Nos Garanties
                     </h2>
                     <p class="text-xl text-gray-600">
                         Votre sécurité est notre priorité
@@ -142,25 +142,25 @@
 
                 <div class="grid md:grid-cols-4 gap-8 max-w-6xl mx-auto">
                     <div class="bg-blue-50 rounded-3xl p-6 text-center transform hover:scale-105 transition">
-                        <div class="text-5xl mb-4">🔒</div>
+                        <div class="mb-4"><x-app-icon name="lock" class="w-10 h-10 inline-block text-blue-600" /></div>
                         <h3 class="font-bold text-gray-900 mb-2">Paiement sécurisé</h3>
                         <p class="text-sm text-gray-600">Vos transactions sont protégées par cryptage SSL</p>
                     </div>
 
                     <div class="bg-green-50 rounded-3xl p-6 text-center transform hover:scale-105 transition">
-                        <div class="text-5xl mb-4">💳</div>
+                        <div class="mb-4"><x-app-icon name="card" class="w-10 h-10 inline-block text-green-600" /></div>
                         <h3 class="font-bold text-gray-900 mb-2">Argent protégé</h3>
                         <p class="text-sm text-gray-600">Votre paiement est gardé jusqu'à la validation</p>
                     </div>
 
                     <div class="bg-yellow-50 rounded-3xl p-6 text-center transform hover:scale-105 transition">
-                        <div class="text-5xl mb-4">🤝</div>
+                        <div class="mb-4"><x-app-icon name="handshake" class="w-10 h-10 inline-block text-yellow-600" /></div>
                         <h3 class="font-bold text-gray-900 mb-2">Support 24/7</h3>
                         <p class="text-sm text-gray-600">Notre équipe est là pour vous aider</p>
                     </div>
 
                     <div class="bg-purple-50 rounded-3xl p-6 text-center transform hover:scale-105 transition">
-                        <div class="text-5xl mb-4">⭐</div>
+                        <div class="mb-4"><x-app-icon name="star" class="w-10 h-10 inline-block text-purple-600" /></div>
                         <h3 class="font-bold text-gray-900 mb-2">Avis vérifiés</h3>
                         <p class="text-sm text-gray-600">Tous les avis proviennent de vraies commandes</p>
                     </div>
@@ -181,16 +181,16 @@
                     @guest
                         <a href="{{ route('register') }}?role=client" 
                            class="bg-white text-blue-900 font-black px-8 py-4 rounded-full hover:bg-blue-50 transition transform hover:scale-105 shadow-xl">
-                            👤 Je cherche un service
+<x-app-icon name="user" class="w-5 h-5 inline-block" /> Je cherche un service
                         </a>
                         <a href="{{ route('register') }}?role=prestataire" 
                            class="bg-yellow-400 text-blue-900 font-black px-8 py-4 rounded-full hover:bg-yellow-300 transition transform hover:scale-105 shadow-xl">
-                            💼 Je propose mes services
+<x-app-icon name="briefcase" class="w-5 h-5 inline-block" /> Je propose mes services
                         </a>
                     @else
                         <a href="{{ route('services.index') }}" 
                            class="bg-white text-blue-900 font-black px-8 py-4 rounded-full hover:bg-blue-50 transition transform hover:scale-105 shadow-xl">
-                            🔍 Parcourir les services
+<x-app-icon name="search" class="w-5 h-5 inline-block" /> Parcourir les services
                         </a>
                     @endguest
                 </div>

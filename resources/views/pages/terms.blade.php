@@ -4,7 +4,7 @@
         <div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white py-16">
             <div class="container mx-auto px-4 text-center">
                 <h1 class="text-4xl md:text-5xl font-black mb-4">
-                    📋 Conditions Générales d'Utilisation
+                    <x-app-icon name="clipboard" class="w-8 h-8 inline-block" /> Conditions Générales d'Utilisation
                 </h1>
                 <p class="text-lg text-blue-100">
                     Dernière mise à jour : {{ date('d/m/Y') }}
@@ -191,7 +191,7 @@
                 </ul>
 
                 <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded mt-8">
-                    <p class="font-bold text-blue-900 mb-2">💡 Besoin d'aide ?</p>
+                    <p class="font-bold text-blue-900 mb-2"><x-app-icon name="lightbulb" class="w-5 h-5 inline-block align-text-bottom" /> Besoin d'aide ?</p>
                     <p class="text-blue-800">
                         Consultez notre <a href="{{ route('faq') }}" class="underline font-bold">FAQ</a> 
                         ou <a href="{{ route('contact') }}" class="underline font-bold">contactez notre support</a>.

@@ -4,7 +4,7 @@
         <div class="container mx-auto px-4">
             <div class="max-w-4xl mx-auto text-center">
                 <h1 class="text-5xl md:text-6xl font-black mb-6">
-                    ❓ Foire Aux Questions
+                    <x-app-icon name="question-circle" class="w-10 h-10 inline-block align-middle" /> Foire Aux Questions
                 </h1>
                 <p class="text-xl md:text-2xl text-blue-100 mb-8">
                     Trouvez rapidement des réponses à vos questions
@@ -81,7 +81,7 @@
                         </div>
                     @empty
                         <div class="text-center py-12">
-                            <div class="text-6xl mb-4">🔍</div>
+                            <div class="mb-4"><x-app-icon name="search" class="w-12 h-12 inline-block" /></div>
                             <p class="text-xl text-gray-600 mb-2">Aucun résultat trouvé</p>
                             <p class="text-gray-500">Essayez avec d'autres mots-clés</p>
                         </div>
@@ -95,15 +95,15 @@
                         <div class="bg-white rounded-3xl p-8 shadow-lg mb-8">
                             <h2 class="text-3xl font-black text-gray-900 mb-6 flex items-center gap-3">
                                 @if($categoryKey === 'general')
-                                    <span class="text-4xl">💡</span>
+                                    <x-app-icon name="lightbulb" class="w-8 h-8 inline-block" />
                                 @elseif($categoryKey === 'prestataire')
-                                    <span class="text-4xl">💼</span>
+                                    <x-app-icon name="briefcase" class="w-8 h-8 inline-block" />
                                 @elseif($categoryKey === 'client')
-                                    <span class="text-4xl">👤</span>
+                                    <x-app-icon name="user" class="w-8 h-8 inline-block" />
                                 @elseif($categoryKey === 'paiement')
-                                    <span class="text-4xl">💳</span>
+                                    <x-app-icon name="card" class="w-8 h-8 inline-block" />
                                 @elseif($categoryKey === 'securite')
-                                    <span class="text-4xl">🔒</span>
+                                    <x-app-icon name="lock" class="w-8 h-8 inline-block" />
                                 @endif
                                 {{ $categoryData['label'] }}
                             </h2>
@@ -173,7 +173,7 @@
                 <p class="text-blue-100 mb-6">Notre équipe de support est là pour vous aider</p>
                 <a href="{{ route('contact') }}" 
                    class="inline-block bg-yellow-400 text-blue-900 font-black px-8 py-4 rounded-full hover:bg-yellow-300 transition transform hover:scale-105 shadow-xl">
-                    📧 Contacter le support
+<x-app-icon name="envelope" class="w-5 h-5 inline-block" /> Contacter le support
                 </a>
             </div>
         </div>

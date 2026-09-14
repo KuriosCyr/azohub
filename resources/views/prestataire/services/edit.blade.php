@@ -6,7 +6,7 @@
                 <a href="{{ route('prestataire.services.index') }}" class="text-blue-900 hover:text-blue-700 font-bold mb-4 inline-block">
                     ← Retour à mes services
                 </a>
-                <h1 class="text-4xl font-black text-gray-900 mb-2">✏️ Modifier le service</h1>
+                <h1 class="text-4xl font-black text-gray-900 mb-2"><x-app-icon name="pencil-square" class="w-8 h-8 inline-block" /> Modifier le service</h1>
                 <p class="text-gray-600">{{ $service->title }}</p>
             </div>
 
@@ -17,7 +17,7 @@
 
                 {{-- Informations de base --}}
                 <div class="bg-white rounded-3xl p-8 shadow-lg">
-                    <h2 class="text-2xl font-black text-gray-900 mb-6">📋 Informations de base</h2>
+                    <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="clipboard" class="w-6 h-6 inline-block" /> Informations de base</h2>
 
                     <div class="space-y-6">
                         {{-- Catégorie --}}
@@ -71,7 +71,7 @@
 
                 {{-- Tarification --}}
                 <div class="bg-white rounded-3xl p-8 shadow-lg">
-                    <h2 class="text-2xl font-black text-gray-900 mb-6">💰 Tarification et délais</h2>
+                    <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="banknotes" class="w-6 h-6 inline-block" /> Tarification et délais</h2>
 
                     <div class="grid md:grid-cols-2 gap-6">
                         {{-- Prix --}}
@@ -96,7 +96,7 @@
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="price_type" value="fixe" {{ old('price_type', $service->price_type) === 'fixe' ? 'checked' : '' }} class="peer sr-only">
                                     <div class="border-2 border-gray-200 peer-checked:border-blue-900 peer-checked:bg-blue-50 rounded-xl p-4 text-center transition">
-                                        <div class="text-2xl mb-1">💵</div>
+                                        <div class="text-2xl mb-1"><x-app-icon name="banknotes" class="w-6 h-6 inline-block" /></div>
                                         <div class="font-bold text-sm">Prix fixe</div>
                                     </div>
                                 </label>
@@ -104,7 +104,7 @@
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="price_type" value="a_partir_de" {{ old('price_type', $service->price_type) === 'a_partir_de' ? 'checked' : '' }} class="peer sr-only">
                                     <div class="border-2 border-gray-200 peer-checked:border-blue-900 peer-checked:bg-blue-50 rounded-xl p-4 text-center transition">
-                                        <div class="text-2xl mb-1">💸</div>
+                                        <div class="text-2xl mb-1"><x-app-icon name="banknotes" class="w-6 h-6 inline-block" /></div>
                                         <div class="font-bold text-sm">À partir de</div>
                                     </div>
                                 </label>
@@ -140,7 +140,7 @@
 
                 {{-- Images --}}
                 <div class="bg-white rounded-3xl p-8 shadow-lg">
-                    <h2 class="text-2xl font-black text-gray-900 mb-6">📷 Images</h2>
+                    <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="camera" class="w-6 h-6 inline-block" /> Images</h2>
 
                     {{-- Image actuelle --}}
                     <div class="mb-6">
@@ -181,7 +181,7 @@
 
                 {{-- Tags --}}
                 <div class="bg-white rounded-3xl p-8 shadow-lg">
-                    <h2 class="text-2xl font-black text-gray-900 mb-6">🏷️ Tags</h2>
+                    <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="tag" class="w-6 h-6 inline-block" /> Tags</h2>
 
                     <div>
                         <label for="tags" class="block text-sm font-bold text-gray-700 mb-2">
@@ -205,7 +205,7 @@
                     </a>
                     <button type="submit" 
                             class="flex-1 bg-blue-900 hover:bg-blue-800 text-white font-black px-8 py-4 rounded-full transition transform hover:scale-105 shadow-lg">
-                        💾 Enregistrer les modifications
+                        <x-app-icon name="save" class="w-5 h-5 inline-block align-text-bottom" /> Enregistrer les modifications
                     </button>
                 </div>
             </form>

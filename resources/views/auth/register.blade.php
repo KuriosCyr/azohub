@@ -6,7 +6,13 @@
                 <a href="{{ route('home') }}" class="inline-flex items-center justify-center mb-4">
                     <span class="text-5xl font-black text-white">Azo</span>
                     <span class="text-5xl font-black text-yellow-400">hub</span>
-                    <span class="ml-2 text-3xl">🇧🇯</span>
+                    <span class="ml-2 inline-flex items-center justify-center w-8 h-5 rounded-sm overflow-hidden align-middle">
+                        <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                            <rect width="45" height="30" fill="#E8112D"/>
+                            <rect width="45" height="15" fill="#FCD116"/>
+                            <rect width="18" height="30" fill="#008751"/>
+                        </svg>
+                    </span>
                 </a>
                 <h2 class="text-2xl font-bold text-white mb-2">Créez votre compte</h2>
                 <p class="text-blue-200">Rejoignez la première plateforme de services au Bénin</p>
@@ -30,7 +36,7 @@
                                        checked
                                        class="peer sr-only">
                                 <div class="border-2 border-gray-200 peer-checked:border-blue-900 peer-checked:bg-blue-50 rounded-2xl p-6 text-center transition hover:border-blue-300">
-                                    <div class="text-4xl mb-2">🙋</div>
+                                    <div class="mb-2"><x-app-icon name="user" class="w-10 h-10 inline-block" /></div>
                                     <div class="font-bold text-gray-900">Trouver un service</div>
                                     <div class="text-sm text-gray-600 mt-1">Je suis client</div>
                                 </div>
@@ -42,7 +48,7 @@
                                        value="prestataire"
                                        class="peer sr-only">
                                 <div class="border-2 border-gray-200 peer-checked:border-yellow-400 peer-checked:bg-yellow-50 rounded-2xl p-6 text-center transition hover:border-yellow-300">
-                                    <div class="text-4xl mb-2">💼</div>
+                                    <div class="mb-2"><x-app-icon name="briefcase" class="w-10 h-10 inline-block" /></div>
                                     <div class="font-bold text-gray-900">Proposer mes services</div>
                                     <div class="text-sm text-gray-600 mt-1">Je suis prestataire</div>
                                 </div>

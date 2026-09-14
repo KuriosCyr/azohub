@@ -14,11 +14,11 @@
                     <div class="flex gap-2">
                         <a href="{{ route('services.show', $service->slug) }}" target="_blank"
                            class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold px-4 py-2 rounded-xl transition text-sm">
-                            👁️ Voir la page publique
+                            <x-app-icon name="eye" class="w-4 h-4 inline-block align-text-bottom" /> Voir la page publique
                         </a>
                         <a href="{{ route('prestataire.services.edit', $service) }}"
                            class="bg-blue-900 hover:bg-blue-800 text-white font-bold px-4 py-2 rounded-xl transition text-sm">
-                            ✏️ Modifier
+                            <x-app-icon name="pencil" class="w-4 h-4 inline-block align-text-bottom" /> Modifier
                         </a>
                     </div>
                 </div>
@@ -32,11 +32,15 @@
                              alt="{{ $service->title }}" class="w-full h-full object-cover">
                     @else
                         <div class="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                            <span class="text-6xl">📦</span>
+                            <x-app-icon name="box" class="w-12 h-12" />
                         </div>
                     @endif
                     <span class="absolute top-4 right-4 px-4 py-2 rounded-full text-sm font-bold {{ $service->is_active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white' }}">
-                        {{ $service->is_active ? '✓ Actif' : 'Inactif' }}
+                        @if($service->is_active)
+                            <x-app-icon name="check" class="w-4 h-4 inline-block align-text-bottom" /> Actif
+                        @else
+                            Inactif
+                        @endif
                     </span>
                 </div>
                 <div class="p-8">
@@ -67,7 +71,7 @@
             {{-- Portfolio --}}
             @if($service->portfolios->count() > 0)
                 <div class="bg-white rounded-3xl p-8 shadow-lg mb-8">
-                    <h2 class="text-2xl font-black text-gray-900 mb-6">🖼️ Portfolio</h2>
+                    <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="photo" class="w-6 h-6 inline-block" /> Portfolio</h2>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         @foreach($service->portfolios as $portfolio)
                             <img src="{{ Storage::url($portfolio->file_path) }}"
@@ -80,7 +84,7 @@
 
             {{-- Dernières commandes --}}
             <div class="bg-white rounded-3xl p-8 shadow-lg mb-8">
-                <h2 class="text-2xl font-black text-gray-900 mb-6">🛒 Dernières commandes</h2>
+                <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="cart" class="w-6 h-6 inline-block" /> Dernières commandes</h2>
                 @if($service->orders->count() > 0)
                     <div class="space-y-3">
                         @foreach($service->orders->sortByDesc('created_at')->take(10) as $order)
@@ -101,14 +105,14 @@
 
             {{-- Avis --}}
             <div class="bg-white rounded-3xl p-8 shadow-lg">
-                <h2 class="text-2xl font-black text-gray-900 mb-6">⭐ Avis clients</h2>
+                <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="star" class="w-6 h-6 inline-block" /> Avis clients</h2>
                 @if($service->reviews->count() > 0)
                     <div class="space-y-4">
                         @foreach($service->reviews->sortByDesc('created_at') as $review)
                             <div class="p-4 bg-gray-50 rounded-xl">
                                 <div class="flex items-center justify-between mb-2">
                                     <p class="font-bold text-gray-900">{{ $review->reviewer->name }}</p>
-                                    <span class="text-yellow-500 font-bold">{{ str_repeat('★', $review->rating) }}{{ str_repeat('☆', 5 - $review->rating) }}</span>
+                                    <x-star-rating :rating="$review->rating" class="w-4 h-4" />
                                 </div>
                                 @if($review->comment)
                                     <p class="text-gray-700">{{ $review->comment }}</p>

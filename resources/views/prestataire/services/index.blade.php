@@ -4,7 +4,7 @@
             {{-- Header --}}
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 class="text-4xl font-black text-gray-900 mb-2">📦 Mes services</h1>
+                    <h1 class="text-4xl font-black text-gray-900 mb-2"><x-app-icon name="box" class="w-8 h-8 inline-block" /> Mes services</h1>
                     <p class="text-gray-600">Gérez vos offres de services</p>
                 </div>
                 <a href="{{ route('prestataire.services.create') }}" 
@@ -51,13 +51,17 @@
                                         @endif
                                     @else
                                         <div class="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                                            <span class="text-6xl">📦</span>
+                                            <x-app-icon name="box" class="w-12 h-12" />
                                         </div>
                                     @endif
-                                    
+
                                     {{-- Badge statut --}}
                                     <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold {{ $service->is_active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white' }}">
-                                        {{ $service->is_active ? '✓ Actif' : 'Inactif' }}
+                                        @if($service->is_active)
+                                            <x-app-icon name="check" class="w-3 h-3 inline-block align-text-bottom" /> Actif
+                                        @else
+                                            Inactif
+                                        @endif
                                     </span>
                                 </div>
 
@@ -71,7 +75,7 @@
                                                 </span>
                                                 @if($service->is_featured)
                                                     <span class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-bold rounded-full">
-                                                        ⭐ En vedette
+                                                        <x-app-icon name="star" class="w-4 h-4 inline-block align-text-bottom" /> En vedette
                                                     </span>
                                                 @endif
                                             </div>
@@ -105,11 +109,11 @@
                                         <a href="{{ route('services.show', $service->slug) }}" 
                                            target="_blank"
                                            class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold px-4 py-2 rounded-xl transition text-sm">
-                                            👁️ Voir
+                                            <x-app-icon name="eye" class="w-4 h-4 inline-block align-text-bottom" /> Voir
                                         </a>
                                         <a href="{{ route('prestataire.services.edit', $service) }}" 
                                            class="flex-1 text-center bg-blue-900 hover:bg-blue-800 text-white font-bold px-4 py-2 rounded-xl transition text-sm">
-                                            ✏️ Modifier
+                                            <x-app-icon name="pencil" class="w-4 h-4 inline-block align-text-bottom" /> Modifier
                                         </a>
                                         <form action="{{ route('prestataire.services.toggle', $service) }}" 
                                               method="POST" 
@@ -117,7 +121,11 @@
                                             @csrf
                                             <button type="submit" 
                                                     class="w-full {{ $service->is_active ? 'bg-gray-500 hover:bg-gray-600' : 'bg-green-500 hover:bg-green-600' }} text-white font-bold px-4 py-2 rounded-xl transition text-sm">
-                                                {{ $service->is_active ? '⏸️ Désactiver' : '▶️ Activer' }}
+                                                @if($service->is_active)
+                                                    <x-app-icon name="x-circle" class="w-4 h-4 inline-block align-text-bottom" /> Désactiver
+                                                @else
+                                                    <x-app-icon name="check-circle" class="w-4 h-4 inline-block align-text-bottom" /> Activer
+                                                @endif
                                             </button>
                                         </form>
                                         <form action="{{ route('prestataire.services.destroy', $service) }}" 
@@ -128,7 +136,7 @@
                                             @method('DELETE')
                                             <button type="submit" 
                                                     class="w-full bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl transition text-sm">
-                                                🗑️ Supprimer
+                                                <x-app-icon name="trash" class="w-4 h-4 inline-block align-text-bottom" /> Supprimer
                                             </button>
                                         </form>
                                     </div>
@@ -145,7 +153,7 @@
             @else
                 {{-- Empty state --}}
                 <div class="bg-white rounded-3xl p-16 text-center shadow-lg">
-                    <div class="text-8xl mb-6">📦</div>
+                    <div class="mb-6"><x-app-icon name="box" class="w-16 h-16" /></div>
                     <h3 class="text-2xl font-black text-gray-900 mb-4">
                         @if($status === 'active')
                             Aucun service actif

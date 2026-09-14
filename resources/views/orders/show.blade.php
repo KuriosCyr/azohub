@@ -1,4 +1,7 @@
 <x-app-layout>
+    @php
+        $paidPayment = $order->payments->firstWhere('status', 'success');
+    @endphp
     <div class="min-h-screen bg-gray-50 py-8">
         <div class="container mx-auto px-4 max-w-6xl">
             {{-- Header --}}
@@ -57,7 +60,7 @@
                                 class="w-32 h-32 rounded-2xl object-cover">
                             @else
                             <div class="w-32 h-32 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                                <span class="text-4xl">📦</span>
+                                <x-app-icon name="box" class="w-10 h-10 text-blue-400" />
                             </div>
                             @endif
 
@@ -71,7 +74,7 @@
                                 <div class="flex items-center gap-4">
                                     <div>
                                         <p class="text-sm text-gray-500">Prix</p>
-                                        <p class="text-2xl font-black text-blue-900">{{ number_format($order->total_amount, 0) }} FCFA</p>
+                                        <p class="text-2xl font-black text-blue-900">{{ number_format($order->amount, 0) }} FCFA</p>
                                     </div>
                                     <div>
                                         <p class="text-sm text-gray-500">Délai</p>
@@ -91,9 +94,9 @@
                             <div class="flex gap-4">
                                 <div class="flex flex-col items-center">
                                     <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
-                                        ✓
+                                        <x-app-icon name="check" class="w-5 h-5" />
                                     </div>
-                                    @if(!($order->status === 'cancelled' && !$order->paid_at))
+                                    @if(!($order->status === 'cancelled' && !$paidPayment))
                                     <div class="w-1 h-full bg-green-500"></div>
                                     @endif
                                 </div>
@@ -104,11 +107,11 @@
                             </div>
 
                             {{-- Payé --}}
-                            @if($order->paid_at)
+                            @if($paidPayment)
                             <div class="flex gap-4">
                                 <div class="flex flex-col items-center">
                                     <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
-                                        ✓
+                                        <x-app-icon name="check" class="w-5 h-5" />
                                     </div>
                                     @if($order->status !== 'cancelled')
                                     <div class="w-1 h-full {{ in_array($order->status, ['in_progress', 'delivered', 'completed']) ? 'bg-green-500' : 'bg-gray-300' }}"></div>
@@ -116,7 +119,7 @@
                                 </div>
                                 <div class="flex-1 pb-8">
                                     <p class="font-bold text-gray-900">Paiement reçu</p>
-                                    <p class="text-sm text-gray-500">{{ $order->paid_at->format('d/m/Y à H:i') }}</p>
+                                    <p class="text-sm text-gray-500">{{ $paidPayment->paid_at->format('d/m/Y à H:i') }}</p>
                                 </div>
                             </div>
                             @endif
@@ -126,7 +129,7 @@
                             <div class="flex gap-4">
                                 <div class="flex flex-col items-center">
                                     <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
-                                        ✓
+                                        <x-app-icon name="check" class="w-5 h-5" />
                                     </div>
                                     @if(in_array($order->status, ['delivered', 'completed']))
                                     <div class="w-1 h-full bg-green-500"></div>
@@ -141,7 +144,7 @@
                             <div class="flex gap-4">
                                 <div class="flex flex-col items-center">
                                     <div class="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold animate-pulse">
-                                        ⏳
+                                        <x-app-icon name="cog" class="w-5 h-5" />
                                     </div>
                                 </div>
                                 <div class="flex-1 pb-8">
@@ -155,7 +158,7 @@
                             <div class="flex gap-4">
                                 <div class="flex flex-col items-center">
                                     <div class="w-10 h-10 rounded-full {{ $order->status === 'completed' ? 'bg-green-500' : 'bg-purple-500' }} flex items-center justify-center text-white font-bold">
-                                        ✓
+                                        <x-app-icon name="check" class="w-5 h-5" />
                                     </div>
                                     @if($order->status === 'completed')
                                     <div class="w-1 h-full bg-green-500"></div>
@@ -173,7 +176,7 @@
                             <div class="flex gap-4">
                                 <div class="flex flex-col items-center">
                                     <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
-                                        ✓
+                                        <x-app-icon name="check" class="w-5 h-5" />
                                     </div>
                                 </div>
                                 <div class="flex-1">
@@ -188,7 +191,7 @@
                             <div class="flex gap-4">
                                 <div class="flex flex-col items-center">
                                     <div class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white font-bold">
-                                        ✕
+                                        <x-app-icon name="x-mark" class="w-5 h-5" />
                                     </div>
                                 </div>
                                 <div class="flex-1">
@@ -208,20 +211,20 @@
                     <div class="bg-white rounded-3xl p-8 shadow-lg">
                         <h2 class="text-2xl font-black text-gray-900 mb-6">Fichiers livrés</h2>
 
-                        @if($order->delivery_notes)
+                        @if($order->delivery_note)
                         <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
                             <p class="text-sm font-bold text-blue-900 mb-1">Note du prestataire :</p>
-                            <p class="text-gray-700">{{ $order->delivery_notes }}</p>
+                            <p class="text-gray-700">{{ $order->delivery_note }}</p>
                         </div>
                         @endif
 
                         <div class="space-y-3">
-                            @foreach(json_decode($order->deliverables, true) as $index => $file)
+                            @foreach($order->deliverables as $index => $file)
                             <a href="{{ route('orders.deliverable.download', [$order, $index]) }}"
                                 class="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 rounded-2xl transition group">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-2xl">
-                                        📎
+                                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                        <x-app-icon name="paperclip" class="w-6 h-6 text-blue-500" />
                                     </div>
                                     <div>
                                         <p class="font-bold text-gray-900 group-hover:text-blue-600">{{ $file['name'] }}</p>
@@ -249,13 +252,13 @@
                                 @csrf
                                 <button type="submit"
                                     class="w-full bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-4 rounded-2xl transition transform hover:scale-105">
-                                    ✓ Accepter la commande
+                                    <x-app-icon name="check" class="w-5 h-5 inline-block" /> Accepter la commande
                                 </button>
                             </form>
 
                             <button onclick="document.getElementById('refuse-modal').classList.remove('hidden')"
                                 class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-4 rounded-2xl transition">
-                                ✕ Refuser
+<x-app-icon name="x-mark" class="w-5 h-5 inline-block" /> Refuser
                             </button>
                         </div>
                     </div>
@@ -286,7 +289,7 @@
 
                             <button type="submit"
                                 class="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold px-8 py-4 rounded-2xl transition transform hover:scale-105">
-                                📤 Marquer comme livré
+<x-app-icon name="upload" class="w-5 h-5 inline-block" /> Marquer comme livré
                             </button>
                         </form>
                     </div>
@@ -319,7 +322,7 @@
                             </div>
                             <button type="submit"
                                 class="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-blue-900 font-black px-6 py-4 rounded-2xl transition transform hover:scale-105">
-                                💳 Payer {{ number_format($order->amount, 0, ',', ' ') }} FCFA
+<x-app-icon name="card" class="w-5 h-5 inline-block" /> Payer {{ number_format($order->amount, 0, ',', ' ') }} FCFA
                             </button>
                         </form>
                     </div>
@@ -341,7 +344,7 @@
                                 @csrf
                                 <button type="submit"
                                     class="w-full bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-4 rounded-2xl transition transform hover:scale-105">
-                                    ✓ Valider et finaliser
+<x-app-icon name="check" class="w-5 h-5 inline-block" /> Valider et finaliser
                                 </button>
                             </form>
 
@@ -372,7 +375,7 @@
                     @else
                     {{-- CTA pour laisser un avis --}}
                     <div class="bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-3xl p-8 shadow-lg text-center">
-                        <h3 class="text-2xl font-black text-blue-900 mb-4">⭐ Laisser un avis</h3>
+                        <h3 class="text-2xl font-black text-blue-900 mb-4"><x-app-icon name="star" class="w-6 h-6 inline-block" /> Laisser un avis</h3>
                         <p class="text-blue-800 mb-6">
                             Partagez votre expérience pour aider la communauté !
                         </p>
@@ -416,7 +419,7 @@
 
                             @if($userRole === 'client' && $otherUser->isPrestataire())
                             <div class="flex items-center justify-center gap-1 mt-2">
-                                <span class="text-yellow-500">⭐</span>
+<x-app-icon name="star" class="w-4 h-4 inline-block text-yellow-500" />
                                 <span class="font-bold">{{ number_format($otherUser->rating, 1) }}</span>
                                 <span class="text-gray-500 text-sm">({{ $otherUser->total_reviews }} avis)</span>
                             </div>
@@ -425,11 +428,11 @@
 
                         <div class="space-y-2 text-sm">
                             <div class="flex items-center gap-2 text-gray-600">
-                                <span>📧</span>
+                                <x-app-icon name="envelope" class="w-4 h-4 inline-block" />
                                 <span>{{ $otherUser->email }}</span>
                             </div>
                             <div class="flex items-center gap-2 text-gray-600">
-                                <span>📱</span>
+                                <x-app-icon name="phone" class="w-4 h-4 inline-block" />
                                 <span>{{ $otherUser->phone }}</span>
                             </div>
                         </div>
@@ -449,15 +452,15 @@
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Prix service</span>
-                                <span class="font-bold">{{ number_format($order->service_amount, 0) }} FCFA</span>
+                                <span class="font-bold">{{ number_format($order->amount, 0) }} FCFA</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Frais plateforme</span>
-                                <span class="font-bold">{{ number_format($order->platform_fee, 0) }} FCFA</span>
+                                <span class="font-bold">{{ number_format($order->commission, 0) }} FCFA</span>
                             </div>
                             <div class="border-t pt-3 flex justify-between">
-                                <span class="font-bold text-gray-900">Total</span>
-                                <span class="text-2xl font-black text-blue-900">{{ number_format($order->total_amount, 0) }} FCFA</span>
+                                <span class="font-bold text-gray-900">Total payé par le client</span>
+                                <span class="text-2xl font-black text-blue-900">{{ number_format($order->amount, 0) }} FCFA</span>
                             </div>
                         </div>
 

@@ -228,7 +228,7 @@
                                 <div class="flex items-center gap-4">
                                     <div class="flex items-center gap-1 w-20">
                                         <span class="font-bold text-gray-900">{{ $star }}</span>
-                                        <span class="text-yellow-400">★</span>
+                                        <x-app-icon name="star" class="w-4 h-4 inline-block text-yellow-400" />
                                     </div>
                                     <div class="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
                                         <div class="bg-yellow-400 h-full transition-all duration-500" 
@@ -264,11 +264,7 @@
                                         </div>
                                         <div class="text-right flex-shrink-0">
                                             <div class="flex items-center gap-1 mb-1">
-                                                <div class="flex text-lg">
-                                                    @for($i = 1; $i <= 5; $i++)
-                                                        <span class="{{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }}">★</span>
-                                                    @endfor
-                                                </div>
+                                                <x-star-rating :rating="$review->rating" class="w-5 h-5" />
                                                 <span class="font-bold text-gray-900">{{ $review->rating }}</span>
                                             </div>
                                             <p class="text-xs text-gray-500">{{ $review->created_at->diffForHumans() }}</p>
@@ -279,27 +275,15 @@
                                     <div class="flex gap-4 mb-4 text-sm">
                                         <div class="flex items-center gap-1">
                                             <span class="text-gray-600">Qualité:</span>
-                                            <div class="flex">
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    <span class="text-xs {{ $i <= $review->quality_rating ? 'text-yellow-400' : 'text-gray-300' }}">★</span>
-                                                @endfor
-                                            </div>
+                                            <x-star-rating :rating="$review->quality_rating" class="w-3.5 h-3.5" />
                                         </div>
                                         <div class="flex items-center gap-1">
                                             <span class="text-gray-600">Communication:</span>
-                                            <div class="flex">
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    <span class="text-xs {{ $i <= $review->communication_rating ? 'text-yellow-400' : 'text-gray-300' }}">★</span>
-                                                @endfor
-                                            </div>
+                                            <x-star-rating :rating="$review->communication_rating" class="w-3.5 h-3.5" />
                                         </div>
                                         <div class="flex items-center gap-1">
                                             <span class="text-gray-600">Délais:</span>
-                                            <div class="flex">
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    <span class="text-xs {{ $i <= $review->timeliness_rating ? 'text-yellow-400' : 'text-gray-300' }}">★</span>
-                                                @endfor
-                                            </div>
+                                            <x-star-rating :rating="$review->timeliness_rating" class="w-3.5 h-3.5" />
                                         </div>
                                     </div>
 

@@ -28,11 +28,7 @@
                             </div>
                             <div class="text-right">
                                 <div class="flex items-center gap-2 mb-1">
-                                    <div class="flex text-2xl">
-                                        @for($i = 1; $i <= 5; $i++)
-                                            <span class="{{ $i <= $review->rating ? 'text-yellow-400' : 'text-gray-300' }}">★</span>
-                                        @endfor
-                                    </div>
+                                    <x-star-rating :rating="$review->rating" class="w-6 h-6" />
                                     <span class="text-2xl font-black text-gray-900">{{ $review->rating }}/5</span>
                                 </div>
                                 <p class="text-sm text-gray-500">{{ $review->created_at->format('d/m/Y') }}</p>
@@ -43,28 +39,22 @@
                         <div class="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-2xl">
                             <div class="text-center">
                                 <p class="text-xs text-gray-500 mb-1">Qualité</p>
-                                <div class="flex justify-center text-lg">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <span class="{{ $i <= $review->quality_rating ? 'text-yellow-400' : 'text-gray-300' }}">★</span>
-                                    @endfor
+                                <div class="flex justify-center">
+                                    <x-star-rating :rating="$review->quality_rating" class="w-4 h-4" />
                                 </div>
                                 <p class="font-bold text-gray-900 mt-1">{{ $review->quality_rating }}/5</p>
                             </div>
                             <div class="text-center">
                                 <p class="text-xs text-gray-500 mb-1">Communication</p>
-                                <div class="flex justify-center text-lg">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <span class="{{ $i <= $review->communication_rating ? 'text-yellow-400' : 'text-gray-300' }}">★</span>
-                                    @endfor
+                                <div class="flex justify-center">
+                                    <x-star-rating :rating="$review->communication_rating" class="w-4 h-4" />
                                 </div>
                                 <p class="font-bold text-gray-900 mt-1">{{ $review->communication_rating }}/5</p>
                             </div>
                             <div class="text-center">
                                 <p class="text-xs text-gray-500 mb-1">Délais</p>
-                                <div class="flex justify-center text-lg">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <span class="{{ $i <= $review->timeliness_rating ? 'text-yellow-400' : 'text-gray-300' }}">★</span>
-                                    @endfor
+                                <div class="flex justify-center">
+                                    <x-star-rating :rating="$review->timeliness_rating" class="w-4 h-4" />
                                 </div>
                                 <p class="font-bold text-gray-900 mt-1">{{ $review->timeliness_rating }}/5</p>
                             </div>

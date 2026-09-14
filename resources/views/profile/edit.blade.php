@@ -3,20 +3,20 @@
         <div class="container mx-auto px-4">
             {{-- Header --}}
             <div class="mb-8">
-                <h1 class="text-4xl font-black text-gray-900 mb-2">⚙️ Paramètres du compte</h1>
+                <h1 class="text-4xl font-black text-gray-900 mb-2"><x-app-icon name="cog" class="w-8 h-8 inline-block" /> Paramètres du compte</h1>
                 <p class="text-gray-600">Gérez vos informations personnelles et préférences</p>
             </div>
 
             {{-- Flash Messages --}}
             @if(session('success'))
                 <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-lg">
-                    <p class="text-green-700 font-semibold">✅ {{ session('success') }}</p>
+                    <p class="text-green-700 font-semibold"><x-app-icon name="check-circle" class="w-5 h-5 inline-block align-text-bottom" /> {{ session('success') }}</p>
                 </div>
             @endif
 
             @if(session('error'))
                 <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
-                    <p class="text-red-700 font-semibold">❌ {{ session('error') }}</p>
+                    <p class="text-red-700 font-semibold"><x-app-icon name="x-circle" class="w-5 h-5 inline-block align-text-bottom" /> {{ session('error') }}</p>
                 </div>
             @endif
 
@@ -31,7 +31,7 @@
                                      class="w-24 h-24 rounded-full mx-auto border-4 border-blue-100">
                                 @if($user->identity_verified)
                                     <span class="absolute bottom-0 right-6 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                                        ✓ Vérifié
+                                        <x-app-icon name="check" class="w-3 h-3 inline-block align-text-bottom" /> Vérifié
                                     </span>
                                 @endif
                             </div>
@@ -39,29 +39,29 @@
                             <p class="text-sm text-gray-600">{{ $user->email }}</p>
                             @if($user->isPrestataire())
                                 <span class="inline-block mt-2 px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
-                                    💼 Prestataire {{ ucfirst($user->level) }}
+                                    <x-app-icon name="briefcase" class="w-4 h-4 inline-block align-text-bottom" /> Prestataire {{ ucfirst($user->level) }}
                                 </span>
                             @else
                                 <span class="inline-block mt-2 px-3 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
-                                    🙋 Client
+                                    <x-app-icon name="user" class="w-4 h-4 inline-block align-text-bottom" /> Client
                                 </span>
                             @endif
                         </div>
 
                         <nav class="space-y-2">
                             <a href="#informations" class="block px-4 py-3 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-900 font-semibold transition">
-                                👤 Informations personnelles
+                                <x-app-icon name="user" class="w-4 h-4 inline-block align-text-bottom" /> Informations personnelles
                             </a>
                             <a href="#password" class="block px-4 py-3 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-900 font-semibold transition">
-                                🔒 Mot de passe
+                                <x-app-icon name="lock" class="w-4 h-4 inline-block align-text-bottom" /> Mot de passe
                             </a>
                             @if($user->isPrestataire())
                                 <a href="#prestataire" class="block px-4 py-3 rounded-xl hover:bg-blue-50 text-gray-700 hover:text-blue-900 font-semibold transition">
-                                    💼 Infos prestataire
+                                    <x-app-icon name="briefcase" class="w-4 h-4 inline-block align-text-bottom" /> Infos prestataire
                                 </a>
                             @endif
                             <a href="#delete" class="block px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 hover:text-red-700 font-semibold transition">
-                                🗑️ Supprimer le compte
+                                <x-app-icon name="trash" class="w-4 h-4 inline-block align-text-bottom" /> Supprimer le compte
                             </a>
                         </nav>
                     </div>
@@ -71,7 +71,7 @@
                 <div class="lg:col-span-2 space-y-6">
                     {{-- Informations personnelles --}}
                     <div id="informations" class="bg-white rounded-3xl p-8 shadow-lg">
-                        <h2 class="text-2xl font-black text-gray-900 mb-6">👤 Informations personnelles</h2>
+                        <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="user" class="w-6 h-6 inline-block" /> Informations personnelles</h2>
                         
                         <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="space-y-6">
                             @csrf
@@ -178,7 +178,7 @@
                     {{-- Informations prestataire --}}
                     @if($user->isPrestataire())
                         <div id="prestataire" class="bg-white rounded-3xl p-8 shadow-lg">
-                            <h2 class="text-2xl font-black text-gray-900 mb-6">💼 Informations prestataire</h2>
+                            <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="briefcase" class="w-6 h-6 inline-block" /> Informations prestataire</h2>
                             
                             <form method="POST" action="{{ route('profile.update') }}" class="space-y-6">
                                 @csrf
@@ -211,7 +211,7 @@
                                                    {{ old('availability', $user->availability) === 'disponible' ? 'checked' : '' }}
                                                    class="peer sr-only">
                                             <div class="border-2 border-gray-200 peer-checked:border-green-500 peer-checked:bg-green-50 rounded-xl p-4 text-center transition">
-                                                <div class="text-2xl mb-1">✅</div>
+                                                <div class="text-2xl mb-1"><x-app-icon name="check-circle" class="w-6 h-6 inline-block" /></div>
                                                 <div class="font-bold text-sm">Disponible</div>
                                             </div>
                                         </label>
@@ -223,7 +223,7 @@
                                                    {{ old('availability', $user->availability) === 'occupe' ? 'checked' : '' }}
                                                    class="peer sr-only">
                                             <div class="border-2 border-gray-200 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 rounded-xl p-4 text-center transition">
-                                                <div class="text-2xl mb-1">⏳</div>
+                                                <div class="text-2xl mb-1"><x-app-icon name="cog" class="w-6 h-6 inline-block" /></div>
                                                 <div class="font-bold text-sm">Occupé</div>
                                             </div>
                                         </label>
@@ -235,7 +235,7 @@
                                                    {{ old('availability', $user->availability) === 'indisponible' ? 'checked' : '' }}
                                                    class="peer sr-only">
                                             <div class="border-2 border-gray-200 peer-checked:border-red-500 peer-checked:bg-red-50 rounded-xl p-4 text-center transition">
-                                                <div class="text-2xl mb-1">🔴</div>
+                                                <div class="text-2xl mb-1"><x-app-icon name="x-circle" class="w-6 h-6 inline-block" /></div>
                                                 <div class="font-bold text-sm">Indisponible</div>
                                             </div>
                                         </label>
@@ -254,7 +254,7 @@
 
                     {{-- Mot de passe --}}
                     <div id="password" class="bg-white rounded-3xl p-8 shadow-lg">
-                        <h2 class="text-2xl font-black text-gray-900 mb-6">🔒 Modifier le mot de passe</h2>
+                        <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="lock" class="w-6 h-6 inline-block" /> Modifier le mot de passe</h2>
                         
                         <form method="POST" action="{{ route('profile.password') }}" class="space-y-6">
                             @csrf
@@ -309,7 +309,7 @@
 
                     {{-- Supprimer le compte --}}
                     <div id="delete" class="bg-red-50 rounded-3xl p-8 shadow-lg border-2 border-red-200">
-                        <h2 class="text-2xl font-black text-red-900 mb-4">🗑️ Supprimer le compte</h2>
+                        <h2 class="text-2xl font-black text-red-900 mb-4"><x-app-icon name="trash" class="w-6 h-6 inline-block" /> Supprimer le compte</h2>
                         <p class="text-red-700 mb-6">
                             Une fois votre compte supprimé, toutes vos données seront définitivement effacées. 
                             Cette action est irréversible.
@@ -329,7 +329,7 @@
     {{-- Modal de confirmation suppression --}}
     <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-3xl p-8 max-w-md mx-4">
-            <h3 class="text-2xl font-black text-gray-900 mb-4">⚠️ Confirmer la suppression</h3>
+            <h3 class="text-2xl font-black text-gray-900 mb-4"><x-app-icon name="exclamation-triangle" class="w-6 h-6 inline-block" /> Confirmer la suppression</h3>
             <p class="text-gray-700 mb-6">
                 Êtes-vous sûr de vouloir supprimer votre compte ? 
                 Cette action est définitive et irréversible.

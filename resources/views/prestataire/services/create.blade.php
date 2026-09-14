@@ -16,7 +16,7 @@
 
                 {{-- Informations de base --}}
                 <div class="bg-white rounded-3xl p-8 shadow-lg">
-                    <h2 class="text-2xl font-black text-gray-900 mb-6">📋 Informations de base</h2>
+                    <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="clipboard" class="w-6 h-6 inline-block" /> Informations de base</h2>
 
                     <div class="space-y-6">
                         {{-- Catégorie --}}
@@ -80,7 +80,7 @@
 
                 {{-- Tarification --}}
                 <div class="bg-white rounded-3xl p-8 shadow-lg">
-                    <h2 class="text-2xl font-black text-gray-900 mb-6">💰 Tarification et délais</h2>
+                    <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="banknotes" class="w-6 h-6 inline-block" /> Tarification et délais</h2>
 
                     <div class="grid md:grid-cols-2 gap-6">
                         {{-- Prix --}}
@@ -106,7 +106,7 @@
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="price_type" value="fixe" {{ old('price_type', 'fixe') === 'fixe' ? 'checked' : '' }} class="peer sr-only">
                                     <div class="border-2 border-gray-200 peer-checked:border-blue-900 peer-checked:bg-blue-50 rounded-xl p-4 text-center transition">
-                                        <div class="text-2xl mb-1">💵</div>
+                                        <div class="text-2xl mb-1"><x-app-icon name="banknotes" class="w-6 h-6 inline-block" /></div>
                                         <div class="font-bold text-sm">Prix fixe</div>
                                     </div>
                                 </label>
@@ -114,7 +114,7 @@
                                 <label class="relative cursor-pointer">
                                     <input type="radio" name="price_type" value="a_partir_de" {{ old('price_type') === 'a_partir_de' ? 'checked' : '' }} class="peer sr-only">
                                     <div class="border-2 border-gray-200 peer-checked:border-blue-900 peer-checked:bg-blue-50 rounded-xl p-4 text-center transition">
-                                        <div class="text-2xl mb-1">💸</div>
+                                        <div class="text-2xl mb-1"><x-app-icon name="banknotes" class="w-6 h-6 inline-block" /></div>
                                         <div class="font-bold text-sm">À partir de</div>
                                     </div>
                                 </label>
@@ -140,7 +140,7 @@
 
                 {{-- Images --}}
                 <div class="bg-white rounded-3xl p-8 shadow-lg">
-                    <h2 class="text-2xl font-black text-gray-900 mb-6">📷 Images</h2>
+                    <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="camera" class="w-6 h-6 inline-block" /> Images</h2>
 
                     {{-- Image principale --}}
                     <div class="mb-6">
@@ -153,7 +153,7 @@
                             <div id="cover_preview" class="mb-4"></div>
                             <button type="button" onclick="document.getElementById('cover_image').click()"
                                     class="bg-blue-900 hover:bg-blue-800 text-white font-bold px-6 py-3 rounded-full transition">
-                                📁 Choisir une image
+                                <x-app-icon name="folder" class="w-5 h-5 inline-block align-text-bottom" /> Choisir une image
                             </button>
                             <p class="text-xs text-gray-500 mt-2">JPG, PNG ou GIF. Max 5MB. Recommandé: 800x600px</p>
                         </div>
@@ -171,7 +171,7 @@
                             <div id="portfolio_preview" class="grid grid-cols-3 gap-4 mb-4"></div>
                             <button type="button" onclick="document.getElementById('portfolio').click()"
                                     class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold px-6 py-3 rounded-full transition">
-                                🖼️ Ajouter des images (max 5)
+                                <x-app-icon name="photo" class="w-5 h-5 inline-block align-text-bottom" /> Ajouter des images (max 5)
                             </button>
                             <p class="text-xs text-gray-500 mt-2">Ajoutez jusqu'à 5 photos de vos réalisations</p>
                         </div>
@@ -181,7 +181,7 @@
 
                 {{-- Tags --}}
                 <div class="bg-white rounded-3xl p-8 shadow-lg">
-                    <h2 class="text-2xl font-black text-gray-900 mb-6">🏷️ Tags (optionnel)</h2>
+                    <h2 class="text-2xl font-black text-gray-900 mb-6"><x-app-icon name="tag" class="w-6 h-6 inline-block" /> Tags (optionnel)</h2>
 
                     <div>
                         <label for="tags" class="block text-sm font-bold text-gray-700 mb-2">

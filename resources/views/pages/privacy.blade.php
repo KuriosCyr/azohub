@@ -4,7 +4,7 @@
         <div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white py-16">
             <div class="container mx-auto px-4 text-center">
                 <h1 class="text-4xl md:text-5xl font-black mb-4">
-                    🔒 Politique de Confidentialité
+                    <x-app-icon name="lock" class="w-9 h-9 inline-block align-middle" /> Politique de Confidentialité
                 </h1>
                 <p class="text-lg text-blue-100">
                     Dernière mise à jour : {{ date('d/m/Y') }}
@@ -252,7 +252,7 @@
                 </p>
 
                 <div class="bg-green-50 border-l-4 border-green-500 p-6 rounded mt-8">
-                    <p class="font-bold text-green-900 mb-2">✅ Notre engagement</p>
+                    <p class="font-bold text-green-900 mb-2"><x-app-icon name="check-circle" class="w-5 h-5 inline-block" /> Notre engagement</p>
                     <p class="text-green-800">
                         Nous nous engageons à protéger vos données personnelles et à respecter votre vie privée. 
                         La confiance que vous nous accordez est notre priorité.
@@ -260,7 +260,7 @@
                 </div>
 
                 <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded mt-4">
-                    <p class="font-bold text-blue-900 mb-2">📚 Documents connexes</p>
+                    <p class="font-bold text-blue-900 mb-2"><x-app-icon name="book" class="w-5 h-5 inline-block" /> Documents connexes</p>
                     <ul class="mb-0">
                         <li><a href="{{ route('terms') }}" class="text-blue-600 hover:text-blue-800 font-bold">Conditions Générales d'Utilisation</a></li>
                         <li><a href="{{ route('faq') }}" class="text-blue-600 hover:text-blue-800 font-bold">Foire Aux Questions</a></li>

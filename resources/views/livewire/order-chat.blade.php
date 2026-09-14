@@ -105,7 +105,7 @@
                                 <span class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                                     {{ is_string($file) ? $file : $file->getClientOriginalName() }}
                                     <button type="button" wire:click="$set('attachments.{{ $index }}', null)" class="hover:text-red-600">
-                                        ✕
+                                        <x-app-icon name="x-mark" class="w-4 h-4 inline-block" />
                                     </button>
                                 </span>
                             @endforeach

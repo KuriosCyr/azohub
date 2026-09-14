@@ -4,7 +4,7 @@
         <div class="bg-gradient-to-r from-blue-900 to-blue-800 text-white py-20">
             <div class="container mx-auto px-4 text-center">
                 <h1 class="text-5xl md:text-6xl font-black mb-6">
-                    📧 Contactez-nous
+                    <x-app-icon name="envelope" class="w-10 h-10 inline-block align-middle" /> Contactez-nous
                 </h1>
                 <p class="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto">
                     Notre équipe est là pour répondre à toutes vos questions
@@ -112,7 +112,7 @@
                                     type="submit"
                                     class="w-full bg-blue-900 hover:bg-blue-800 text-white font-black px-8 py-4 rounded-2xl transition transform hover:scale-105 shadow-lg"
                                 >
-                                    📤 Envoyer le message
+<x-app-icon name="upload" class="w-5 h-5 inline-block" /> Envoyer le message
                                 </button>
                             </form>
                         </div>
@@ -126,8 +126,8 @@
                             
                             <div class="space-y-4">
                                 <div class="flex items-start gap-4">
-                                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 text-2xl">
-                                        📧
+                                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <x-app-icon name="envelope" class="w-6 h-6 text-blue-600" />
                                     </div>
                                     <div>
                                         <p class="font-bold text-gray-900">Email</p>
@@ -138,8 +138,8 @@
                                 </div>
 
                                 <div class="flex items-start gap-4">
-                                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 text-2xl">
-                                        📱
+                                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <x-app-icon name="phone" class="w-6 h-6 text-green-600" />
                                     </div>
                                     <div>
                                         <p class="font-bold text-gray-900">Téléphone</p>
@@ -150,8 +150,8 @@
                                 </div>
 
                                 <div class="flex items-start gap-4">
-                                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 text-2xl">
-                                        💬
+                                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <x-app-icon name="chat" class="w-6 h-6 text-purple-600" />
                                     </div>
                                     <div>
                                         <p class="font-bold text-gray-900">WhatsApp</p>
@@ -162,8 +162,8 @@
                                 </div>
 
                                 <div class="flex items-start gap-4">
-                                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0 text-2xl">
-                                        📍
+                                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <x-app-icon name="map-pin" class="w-6 h-6 text-yellow-600" />
                                     </div>
                                     <div>
                                         <p class="font-bold text-gray-900">Adresse</p>
@@ -175,7 +175,7 @@
 
                         {{-- Horaires --}}
                         <div class="bg-gradient-to-br from-blue-900 to-blue-800 rounded-3xl p-6 text-white">
-                            <h3 class="text-xl font-black mb-4">⏰ Horaires</h3>
+                            <h3 class="text-xl font-black mb-4"><x-app-icon name="calendar" class="w-6 h-6 inline-block" /> Horaires</h3>
                             <div class="space-y-2 text-blue-100">
                                 <p><strong class="text-white">Lundi - Vendredi:</strong> 8h - 18h</p>
                                 <p><strong class="text-white">Samedi:</strong> 9h - 14h</p>
@@ -207,7 +207,7 @@
 
                         {{-- FAQ Link --}}
                         <div class="bg-yellow-100 border-2 border-yellow-400 rounded-3xl p-6 text-center">
-                            <div class="text-4xl mb-3">❓</div>
+                            <div class="mb-3"><x-app-icon name="question-circle" class="w-10 h-10 inline-block" /></div>
                             <p class="font-bold text-gray-900 mb-3">Consultez d'abord notre FAQ</p>
                             <a href="{{ route('faq') }}" class="inline-block bg-blue-900 text-white font-bold px-6 py-3 rounded-full hover:bg-blue-800 transition">
                                 Voir la FAQ

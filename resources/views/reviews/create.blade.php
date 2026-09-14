@@ -8,7 +8,7 @@
                     ← Retour à la commande
                 </a>
                 <h1 class="text-4xl font-black text-gray-900 mb-2">
-                    ⭐ Laisser un avis
+                    <x-app-icon name="star" class="w-8 h-8 inline-block" /> Laisser un avis
                 </h1>
                 <p class="text-gray-600">
                     Partagez votre expérience pour aider la communauté
@@ -57,7 +57,7 @@
                                     class="text-5xl transition transform hover:scale-110"
                                     :class="rating >= {{ $i }} ? 'text-yellow-400' : 'text-gray-300'"
                                 >
-                                    ★
+                                    <x-app-icon name="star" class="w-10 h-10" />
                                 </button>
                                 <input type="hidden" name="rating" :value="rating">
                             @endfor
@@ -89,14 +89,7 @@
                                         class="w-4 h-4 text-blue-900 focus:ring-blue-900"
                                         {{ old('quality_rating') == $i ? 'checked' : '' }}
                                     >
-                                    <span class="flex">
-                                        @for($j = 1; $j <= $i; $j++)
-                                            <span class="text-yellow-400">★</span>
-                                        @endfor
-                                        @for($j = $i + 1; $j <= 5; $j++)
-                                            <span class="text-gray-300">★</span>
-                                        @endfor
-                                    </span>
+                                    <x-star-rating :rating="$i" class="w-4 h-4" />
                                 </label>
                             @endfor
                         </div>
@@ -121,14 +114,7 @@
                                         class="w-4 h-4 text-blue-900 focus:ring-blue-900"
                                         {{ old('communication_rating') == $i ? 'checked' : '' }}
                                     >
-                                    <span class="flex">
-                                        @for($j = 1; $j <= $i; $j++)
-                                            <span class="text-yellow-400">★</span>
-                                        @endfor
-                                        @for($j = $i + 1; $j <= 5; $j++)
-                                            <span class="text-gray-300">★</span>
-                                        @endfor
-                                    </span>
+                                    <x-star-rating :rating="$i" class="w-4 h-4" />
                                 </label>
                             @endfor
                         </div>
@@ -153,14 +139,7 @@
                                         class="w-4 h-4 text-blue-900 focus:ring-blue-900"
                                         {{ old('timeliness_rating') == $i ? 'checked' : '' }}
                                     >
-                                    <span class="flex">
-                                        @for($j = 1; $j <= $i; $j++)
-                                            <span class="text-yellow-400">★</span>
-                                        @endfor
-                                        @for($j = $i + 1; $j <= 5; $j++)
-                                            <span class="text-gray-300">★</span>
-                                        @endfor
-                                    </span>
+                                    <x-star-rating :rating="$i" class="w-4 h-4" />
                                 </label>
                             @endfor
                         </div>
@@ -182,7 +161,7 @@
                         class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-blue-900 focus:ring-4 focus:ring-blue-100 transition"
                     >{{ old('comment') }}</textarea>
                     <p class="text-sm text-gray-500 mt-2">
-                        💡 Un avis détaillé aide les autres utilisateurs à faire leur choix
+                        <x-app-icon name="lightbulb" class="w-4 h-4 inline-block align-text-bottom" /> Un avis détaillé aide les autres utilisateurs à faire leur choix
                     </p>
                     @error('comment')
                         <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
@@ -193,10 +172,10 @@
                 <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                     <p class="text-sm text-blue-900 font-bold mb-2">Conseils pour un bon avis :</p>
                     <ul class="text-sm text-blue-800 space-y-1">
-                        <li>✓ Soyez honnête et constructif</li>
-                        <li>✓ Mentionnez ce qui vous a plu et ce qui pourrait être amélioré</li>
-                        <li>✓ Restez respectueux même si vous n'êtes pas satisfait</li>
-                        <li>✓ Donnez des exemples concrets</li>
+                        <li><x-app-icon name="check" class="w-4 h-4 inline-block align-text-bottom" /> Soyez honnête et constructif</li>
+                        <li><x-app-icon name="check" class="w-4 h-4 inline-block align-text-bottom" /> Mentionnez ce qui vous a plu et ce qui pourrait être amélioré</li>
+                        <li><x-app-icon name="check" class="w-4 h-4 inline-block align-text-bottom" /> Restez respectueux même si vous n'êtes pas satisfait</li>
+                        <li><x-app-icon name="check" class="w-4 h-4 inline-block align-text-bottom" /> Donnez des exemples concrets</li>
                     </ul>
                 </div>
 
@@ -209,7 +188,7 @@
                     <button 
                         type="submit"
                         class="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-blue-900 font-black px-8 py-4 rounded-2xl transition transform hover:scale-105 shadow-lg">
-                        ⭐ Publier mon avis
+                        <x-app-icon name="star" class="w-5 h-5 inline-block align-text-bottom" /> Publier mon avis
                     </button>
                 </div>
             </form>
