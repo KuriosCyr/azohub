@@ -11,12 +11,9 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800,900&display=swap" rel="stylesheet" />
 
-    <!-- Scripts -->
+    <!-- Scripts (Alpine.js est déjà bundlé et démarré dans resources/js/app.js) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="font-sans antialiased bg-gray-50">
     <!-- Navigation (IDENTIQUE AU PUBLIC) -->
