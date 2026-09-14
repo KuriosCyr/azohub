@@ -1,0 +1,148 @@
+<?php
+
+use App\Livewire\HomePage;
+use App\Livewire\ServicesIndex;
+use App\Livewire\ServiceShow;
+use App\Livewire\OrderCreate;
+use App\Livewire\PrestataireProfile;
+use App\Livewire\PrestataireDashboard;
+use App\Livewire\ClientDashboard;
+use App\Livewire\FaqPage;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\PaymentController;
+use Illuminate\Support\Facades\Route;
+
+// ============================================
+// PAGES PUBLIQUES
+// ============================================
+
+Route::get('/', HomePage::class)->name('home');
+Route::get('/services', ServicesIndex::class)->name('services.index');
+Route::get('/services/{service:slug}', ServiceShow::class)->name('services.show');
+
+// Pages informatives
+Route::view('/how-it-works', 'pages.how-it-works')->name('how-it-works');
+Route::get('/faq', FaqPage::class)->name('faq');
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
+Route::view('/terms', 'pages.terms')->name('terms');
+Route::view('/privacy', 'pages.privacy')->name('privacy');
+
+// ============================================
+// AUTHENTIFICATION
+// ============================================
+
+require __DIR__.'/auth.php';
+
+// ============================================
+// ROUTES PROTÉGÉES (AUTH)
+// ============================================
+
+Route::middleware(['auth'])->group(function () {
+    
+    // Redirection dashboard selon le rôle
+    Route::get('/dashboard', function () {
+        if (auth()->user()->isPrestataire()) {
+            return redirect()->route('prestataire.dashboard');
+        }
+        return redirect()->route('client.dashboard');
+    })->name('dashboard');
+    
+    // Dashboard prestataire
+    Route::get('/prestataire/dashboard', PrestataireDashboard::class)
+        ->middleware('prestataire')
+        ->name('prestataire.dashboard');
+    
+    // Dashboard client
+    Route::get('/client/dashboard', ClientDashboard::class)
+        ->middleware('client')
+        ->name('client.dashboard');
+    
+    // ============================================
+    // PROFIL UTILISATEUR
+    // ============================================
+    
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [\App\Http\Controllers\ProfileController::class, 'update'])->name('update');
+        Route::put('/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password');
+        Route::delete('/', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('destroy');
+    });
+    
+    // ============================================
+    // GESTION SERVICES (PRESTATAIRES)
+    // ============================================
+    
+    Route::middleware('prestataire')->prefix('prestataire')->name('prestataire.')->group(function () {
+        Route::resource('services', ServiceController::class);
+        Route::post('services/{service}/toggle', [ServiceController::class, 'toggleActive'])->name('services.toggle');
+    });
+
+    // ============================================
+    // GESTION COMMANDES
+    // ============================================
+    
+    Route::prefix('orders')->name('orders.')->group(function () {
+        // Créer une commande
+        Route::get('/create', OrderCreate::class)->middleware('client')->name('create');
+
+        // Voir une commande
+        Route::get('/{order}', [OrderController::class, 'show'])->name('show');
+        
+        // Actions prestataire
+        Route::middleware('prestataire')->group(function () {
+            Route::post('/{order}/accept', [OrderController::class, 'accept'])->name('accept');
+            Route::post('/{order}/refuse', [OrderController::class, 'refuse'])->name('refuse');
+            Route::post('/{order}/deliver', [OrderController::class, 'markAsDelivered'])->name('deliver');
+        });
+        
+        // Actions client
+        Route::middleware('client')->group(function () {
+            Route::post('/{order}/validate', [OrderController::class, 'validate'])->name('validate');
+            Route::post('/{order}/request-revision', [OrderController::class, 'requestRevision'])->name('request-revision');
+            Route::post('/{order}/pay', [PaymentController::class, 'initiate'])->name('pay');
+        });
+        
+        // Actions communes
+        Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('cancel');
+        Route::get('/{order}/deliverable/{index}', [OrderController::class, 'downloadDeliverable'])->name('deliverable.download');
+        
+        // Messages
+        Route::post('/{order}/messages', [MessageController::class, 'store'])->name('messages.store');
+        Route::post('/{order}/messages/read', [MessageController::class, 'markAsRead'])->name('messages.read');
+    });
+
+    // ============================================
+    // GESTION AVIS
+    // ============================================
+    
+    Route::prefix('reviews')->name('reviews.')->group(function () {
+        Route::get('/orders/{order}/create', [ReviewController::class, 'create'])->name('create');
+        Route::post('/orders/{order}', [ReviewController::class, 'store'])->name('store');
+        Route::get('/{review}', [ReviewController::class, 'show'])->name('show');
+    });
+
+    // ============================================
+    // TÉLÉCHARGEMENT PIÈCES JOINTES MESSAGES
+    // ============================================
+    
+    Route::get('/messages/{message}/attachment/{index}', [MessageController::class, 'downloadAttachment'])
+        ->name('messages.attachment.download');
+});
+
+// ============================================
+// PAIEMENT (FEDAPAY)
+// ============================================
+
+Route::get('/payments/callback/{order}', [PaymentController::class, 'callback'])->name('payments.callback');
+Route::post('/payments/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
+
+// ============================================
+// PROFIL PUBLIC PRESTATAIRE (EN DERNIER)
+// ============================================
+
+Route::get('/prestataire/{username}', PrestataireProfile::class)->name('prestataire.profile');
