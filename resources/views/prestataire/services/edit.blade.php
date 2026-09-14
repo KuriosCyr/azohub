@@ -148,12 +148,8 @@
                             Image de couverture actuelle
                         </label>
                         @if($service->cover_image)
-                            <div class="mb-4">
-                                @if(Str::startsWith($service->cover_image, 'http'))
-                                    <img src="{{ $service->cover_image }}" alt="{{ $service->title }}" class="max-w-md rounded-2xl shadow-lg">
-                                @else
-                                    <img src="{{ Storage::url($service->cover_image) }}" alt="{{ $service->title }}" class="max-w-md rounded-2xl shadow-lg">
-                                @endif
+                            <div class="mb-4 max-w-md h-56 rounded-2xl shadow-lg overflow-hidden">
+                                <x-service-cover :service="$service" class="w-full h-full object-cover" />
                             </div>
                         @endif
                         

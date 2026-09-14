@@ -27,14 +27,7 @@
             {{-- Image de couverture --}}
             <div class="bg-white rounded-3xl overflow-hidden shadow-lg mb-8">
                 <div class="h-64 relative">
-                    @if($service->cover_image)
-                        <img src="{{ Str::startsWith($service->cover_image, 'http') ? $service->cover_image : Storage::url($service->cover_image) }}"
-                             alt="{{ $service->title }}" class="w-full h-full object-cover">
-                    @else
-                        <div class="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                            <x-app-icon name="box" class="w-12 h-12" />
-                        </div>
-                    @endif
+                    <x-service-cover :service="$service" class="w-full h-full object-cover" />
                     <span class="absolute top-4 right-4 px-4 py-2 rounded-full text-sm font-bold {{ $service->is_active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white' }}">
                         @if($service->is_active)
                             <x-app-icon name="check" class="w-4 h-4 inline-block align-text-bottom" /> Actif

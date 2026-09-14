@@ -54,15 +54,9 @@
                         <h2 class="text-2xl font-black text-gray-900 mb-6">Service commandé</h2>
 
                         <div class="flex gap-6">
-                            @if($order->service->cover_image)
-                            <img src="{{ Str::startsWith($order->service->cover_image, 'http') ? $order->service->cover_image : Storage::url($order->service->cover_image) }}"
-                                alt="{{ $order->service->title }}"
-                                class="w-32 h-32 rounded-2xl object-cover">
-                            @else
-                            <div class="w-32 h-32 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                                <x-app-icon name="box" class="w-10 h-10 text-blue-400" />
+                            <div class="w-32 h-32 rounded-2xl overflow-hidden flex-shrink-0">
+                                <x-service-cover :service="$order->service" class="w-full h-full object-cover" />
                             </div>
-                            @endif
 
                             <div class="flex-1">
                                 <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full mb-2 inline-block">

@@ -19,14 +19,8 @@
 
                     {{-- Service résumé --}}
                     <div class="flex gap-4 p-4 bg-blue-50 rounded-2xl mb-8">
-                        <div class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-blue-500 to-blue-700">
-                            @if($service->cover_image)
-                                <img src="{{ Storage::url($service->cover_image) }}" alt="{{ $service->title }}" class="w-full h-full object-cover">
-                            @else
-                                <div class="w-full h-full flex items-center justify-center text-white text-2xl font-black">
-                                    {{ substr($service->title, 0, 2) }}
-                                </div>
-                            @endif
+                        <div class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                            <x-service-cover :service="$service" class="w-full h-full object-cover" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="font-bold text-gray-900 line-clamp-2">{{ $service->title }}</p>

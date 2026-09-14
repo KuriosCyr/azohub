@@ -39,21 +39,7 @@
                             <div class="flex flex-col md:flex-row">
                                 {{-- Image --}}
                                 <div class="md:w-64 h-48 md:h-auto relative flex-shrink-0">
-                                    @if($service->cover_image)
-                                        @if(Str::startsWith($service->cover_image, 'http'))
-                                            <img src="{{ $service->cover_image }}" 
-                                                 alt="{{ $service->title }}"
-                                                 class="w-full h-full object-cover">
-                                        @else
-                                            <img src="{{ Storage::url($service->cover_image) }}" 
-                                                 alt="{{ $service->title }}"
-                                                 class="w-full h-full object-cover">
-                                        @endif
-                                    @else
-                                        <div class="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                                            <x-app-icon name="box" class="w-12 h-12" />
-                                        </div>
-                                    @endif
+                                    <x-service-cover :service="$service" class="w-full h-full object-cover" />
 
                                     {{-- Badge statut --}}
                                     <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold {{ $service->is_active ? 'bg-green-500 text-white' : 'bg-gray-500 text-white' }}">

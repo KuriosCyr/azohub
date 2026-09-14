@@ -85,9 +85,7 @@
                         {{-- Image principale --}}
                         @if($service->cover_image)
                         <div class="col-span-2 md:col-span-3 relative h-80 rounded-2xl overflow-hidden group">
-                            <img src="{{ Storage::url($service->cover_image) }}" 
-                                 alt="{{ $service->title }}"
-                                 class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                            <x-service-cover :service="$service" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
                         </div>
                         @endif
 
@@ -227,16 +225,8 @@
                 @foreach($similarServices as $similar)
                 <a href="{{ route('services.show', $similar) }}" 
                    class="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-                    <div class="relative h-48 bg-gradient-to-br from-blue-100 to-blue-200">
-                        @if($similar->cover_image)
-                            <img src="{{ Storage::url($similar->cover_image) }}" 
-                                 alt="{{ $similar->title }}"
-                                 class="w-full h-full object-cover">
-                        @else
-                            <div class="w-full h-full flex items-center justify-center text-white text-4xl font-black bg-gradient-to-br from-blue-500 to-blue-700">
-                                {{ substr($similar->title, 0, 2) }}
-                            </div>
-                        @endif
+                    <div class="relative h-48 overflow-hidden">
+                        <x-service-cover :service="$similar" class="w-full h-full object-cover" />
                     </div>
                     <div class="p-5">
                         <h3 class="font-bold text-lg mb-2 line-clamp-2 min-h-[3.5rem]">{{ $similar->title }}</h3>

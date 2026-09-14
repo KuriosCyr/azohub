@@ -15,20 +15,6 @@ class ServiceSeeder extends Seeder
         $prestataires = User::where('role', 'prestataire')->get();
         $categories = Category::all();
 
-        // Images Unsplash par catégorie (mots-clés de recherche)
-        $categoryImages = [
-            'BTP & Travaux' => 'construction,plumbing,electrical,painting,building',
-            'Digital & Tech' => 'laptop,coding,design,website,technology',
-            'Maison & Jardinage' => 'garden,cleaning,home,interior,plants',
-            'Éducation & Formation' => 'education,learning,teacher,book,student',
-            'Événementiel' => 'party,wedding,event,celebration,music',
-            'Transport & Livraison' => 'truck,delivery,moving,transport,car',
-            'Beauté & Bien-être' => 'beauty,massage,spa,wellness,fitness',
-            'Mécanique & Automobile' => 'mechanic,car,repair,automotive,garage',
-            'Administration & Juridique' => 'office,business,legal,accounting,documents',
-            'Santé & Social' => 'healthcare,nursing,childcare,medical,care',
-        ];
-
         // Services par catégorie avec descriptions détaillées
         $servicesData = [
             'BTP & Travaux' => [
@@ -160,14 +146,8 @@ class ServiceSeeder extends Seeder
             
             if (!$category) continue;
 
-            // Mots-clés Unsplash pour cette catégorie
-            $imageKeyword = $categoryImages[$categoryName] ?? 'business';
-
             foreach ($services as $index => $serviceData) {
                 $prestataire = $prestataires->random();
-
-                // URL image Unsplash (800x600, thème aléatoire de la catégorie)
-                $imageUrl = "https://source.unsplash.com/800x600/?{$imageKeyword}&sig=" . ($count + $index);
 
                 Service::create([
                     'user_id' => $prestataire->id,
@@ -180,7 +160,6 @@ class ServiceSeeder extends Seeder
                     'price_type' => rand(0, 10) > 3 ? 'a_partir_de' : 'fixe',
                     'delivery_time' => rand(1, 14),
                     'city' => $prestataire->city,
-                    'cover_image' => $imageUrl, // Image Unsplash
                     'rating' => rand(35, 50) / 10,
                     'total_orders' => rand(0, 100),
                     'total_reviews' => rand(0, 50),

@@ -217,15 +217,9 @@
                     @forelse($recentServices as $service)
                         <div class="px-6 py-5 hover:bg-gray-50 transition">
                             <div class="flex gap-4">
-                                @if($service->cover_image)
-                                    <img src="{{ Str::startsWith($service->cover_image, 'http') ? $service->cover_image : Storage::url($service->cover_image) }}"
-                                         alt="{{ $service->title }}"
-                                         class="w-20 h-20 rounded-xl object-cover flex-shrink-0">
-                                @else
-                                    <div class="w-20 h-20 rounded-xl bg-blue-50 flex items-center justify-center text-blue-300 flex-shrink-0">
-                                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
-                                    </div>
-                                @endif
+                                <div class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                                    <x-service-cover :service="$service" class="w-full h-full object-cover" />
+                                </div>
 
                                 <div class="flex-1 min-w-0">
                                     <div class="flex justify-between items-start gap-3 mb-2">
