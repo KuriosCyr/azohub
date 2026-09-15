@@ -18,16 +18,19 @@ class ServiceRequest extends Model
         'budget',
         'deadline',
         'city',
+        'address',
         'attachments',
         'status',
         'proposals_count',
+        'expires_at',
     ];
 
     protected $casts = [
         'budget' => 'decimal:2',
-        'deadline' => 'date',
+        'deadline' => 'integer',
         'attachments' => 'array',
         'proposals_count' => 'integer',
+        'expires_at' => 'datetime',
     ];
 
     // Relations

@@ -39,6 +39,11 @@ class DatabaseSeeder extends Seeder
         $this->call(OrderSeeder::class);
         $this->command->newLine();
 
+        // 5bis. Demandes & propositions
+        $this->command->info('🤝 Création des demandes et propositions...');
+        $this->call(ServiceRequestSeeder::class);
+        $this->command->newLine();
+
         // 6. Avis
         $this->command->info('⭐ Création des avis...');
         $this->call(ReviewSeeder::class);
@@ -62,6 +67,8 @@ class DatabaseSeeder extends Seeder
                 ['  → Actifs', \App\Models\Service::where('is_active', true)->count()],
                 ['Commandes', \App\Models\Order::count()],
                 ['  → Terminées', \App\Models\Order::where('status', 'completed')->count()],
+                ['Demandes (négociation)', \App\Models\ServiceRequest::count()],
+                ['Propositions', \App\Models\Proposal::count()],
                 ['Avis', \App\Models\Review::count()],
             ]
         );

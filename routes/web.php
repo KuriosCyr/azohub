@@ -8,6 +8,10 @@ use App\Livewire\PrestataireProfile;
 use App\Livewire\PrestataireDashboard;
 use App\Livewire\ClientDashboard;
 use App\Livewire\FaqPage;
+use App\Livewire\ServiceRequestCreate;
+use App\Livewire\ServiceRequestsIndex;
+use App\Livewire\ServiceRequestShow;
+use App\Livewire\ProposalAccept;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MessageController;
@@ -115,6 +119,19 @@ Route::middleware(['auth'])->group(function () {
         // Messages
         Route::post('/{order}/messages', [MessageController::class, 'store'])->name('messages.store');
         Route::post('/{order}/messages/read', [MessageController::class, 'markAsRead'])->name('messages.read');
+    });
+
+    // ============================================
+    // DEMANDES & PROPOSITIONS (NÉGOCIATION)
+    // ============================================
+
+    Route::prefix('demandes')->name('service-requests.')->group(function () {
+        Route::get('/', ServiceRequestsIndex::class)->name('index');
+        Route::get('/nouvelle', ServiceRequestCreate::class)->middleware('client')->name('create');
+        Route::get('/{serviceRequest}', ServiceRequestShow::class)->name('show');
+        Route::get('/{serviceRequest}/propositions/{proposal}/accepter', ProposalAccept::class)
+            ->middleware('client')
+            ->name('proposals.accept');
     });
 
     // ============================================

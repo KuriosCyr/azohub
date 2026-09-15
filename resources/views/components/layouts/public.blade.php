@@ -119,6 +119,13 @@
                             <a href="{{ route('prestataire.services.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('prestataire.services.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                                 Mes services
                             </a>
+                            <a href="{{ route('service-requests.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('service-requests.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
+                                Opportunités
+                            </a>
+                        @else
+                            <a href="{{ route('service-requests.index', ['mine' => 1]) }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('service-requests.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
+                                Mes demandes
+                            </a>
                         @endif
                     @endauth
                 </div>
@@ -307,6 +314,15 @@
                         <a href="{{ route('prestataire.services.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
                             <x-app-icon name="briefcase" class="w-4 h-4" />
                             Mes services
+                        </a>
+                        <a href="{{ route('service-requests.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                            <x-app-icon name="clipboard" class="w-4 h-4" />
+                            Opportunités
+                        </a>
+                    @else
+                        <a href="{{ route('service-requests.index', ['mine' => 1]) }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                            <x-app-icon name="clipboard" class="w-4 h-4" />
+                            Mes demandes
                         </a>
                     @endif
                     <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
