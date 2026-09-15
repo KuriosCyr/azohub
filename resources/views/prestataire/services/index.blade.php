@@ -35,7 +35,9 @@
             @if($services->count() > 0)
                 <div class="space-y-4">
                     @foreach($services as $service)
-                        <div class="bg-cream-50 rounded-xl border border-ink-100 overflow-hidden hover:shadow-md transition">
+                        <div x-data x-intersect.once="$el.classList.add('revealed')"
+                             style="transition-delay: {{ $loop->index * 60 }}ms"
+                             class="reveal bg-cream-50 rounded-xl border border-ink-100 overflow-hidden hover:shadow-md transition">
                             <div class="flex flex-col md:flex-row">
                                 {{-- Image --}}
                                 <div class="md:w-64 h-48 md:h-auto relative flex-shrink-0">

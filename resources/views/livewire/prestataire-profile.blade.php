@@ -142,7 +142,9 @@
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($services as $service)
                     <a href="{{ route('services.show', $service) }}"
-                       class="bg-cream-50 rounded-xl overflow-hidden border border-ink-100 hover:shadow-md transition-all duration-300 transform hover:-translate-y-2 group">
+                       x-data x-intersect.once="$el.classList.add('revealed')"
+                       style="transition-delay: {{ $loop->index * 70 }}ms"
+                       class="reveal bg-cream-50 rounded-xl overflow-hidden border border-ink-100 hover:shadow-md transition-all duration-300 transform hover:-translate-y-2 group">
                         <div class="relative h-48 overflow-hidden">
                             <x-service-cover :service="$service" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
                             <span class="absolute top-3 left-3 bg-terracotta-600 text-cream-50 px-3 py-1 rounded-full text-xs font-bold uppercase">

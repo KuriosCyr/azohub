@@ -305,17 +305,13 @@
                     <div class="p-5 space-y-4">
                         @foreach($recommendedServices as $service)
                             <a href="{{ route('services.show', $service->slug) }}"
-                               class="block group">
+                               x-data x-intersect.once="$el.classList.add('revealed')"
+                               style="transition-delay: {{ $loop->index * 70 }}ms"
+                               class="reveal block group">
                                 <div class="flex gap-3">
-                                    @if($service->image)
-                                        <img src="{{ Storage::url($service->image) }}"
-                                             alt="{{ $service->title }}"
-                                             class="w-14 h-14 rounded-xl object-cover border border-ink-100 flex-shrink-0">
-                                    @else
-                                        <div class="w-14 h-14 rounded-xl bg-terracotta-50 flex items-center justify-center text-terracotta-600 flex-shrink-0">
-                                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg>
-                                        </div>
-                                    @endif
+                                    <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
+                                        <x-service-cover :service="$service" class="w-full h-full object-cover" />
+                                    </div>
 
                                     <div class="flex-1 min-w-0">
                                         <h4 class="font-bold text-ink-900 group-hover:text-terracotta-700 transition truncate text-sm">

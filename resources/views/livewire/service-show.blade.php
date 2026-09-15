@@ -91,7 +91,9 @@
 
                         {{-- Portfolio --}}
                         @foreach($service->portfolios as $portfolio)
-                        <div class="relative h-48 rounded-lg overflow-hidden group cursor-pointer">
+                        <div x-data x-intersect.once="$el.classList.add('revealed')"
+                             style="transition-delay: {{ $loop->index * 70 }}ms"
+                             class="reveal relative h-48 rounded-lg overflow-hidden group cursor-pointer">
                             <img src="{{ Storage::url($portfolio->file_path) }}"
                                  alt="Portfolio"
                                  class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
@@ -224,7 +226,9 @@
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 @foreach($similarServices as $similar)
                 <a href="{{ route('services.show', $similar) }}"
-                   class="bg-cream-50 rounded-xl overflow-hidden border border-ink-100 hover:shadow-md transition-all duration-300 transform hover:-translate-y-2">
+                   x-data x-intersect.once="$el.classList.add('revealed')"
+                   style="transition-delay: {{ $loop->index * 80 }}ms"
+                   class="reveal bg-cream-50 rounded-xl overflow-hidden border border-ink-100 hover:shadow-md transition-all duration-300 transform hover:-translate-y-2">
                     <div class="relative h-48 overflow-hidden">
                         <x-service-cover :service="$similar" class="w-full h-full object-cover" />
                     </div>
