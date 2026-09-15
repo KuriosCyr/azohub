@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Message;
+use App\Notifications\NewMessageReceived;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -54,7 +55,7 @@ class MessageController extends Controller
             'attachments' => !empty($attachments) ? $attachments : null,
         ]);
 
-        // TODO: Envoyer notification au destinataire
+        $message->receiver->notify(new NewMessageReceived($message));
 
         return redirect()
             ->back()

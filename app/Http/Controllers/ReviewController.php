@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Review;
+use App\Notifications\NewReviewReceived;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -102,6 +103,8 @@ class ReviewController extends Controller
             // Mise à jour du service
             $order->service->updateRating();
         }
+
+        $review->reviewee->notify(new NewReviewReceived($review));
 
         return redirect()
             ->route('orders.show', $order)

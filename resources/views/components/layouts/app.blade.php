@@ -62,7 +62,9 @@
                 </div>
 
                 <!-- User Menu -->
-                <div class="hidden md:flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-2">
+                    <livewire:notification-bell />
+
                     <div x-data="{ open: false }" @click.away="open = false" class="relative">
                         <button @click="open = !open" class="flex items-center gap-3 hover:bg-ink-100/40 rounded-lg px-3 py-2 transition">
                             <img src="{{ Auth::user()->avatar ? Storage::url(Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) }}"
@@ -144,7 +146,9 @@
                 </div>
 
                 <!-- Mobile menu button -->
-                <div class="md:hidden flex items-center">
+                <div class="md:hidden flex items-center gap-1">
+                    <livewire:notification-bell />
+
                     <button x-data @click="$dispatch('toggle-mobile-menu')" class="text-ink-700 hover:text-ink-900 p-2 rounded-lg hover:bg-ink-100/40 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>

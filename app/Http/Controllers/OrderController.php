@@ -3,6 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Notifications\OrderAccepted;
+use App\Notifications\OrderCancelled;
+use App\Notifications\OrderDelivered;
+use App\Notifications\OrderRefused;
+use App\Notifications\PaymentReleased;
+use App\Notifications\RevisionRequested;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -57,7 +63,7 @@ class OrderController extends Controller
             'accepted_at' => now(),
         ]);
 
-        // TODO: Envoyer notification au client
+        $order->client->notify(new OrderAccepted($order));
 
         return redirect()
             ->back()
@@ -87,8 +93,9 @@ class OrderController extends Controller
 
         $order->refund($validated['refusal_reason'] ?? 'Refusé par le prestataire');
 
+        $order->client->notify(new OrderRefused($order));
+
         // TODO: Déclencher le remboursement réel côté FedaPay (Transaction refund)
-        // TODO: Envoyer notification au client
 
         return redirect()
             ->route('prestataire.dashboard')
@@ -139,7 +146,7 @@ class OrderController extends Controller
             'deliverables' => !empty($deliverables) ? $deliverables : null,
         ]);
 
-        // TODO: Envoyer notification au client
+        $order->client->notify(new OrderDelivered($order));
 
         return redirect()
             ->back()
@@ -166,7 +173,7 @@ class OrderController extends Controller
         // Libérer le paiement au prestataire et clôturer la commande
         $order->releasePayment();
 
-        // TODO: Envoyer notification au prestataire
+        $order->prestataire->notify(new PaymentReleased($order));
 
         return redirect()
             ->back()
@@ -201,7 +208,7 @@ class OrderController extends Controller
             'revision_notes' => $validated['revision_notes'],
         ]);
 
-        // TODO: Envoyer notification au prestataire
+        $order->prestataire->notify(new RevisionRequested($order));
 
         return redirect()
             ->back()
@@ -232,7 +239,10 @@ class OrderController extends Controller
         $order->refund($validated['cancellation_reason']);
 
         // TODO: Déclencher le remboursement réel côté FedaPay si la commande était payée
-        // TODO: Envoyer notifications
+
+        $cancelledByRole = $order->client_id === Auth::id() ? 'client' : 'prestataire';
+        $recipient = $cancelledByRole === 'client' ? $order->prestataire : $order->client;
+        $recipient->notify(new OrderCancelled($order, $cancelledByRole));
 
         return redirect()
             ->route('dashboard')

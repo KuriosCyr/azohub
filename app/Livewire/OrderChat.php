@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Order;
 use App\Models\Message;
+use App\Notifications\NewMessageReceived;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
@@ -70,13 +71,15 @@ class OrderChat extends Component
         }
 
         // Créer le message
-        Message::create([
+        $newMessage = Message::create([
             'order_id' => $this->order->id,
             'sender_id' => Auth::id(),
             'receiver_id' => $receiverId,
             'message' => $this->message,
             'attachments' => !empty($uploadedAttachments) ? $uploadedAttachments : null,
         ]);
+
+        $newMessage->receiver->notify(new NewMessageReceived($newMessage));
 
         // Reset explicite des champs
         $this->message = '';

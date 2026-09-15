@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\PaymentConfirmed;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -56,6 +57,8 @@ class Payment extends Model
                 'status' => 'paid',
                 'payment_status' => 'held',
             ]);
+
+            $this->order->prestataire->notify(new PaymentConfirmed($this->order));
         }
     }
 
