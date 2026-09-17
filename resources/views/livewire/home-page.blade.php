@@ -87,20 +87,24 @@
 
                 {{-- Colonne décorative --}}
                 <div class="hidden md:grid grid-cols-2 gap-4">
-                    <div class="h-56 rounded-lg bg-forest-600 flex items-end p-5 overflow-hidden relative">
-                        <img src="https://images.unsplash.com/photo-1765378025221-3ed7eadc6def?w=500&h=600&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy">
+                    <div class="h-56 rounded-lg bg-ink-900 flex items-end p-5 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1765378025221-3ed7eadc6def?w=500&h=600&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-55 mix-blend-luminosity" loading="lazy">
+                        <div class="absolute inset-0 bg-ink-900/40"></div>
                         <x-app-icon name="wrench" class="w-8 h-8 text-cream-50 relative" />
                     </div>
-                    <div class="h-40 mt-16 rounded-lg bg-ochre-600 flex items-end p-5 overflow-hidden relative" style="animation: float 7s ease-in-out infinite; animation-delay: .3s;">
-                        <img src="https://images.unsplash.com/photo-1740657254989-42fe9c3b8cce?w=500&h=400&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy">
+                    <div class="h-40 mt-16 rounded-lg bg-terracotta-700 flex items-end p-5 overflow-hidden relative" style="animation: float 7s ease-in-out infinite; animation-delay: .3s;">
+                        <img src="https://images.unsplash.com/photo-1740657254989-42fe9c3b8cce?w=500&h=400&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-55 mix-blend-luminosity" loading="lazy">
+                        <div class="absolute inset-0 bg-terracotta-700/40"></div>
                         <x-app-icon name="home" class="w-7 h-7 text-cream-50 relative" />
                     </div>
-                    <div class="h-40 rounded-lg bg-clay-500 flex items-end p-5 overflow-hidden relative" style="animation: float 8s ease-in-out infinite; animation-delay: 1s;">
-                        <img src="https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=500&h=400&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy">
+                    <div class="h-40 rounded-lg bg-clay-600 flex items-end p-5 overflow-hidden relative" style="animation: float 8s ease-in-out infinite; animation-delay: 1s;">
+                        <img src="https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=500&h=400&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-55 mix-blend-luminosity" loading="lazy">
+                        <div class="absolute inset-0 bg-clay-600/40"></div>
                         <x-app-icon name="laptop" class="w-7 h-7 text-cream-50 relative" />
                     </div>
-                    <div class="h-56 -mt-16 rounded-lg bg-ink-900 flex items-end p-5 overflow-hidden relative">
-                        <img src="https://images.unsplash.com/photo-1653821355736-0c2598d0a63e?w=500&h=600&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-40" loading="lazy">
+                    <div class="h-56 -mt-16 rounded-lg bg-terracotta-600 flex items-end p-5 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1653821355736-0c2598d0a63e?w=500&h=600&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-55 mix-blend-luminosity" loading="lazy">
+                        <div class="absolute inset-0 bg-terracotta-600/40"></div>
                         <x-app-icon name="sparkles" class="w-8 h-8 text-cream-50 relative" />
                     </div>
                 </div>

@@ -24,7 +24,8 @@
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex items-center">
-                    <a href="{{ route('home') }}" class="flex items-center gap-1">
+                    <a href="{{ route('home') }}" class="flex items-center gap-2">
+                        <x-logo-mark class="w-8 h-8" />
                         <span class="font-serif text-2xl font-medium text-ink-900">Azo</span><span class="font-serif text-2xl font-medium text-terracotta-600">hub</span>
                         <span class="ml-1 inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden">
                             <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
@@ -281,7 +282,8 @@
 
             <!-- Header -->
             <div class="flex items-center justify-between px-5 py-4 border-b border-ink-100">
-                <a href="{{ route('home') }}" class="flex items-center gap-1">
+                <a href="{{ route('home') }}" class="flex items-center gap-2">
+                    <x-logo-mark class="w-7 h-7" />
                     <span class="font-serif text-xl font-medium text-ink-900">Azo</span><span class="font-serif text-xl font-medium text-terracotta-600">hub</span>
                 </a>
                 <button @click="open = false" class="p-2 rounded-lg hover:bg-ink-100/40 transition text-ink-400">
@@ -398,7 +400,8 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
                 <!-- About -->
                 <div>
-                    <div class="flex items-center gap-1.5 mb-4">
+                    <div class="flex items-center gap-2 mb-4">
+                        <x-logo-mark class="w-7 h-7" />
                         <span class="font-serif text-xl font-medium text-cream-50">Azo</span><span class="font-serif text-xl font-medium text-ochre-500">hub</span>
                         <span class="inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden ml-1">
                             <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
