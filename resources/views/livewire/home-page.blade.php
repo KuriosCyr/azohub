@@ -1,7 +1,7 @@
 <div>
     {{-- Hero Section --}}
     <section class="bg-cream relative overflow-hidden">
-        <div class="absolute inset-0 pointer-events-none opacity-40" style="background-image: radial-gradient(#D4A73B 1px, transparent 1px); background-size: 22px 22px;"></div>
+        <div class="absolute inset-0 pointer-events-none opacity-40" style="background-image: radial-gradient(#94A3B8 1px, transparent 1px); background-size: 22px 22px;"></div>
 
         <div class="container mx-auto px-4 relative py-16 md:py-24">
             <div class="grid md:grid-cols-2 gap-16 items-end">
