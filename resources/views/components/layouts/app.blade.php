@@ -70,7 +70,7 @@
                 </div>
 
                 <!-- User Menu -->
-                <div class="hidden md:flex items-center space-x-2">
+                <div class="hidden md:flex items-center space-x-4">
                     <livewire:notification-bell />
 
                     <div x-data="{ open: false }" @click.away="open = false" class="relative">

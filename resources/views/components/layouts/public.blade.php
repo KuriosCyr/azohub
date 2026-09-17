@@ -131,7 +131,7 @@
                 </div>
 
                 <!-- Auth / User Menu -->
-                <div class="hidden md:flex items-center space-x-2">
+                <div class="hidden md:flex items-center space-x-4">
                     @auth
                         <livewire:notification-bell />
 
