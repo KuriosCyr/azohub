@@ -8,6 +8,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
@@ -17,42 +18,70 @@ class ServiceRequestsTable
     {
         return $table
             ->columns([
-                TextColumn::make('user_id')
-                    ->numeric()
+                TextColumn::make('client.name')
+                    ->label('Client')
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('category_id')
-                    ->numeric()
+                TextColumn::make('category.name')
+                    ->label('Catégorie')
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('title')
-                    ->searchable(),
+                    ->label('Titre')
+                    ->searchable()
+                    ->limit(40),
                 TextColumn::make('budget')
-                    ->numeric()
+                    ->label('Budget')
+                    ->money('XOF')
                     ->sortable(),
                 TextColumn::make('deadline')
+                    ->label('Délai (j)')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('city')
-                    ->searchable(),
-                TextColumn::make('address')
+                    ->label('Ville')
                     ->searchable(),
                 TextColumn::make('status')
-                    ->badge(),
+                    ->label('Statut')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'open' => 'success',
+                        'closed' => 'gray',
+                        'cancelled' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'open' => 'Ouverte',
+                        'closed' => 'Clôturée',
+                        'cancelled' => 'Annulée',
+                        default => $state,
+                    }),
                 TextColumn::make('proposals_count')
+                    ->label('Propositions')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('expires_at')
-                    ->dateTime()
-                    ->sortable(),
                 TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Créée le')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Modifiée le')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('status')
+                    ->label('Statut')
+                    ->options([
+                        'open' => 'Ouverte',
+                        'closed' => 'Clôturée',
+                        'cancelled' => 'Annulée',
+                    ]),
+                SelectFilter::make('category_id')
+                    ->label('Catégorie')
+                    ->relationship('category', 'name'),
                 TrashedFilter::make(),
             ])
             ->recordActions([
@@ -64,6 +93,7 @@ class ServiceRequestsTable
                     ForceDeleteBulkAction::make(),
                     RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('created_at', 'desc');
     }
 }
