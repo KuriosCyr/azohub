@@ -49,6 +49,11 @@ class DatabaseSeeder extends Seeder
         $this->call(ReviewSeeder::class);
         $this->command->newLine();
 
+        // 7. FAQ
+        $this->command->info('❓ Création de la FAQ...');
+        $this->call(FaqSeeder::class);
+        $this->command->newLine();
+
         // Récapitulatif
         $this->command->info('✅ Seeding terminé avec succès !');
         $this->command->newLine();
@@ -70,6 +75,7 @@ class DatabaseSeeder extends Seeder
                 ['Demandes (négociation)', \App\Models\ServiceRequest::count()],
                 ['Propositions', \App\Models\Proposal::count()],
                 ['Avis', \App\Models\Review::count()],
+                ['FAQ', \App\Models\Faq::count()],
             ]
         );
 
