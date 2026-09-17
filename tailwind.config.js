@@ -14,6 +14,8 @@ export default {
             fontFamily: {
                 sans: ['"Work Sans"', ...defaultTheme.fontFamily.sans],
                 serif: ['Newsreader', ...defaultTheme.fontFamily.serif],
+                // Wordmark only (nav/footer logo) — matches the "Azohub" lockup from Claude Design.
+                brand: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
             },
             colors: {
                 // "Confiance Digitale" — bleu/blanc. Les noms de tokens restent ceux

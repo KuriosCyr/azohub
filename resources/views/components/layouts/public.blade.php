@@ -7,10 +7,12 @@
 
     <title>{{ config('app.name', 'Azohub') }} - Plateforme de services au Bénin</title>
 
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,500&family=Work+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet" />
 
     <!-- Scripts (Alpine.js est déjà bundlé et démarré dans resources/js/app.js) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -26,7 +28,7 @@
                 <div class="flex items-center">
                     <a href="{{ route('home') }}" class="flex items-center gap-2">
                         <x-logo-mark class="w-8 h-8" />
-                        <span class="font-serif text-2xl font-medium text-ink-900">Azo</span><span class="font-serif text-2xl font-medium text-terracotta-600">hub</span>
+                        <span class="font-brand text-2xl font-extrabold tracking-tight text-ink-900">Azo</span><span class="font-brand text-2xl font-extrabold tracking-tight text-terracotta-600">hub</span>
                         <span class="ml-1 inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden">
                             <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
                                 <rect width="45" height="30" fill="#E8112D"/>
@@ -284,7 +286,7 @@
             <div class="flex items-center justify-between px-5 py-4 border-b border-ink-100">
                 <a href="{{ route('home') }}" class="flex items-center gap-2">
                     <x-logo-mark class="w-7 h-7" />
-                    <span class="font-serif text-xl font-medium text-ink-900">Azo</span><span class="font-serif text-xl font-medium text-terracotta-600">hub</span>
+                    <span class="font-brand text-xl font-extrabold tracking-tight text-ink-900">Azo</span><span class="font-brand text-xl font-extrabold tracking-tight text-terracotta-600">hub</span>
                 </a>
                 <button @click="open = false" class="p-2 rounded-lg hover:bg-ink-100/40 transition text-ink-400">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -401,8 +403,8 @@
                 <!-- About -->
                 <div>
                     <div class="flex items-center gap-2 mb-4">
-                        <x-logo-mark class="w-7 h-7" />
-                        <span class="font-serif text-xl font-medium text-cream-50">Azo</span><span class="font-serif text-xl font-medium text-ochre-500">hub</span>
+                        <x-logo-mark class="w-7 h-7" :dark="true" />
+                        <span class="font-brand text-xl font-extrabold tracking-tight text-cream-50">Azo</span><span class="font-brand text-xl font-extrabold tracking-tight text-clay-500">hub</span>
                         <span class="inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden ml-1">
                             <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
                                 <rect width="45" height="30" fill="#E8112D"/>
