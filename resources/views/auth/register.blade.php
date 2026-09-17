@@ -130,13 +130,11 @@
                             <label for="password" class="block text-sm font-bold text-ink-700 mb-2">
                                 Mot de passe <span class="text-red-500">*</span>
                             </label>
-                            <input id="password"
-                                   type="password"
+                            <x-password-input id="password"
                                    name="password"
                                    required
                                    autocomplete="new-password"
-                                   placeholder="Min. 8 caractères"
-                                   class="w-full px-4 py-3 border-2 border-ink-100 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
+                                   placeholder="Min. 8 caractères" />
                             <x-input-error :messages="$errors->get('password')" class="mt-2" />
                         </div>
 
@@ -145,13 +143,11 @@
                             <label for="password_confirmation" class="block text-sm font-bold text-ink-700 mb-2">
                                 Confirmer le mot de passe <span class="text-red-500">*</span>
                             </label>
-                            <input id="password_confirmation"
-                                   type="password"
+                            <x-password-input id="password_confirmation"
                                    name="password_confirmation"
                                    required
                                    autocomplete="new-password"
-                                   placeholder="Retapez le mot de passe"
-                                   class="w-full px-4 py-3 border-2 border-ink-100 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
+                                   placeholder="Retapez le mot de passe" />
                             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                         </div>
                     </div>

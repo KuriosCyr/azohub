@@ -39,12 +39,10 @@
                         <label for="password" class="block text-sm font-bold text-ink-700 mb-2">
                             Mot de passe
                         </label>
-                        <input id="password"
-                               type="password"
+                        <x-password-input id="password"
                                name="password"
                                required
-                               autocomplete="current-password"
-                               class="w-full px-4 py-3 border-2 border-ink-100 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
+                               autocomplete="current-password" />
                         <x-input-error :messages="$errors->get('password')" class="mt-2" />
                     </div>
 
