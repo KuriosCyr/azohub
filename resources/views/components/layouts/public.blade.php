@@ -26,16 +26,8 @@
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex items-center">
-                    <a href="{{ route('home') }}" class="flex items-center gap-2">
-                        <x-logo-mark class="w-8 h-8" />
-                        <span class="font-brand text-2xl font-extrabold tracking-tight text-ink-900">Azo</span><span class="font-brand text-2xl font-extrabold tracking-tight text-terracotta-600">hub</span>
-                        <span class="ml-1 inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden">
-                            <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                                <rect width="45" height="30" fill="#E8112D"/>
-                                <rect width="45" height="15" fill="#FCD116"/>
-                                <rect width="18" height="30" fill="#008751"/>
-                            </svg>
-                        </span>
+                    <a href="{{ route('home') }}" class="flex items-center">
+                        <x-logo-lockup class="h-10 w-auto" />
                     </a>
                 </div>
 
@@ -284,9 +276,8 @@
 
             <!-- Header -->
             <div class="flex items-center justify-between px-5 py-4 border-b border-ink-100">
-                <a href="{{ route('home') }}" class="flex items-center gap-2">
-                    <x-logo-mark class="w-7 h-7" />
-                    <span class="font-brand text-xl font-extrabold tracking-tight text-ink-900">Azo</span><span class="font-brand text-xl font-extrabold tracking-tight text-terracotta-600">hub</span>
+                <a href="{{ route('home') }}" class="flex items-center">
+                    <x-logo-lockup class="h-9 w-auto" />
                 </a>
                 <button @click="open = false" class="p-2 rounded-lg hover:bg-ink-100/40 transition text-ink-400">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -402,16 +393,8 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
                 <!-- About -->
                 <div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <x-logo-mark class="w-7 h-7" :dark="true" />
-                        <span class="font-brand text-xl font-extrabold tracking-tight text-cream-50">Azo</span><span class="font-brand text-xl font-extrabold tracking-tight text-clay-500">hub</span>
-                        <span class="inline-flex items-center justify-center w-5 h-3 rounded-sm overflow-hidden ml-1">
-                            <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                                <rect width="45" height="30" fill="#E8112D"/>
-                                <rect width="45" height="15" fill="#FCD116"/>
-                                <rect width="18" height="30" fill="#008751"/>
-                            </svg>
-                        </span>
+                    <div class="flex items-center mb-4">
+                        <x-logo-lockup class="h-9 w-auto" :dark="true" />
                     </div>
                     <p class="text-cream-100/60 text-sm leading-relaxed mb-5">
                         La plateforme n°1 pour trouver des prestataires de confiance au Bénin.

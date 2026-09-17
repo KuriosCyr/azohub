@@ -4,9 +4,7 @@
             {{-- Logo --}}
             <div class="text-center mb-8">
                 <a href="{{ route('home') }}" class="inline-flex items-center justify-center mb-4">
-                    <span class="text-5xl font-serif font-medium text-cream-50">Azo</span>
-                    <span class="text-5xl font-serif font-medium text-ochre-500">hub</span>
-                    <span class="ml-2 text-3xl">🇧🇯</span>
+                    <x-logo-lockup class="h-12 w-auto" :dark="true" />
                 </a>
                 <h2 class="text-2xl font-bold text-cream-50 mb-2">Bon retour !</h2>
                 <p class="text-cream-100/60">Connectez-vous pour accéder à votre compte</p>

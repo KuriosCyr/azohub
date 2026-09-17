@@ -4,15 +4,7 @@
             {{-- Logo --}}
             <div class="text-center mb-8">
                 <a href="{{ route('home') }}" class="inline-flex items-center justify-center mb-4">
-                    <span class="text-5xl font-serif font-medium text-cream-50">Azo</span>
-                    <span class="text-5xl font-serif font-medium text-ochre-500">hub</span>
-                    <span class="ml-2 inline-flex items-center justify-center w-8 h-5 rounded-sm overflow-hidden align-middle">
-                        <svg viewBox="0 0 45 30" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
-                            <rect width="45" height="30" fill="#E8112D"/>
-                            <rect width="45" height="15" fill="#FCD116"/>
-                            <rect width="18" height="30" fill="#008751"/>
-                        </svg>
-                    </span>
+                    <x-logo-lockup class="h-12 w-auto" :dark="true" />
                 </a>
                 <h2 class="text-2xl font-bold text-cream-50 mb-2">Créez votre compte</h2>
                 <p class="text-cream-100/60">Rejoignez la première plateforme de services au Bénin</p>
