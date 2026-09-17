@@ -229,18 +229,31 @@ class Order extends Model
     }
 
     // Rembourser le client (annulation ou litige tranché en sa faveur)
+    // FedaPay n'expose pas d'API de remboursement automatique : un paiement déjà
+    // encaissé passe en "refund_pending" et doit être traité manuellement par un
+    // administrateur depuis le dashboard FedaPay, puis confirmé côté Azohub via
+    // Order::confirmRefund().
     public function refund(?string $reason = null)
     {
+        $successfulPayment = $this->payments()->where('status', 'success')->latest()->first();
+
         $this->update([
             'status' => 'cancelled',
-            'payment_status' => 'refunded',
+            'payment_status' => $successfulPayment ? 'refund_pending' : $this->payment_status,
             'cancelled_at' => $this->cancelled_at ?? now(),
             'cancellation_reason' => $reason ?? $this->cancellation_reason,
         ]);
 
-        $this->payments()->where('status', 'success')->latest()->first()?->update([
-            'status' => 'refunded',
-        ]);
+        $successfulPayment?->update(['status' => 'refund_pending']);
+    }
+
+    // Confirme qu'un remboursement en attente a bien été traité manuellement
+    // (bouton admin, une fois le remboursement effectué depuis le dashboard FedaPay).
+    public function confirmRefund(): void
+    {
+        $this->update(['payment_status' => 'refunded']);
+
+        $this->payments()->where('status', 'refund_pending')->update(['status' => 'refunded']);
     }
 
     // Libérer le paiement au prestataire (validation client ou litige tranché en sa faveur)
@@ -282,6 +295,7 @@ class Order extends Model
             'pending' => 'En attente',
             'held' => 'Bloqué (Escrow)',
             'released' => 'Libéré',
+            'refund_pending' => 'Remboursement en cours',
             'refunded' => 'Remboursé',
             default => ucfirst($this->payment_status),
         };

@@ -464,10 +464,11 @@
                                 <span class="font-bold
                                     @if($order->payment_status === 'released') text-forest-700
                                     @elseif($order->payment_status === 'held') text-ochre-600
+                                    @elseif($order->payment_status === 'refund_pending') text-ochre-600
                                     @elseif($order->payment_status === 'refunded') text-red-600
                                     @else text-ink-500
                                     @endif">
-                                    {{ ucfirst($order->payment_status) }}
+                                    {{ $order->payment_status_label }}
                                 </span>
                             </div>
                         </div>

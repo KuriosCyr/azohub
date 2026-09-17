@@ -59,7 +59,13 @@ class OrderForm
                     ->default('pending_payment')
                     ->required(),
                 Select::make('payment_status')
-                    ->options(['pending' => 'Pending', 'held' => 'Held', 'released' => 'Released', 'refunded' => 'Refunded'])
+                    ->options([
+                        'pending' => 'Pending',
+                        'held' => 'Held',
+                        'released' => 'Released',
+                        'refund_pending' => 'Refund pending',
+                        'refunded' => 'Refunded',
+                    ])
                     ->default('pending')
                     ->required(),
                 TextInput::make('deliverables'),

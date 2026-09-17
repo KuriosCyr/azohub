@@ -95,11 +95,9 @@ class OrderController extends Controller
 
         $order->client->notify(new OrderRefused($order));
 
-        // TODO: Déclencher le remboursement réel côté FedaPay (Transaction refund)
-
         return redirect()
             ->route('prestataire.dashboard')
-            ->with('success', 'Commande refusée. Le client sera remboursé.');
+            ->with('success', 'Commande refusée. Le remboursement du client est en cours de traitement.');
     }
 
     /**
@@ -238,15 +236,17 @@ class OrderController extends Controller
 
         $order->refund($validated['cancellation_reason']);
 
-        // TODO: Déclencher le remboursement réel côté FedaPay si la commande était payée
-
         $cancelledByRole = $order->client_id === Auth::id() ? 'client' : 'prestataire';
         $recipient = $cancelledByRole === 'client' ? $order->prestataire : $order->client;
         $recipient->notify(new OrderCancelled($order, $cancelledByRole));
 
+        $message = $order->payment_status === 'refund_pending'
+            ? 'Commande annulée. Le remboursement du client est en cours de traitement.'
+            : 'Commande annulée avec succès.';
+
         return redirect()
             ->route('dashboard')
-            ->with('success', 'Commande annulée avec succès.');
+            ->with('success', $message);
     }
 
     /**

@@ -37,7 +37,13 @@ class PaymentForm
                 TextInput::make('phone_number')
                     ->tel(),
                 Select::make('status')
-                    ->options(['pending' => 'Pending', 'success' => 'Success', 'failed' => 'Failed', 'refunded' => 'Refunded'])
+                    ->options([
+                        'pending' => 'Pending',
+                        'success' => 'Success',
+                        'failed' => 'Failed',
+                        'refund_pending' => 'Refund pending',
+                        'refunded' => 'Refunded',
+                    ])
                     ->default('pending')
                     ->required(),
                 Select::make('type')
