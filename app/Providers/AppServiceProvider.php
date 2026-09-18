@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
@@ -25,5 +27,14 @@ class AppServiceProvider extends ServiceProvider
         // Enregistrer les composants layouts
         Blade::component('components.layouts.public', 'public-layout');
         Blade::component('components.layouts.app', 'app-layout');
+
+        VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
+            return (new MailMessage)
+                ->subject('Confirmez votre adresse email - Azohub')
+                ->greeting('Bonjour ' . $notifiable->name . ',')
+                ->line('Merci de votre inscription sur Azohub ! Cliquez sur le bouton ci-dessous pour confirmer votre adresse email.')
+                ->action('Confirmer mon email', $url)
+                ->line('Si vous n\'avez pas créé de compte, vous pouvez ignorer cet email.');
+        });
     }
 }

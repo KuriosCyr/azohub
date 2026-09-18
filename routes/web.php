@@ -57,8 +57,8 @@ require __DIR__.'/auth.php';
 // ROUTES PROTÉGÉES (AUTH)
 // ============================================
 
-Route::middleware(['auth'])->group(function () {
-    
+Route::middleware(['auth', 'verified'])->group(function () {
+
     // Redirection dashboard selon le rôle
     Route::get('/dashboard', function () {
         if (auth()->user()->isPrestataire()) {

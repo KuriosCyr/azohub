@@ -16,12 +16,14 @@ class Subscription extends Model
         'starts_at',
         'ends_at',
         'auto_renew',
+        'reminded_at',
     ];
 
     protected $casts = [
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
         'auto_renew' => 'boolean',
+        'reminded_at' => 'datetime',
     ];
 
     // Relations
@@ -49,6 +51,7 @@ class Subscription extends Model
         $this->starts_at = now();
         $this->ends_at = $this->plan->billing_period === 'yearly' ? now()->addYear() : now()->addMonth();
         $this->status = 'active';
+        $this->reminded_at = null;
         $this->save();
     }
 
