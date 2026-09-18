@@ -45,7 +45,26 @@
                 </select>
                 <input type="text" wire:model.live.debounce.400ms="cityFilter" placeholder="Filtrer par ville..."
                        class="px-4 py-2.5 rounded-lg border border-ink-200 text-sm focus:ring-2 focus:ring-terracotta-600 focus:border-transparent">
+
+                @auth
+                    @if(Auth::user()->isPrestataire() && $categoryFilter === '')
+                        <button wire:click="toggleOnlyMyCategories"
+                                class="ml-auto flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition
+                                {{ $onlyMyCategories ? 'bg-terracotta-600 text-cream-50' : 'bg-cream-100 text-ink-600 border border-ink-200' }}">
+                            <x-app-icon name="briefcase" class="w-4 h-4" />
+                            {{ $onlyMyCategories ? 'Mes catégories uniquement' : 'Toutes les catégories' }}
+                        </button>
+                    @endif
+                @endauth
             </div>
+
+            @auth
+                @if(Auth::user()->isPrestataire() && $categoryFilter === '' && $onlyMyCategories && $this->myCategoryIds->isEmpty())
+                    <p class="text-sm text-ink-400 mb-6 -mt-4">
+                        Vous n'avez pas encore de service publié, donc aucun filtre de catégorie n'est appliqué pour l'instant.
+                    </p>
+                @endif
+            @endauth
         @endif
 
         <div class="grid md:grid-cols-2 xl:grid-cols-3 gap-6">

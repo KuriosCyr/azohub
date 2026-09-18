@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Category;
+use App\Models\Service;
 use App\Models\ServiceRequest;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -15,10 +16,12 @@ class ServiceRequestsIndex extends Component
     public bool $mine = false;
     public $categoryFilter = '';
     public string $cityFilter = '';
+    public bool $onlyMyCategories = true;
 
     public function mount()
     {
         $this->mine = request()->boolean('mine');
+        $this->onlyMyCategories = Auth::check() && Auth::user()->isPrestataire();
     }
 
     public function updatingCategoryFilter()
@@ -29,6 +32,21 @@ class ServiceRequestsIndex extends Component
     public function updatingCityFilter()
     {
         $this->resetPage();
+    }
+
+    public function toggleOnlyMyCategories()
+    {
+        $this->onlyMyCategories = !$this->onlyMyCategories;
+        $this->resetPage();
+    }
+
+    public function getMyCategoryIdsProperty()
+    {
+        if (!Auth::check() || !Auth::user()->isPrestataire()) {
+            return collect();
+        }
+
+        return Service::where('user_id', Auth::id())->pluck('category_id')->unique();
     }
 
     public function getServiceRequestsProperty()
@@ -43,6 +61,12 @@ class ServiceRequestsIndex extends Component
 
             if ($this->categoryFilter !== '') {
                 $query->where('category_id', $this->categoryFilter);
+            } elseif ($this->onlyMyCategories && Auth::check() && Auth::user()->isPrestataire()) {
+                $categoryIds = $this->myCategoryIds;
+
+                if ($categoryIds->isNotEmpty()) {
+                    $query->whereIn('category_id', $categoryIds);
+                }
             }
 
             if ($this->cityFilter !== '') {
