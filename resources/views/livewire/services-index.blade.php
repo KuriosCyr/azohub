@@ -114,7 +114,7 @@
                     </div>
                 </div>
 
-                <x-ad-banner placement="services_sidebar" class="h-64 mt-6 sticky top-24" />
+                <x-ad-banner placement="services_sidebar" class="h-64 mt-6" />
             </aside>
 
             {{-- Liste des services --}}
