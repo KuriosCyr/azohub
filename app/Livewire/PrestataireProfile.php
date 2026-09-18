@@ -3,7 +3,9 @@
 namespace App\Livewire;
 
 use App\Models\Conversation;
+use App\Models\ProfileView;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -23,6 +25,16 @@ class PrestataireProfile extends Component
         // Vérifier que le compte est actif
         if (!$this->prestataire->is_active) {
             abort(404, 'Ce profil n\'est pas disponible.');
+        }
+
+        // Statistiques (avantage des plans payants) : on ne compte pas les visites
+        // du prestataire sur son propre profil.
+        if (Auth::id() !== $this->prestataire->id) {
+            ProfileView::create([
+                'prestataire_id' => $this->prestataire->id,
+                'viewer_id' => Auth::id(),
+                'viewed_at' => now(),
+            ]);
         }
     }
 

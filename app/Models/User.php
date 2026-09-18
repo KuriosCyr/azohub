@@ -170,6 +170,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->hasMany(WithdrawalRequest::class, 'prestataire_id');
     }
 
+    public function profileViews()
+    {
+        return $this->hasMany(ProfileView::class, 'prestataire_id');
+    }
+
     // Messages envoyés
     public function sentMessages()
     {

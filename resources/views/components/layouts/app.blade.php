@@ -131,6 +131,9 @@
                                         Abonnement
                                         <span class="text-xs text-ink-400 ml-2">{{ Auth::user()->currentPlan()?->name ?? 'Gratuit' }}</span>
                                     </a>
+                                    <a href="{{ route('prestataire.statistics') }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                        Statistiques
+                                    </a>
                                 @else
                                     <a href="{{ route('client.dashboard') }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                         Dashboard
@@ -236,6 +239,10 @@
                     <a href="{{ route('prestataire.subscription') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
                         <x-app-icon name="sparkles" class="w-4 h-4" />
                         Abonnement
+                    </a>
+                    <a href="{{ route('prestataire.statistics') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                        <x-app-icon name="chart-bar" class="w-4 h-4" />
+                        Statistiques
                     </a>
                 @else
                     <a href="{{ route('service-requests.index', ['mine' => 1]) }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">

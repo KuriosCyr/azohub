@@ -8,6 +8,7 @@ use App\Livewire\PrestataireProfile;
 use App\Livewire\PrestataireDashboard;
 use App\Livewire\PrestataireWallet;
 use App\Livewire\PrestataireSubscription;
+use App\Livewire\PrestataireStatistics;
 use App\Livewire\ClientDashboard;
 use App\Livewire\FaqPage;
 use App\Livewire\ServiceRequestCreate;
@@ -81,6 +82,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/prestataire/abonnement', PrestataireSubscription::class)
         ->middleware('prestataire')
         ->name('prestataire.subscription');
+
+    // Statistiques prestataire (avantage Pro/Premium)
+    Route::get('/prestataire/statistiques', PrestataireStatistics::class)
+        ->middleware('prestataire')
+        ->name('prestataire.statistics');
 
     // Dashboard client
     Route::get('/client/dashboard', ClientDashboard::class)

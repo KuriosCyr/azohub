@@ -195,6 +195,10 @@
                                             Abonnement
                                             <span class="text-xs text-ink-400 ml-auto">{{ Auth::user()->currentPlan()?->name ?? 'Gratuit' }}</span>
                                         </a>
+                                        <a href="{{ route('prestataire.statistics') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                            <x-app-icon name="chart-bar" class="w-4 h-4 text-ink-300" />
+                                            Statistiques
+                                        </a>
                                     @else
                                         <a href="{{ route('client.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                             <x-app-icon name="home" class="w-4 h-4 text-ink-300" />
