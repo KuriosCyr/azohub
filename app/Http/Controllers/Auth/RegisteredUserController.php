@@ -49,6 +49,13 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        // En local, aucun service d'envoi d'email réel n'est configuré (MAIL_MAILER=log) :
+        // un compte de test resterait bloqué sur "confirmez votre email" sans jamais recevoir
+        // le lien. Ne s'applique jamais hors environnement local.
+        if (app()->environment(['local', 'testing'])) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
         event(new Registered($user));
 
         Auth::login($user);

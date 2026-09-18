@@ -165,6 +165,82 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->hasMany(Order::class, 'prestataire_id');
     }
 
+    public function conversationsAsPrestataire()
+    {
+        return $this->hasMany(Conversation::class, 'prestataire_id');
+    }
+
+    // Délai moyen (en minutes) avant la première réponse du prestataire à un premier
+    // message client, calculé sur ses 30 conversations les plus récentes. Null tant
+    // qu'il n'a pas encore répondu à un premier contact.
+    public function averageResponseTimeMinutes(): ?int
+    {
+        $conversations = $this->conversationsAsPrestataire()
+            ->with(['messages' => fn ($q) => $q->orderBy('created_at')])
+            ->latest('created_at')
+            ->take(30)
+            ->get();
+
+        $deltas = [];
+
+        foreach ($conversations as $conversation) {
+            $firstClientMessage = $conversation->messages->firstWhere('sender_id', $conversation->client_id);
+
+            if (!$firstClientMessage) {
+                continue;
+            }
+
+            $firstReply = $conversation->messages
+                ->where('sender_id', $this->id)
+                ->where('created_at', '>', $firstClientMessage->created_at)
+                ->first();
+
+            if ($firstReply) {
+                $deltas[] = $firstClientMessage->created_at->diffInMinutes($firstReply->created_at);
+            }
+        }
+
+        if (empty($deltas)) {
+            return null;
+        }
+
+        return (int) round(array_sum($deltas) / count($deltas));
+    }
+
+    public function responseTimeLabel(): string
+    {
+        $minutes = $this->averageResponseTimeMinutes();
+
+        if ($minutes === null) {
+            return 'Pas encore de données';
+        }
+        if ($minutes < 60) {
+            return '< 1h';
+        }
+
+        $hours = (int) round($minutes / 60);
+        if ($hours < 24) {
+            return $hours . 'h';
+        }
+
+        return (int) round($hours / 24) . ' j';
+    }
+
+    // Taux de commandes menées à terme parmi celles qui ont abouti (terminée ou annulée) ;
+    // les commandes encore en cours ne comptent ni pour ni contre. Null si aucune donnée.
+    public function completionRate(): ?float
+    {
+        $concluded = $this->prestataireOrders()->whereIn('status', ['completed', 'cancelled'])->count();
+
+        if ($concluded === 0) {
+            return null;
+        }
+
+        $completed = $this->prestataireOrders()->where('status', 'completed')->count();
+
+        return round(($completed / $concluded) * 100);
+    }
+
     public function withdrawalRequests()
     {
         return $this->hasMany(WithdrawalRequest::class, 'prestataire_id');
@@ -285,17 +361,23 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     ];
 
     // Limite de services : le plus avantageux entre l'allocation gratuite du niveau
-    // et la limite de l'abonnement payant. Un plan à null (illimité) l'emporte toujours.
+    // et la limite de l'abonnement payant. Un plan à null (illimité) l'emporte toujours,
+    // mais l'ABSENCE de plan (ex: plan Gratuit supprimé par erreur) ne doit jamais être
+    // confondue avec "illimité" : on retombe alors sur la seule allocation du niveau.
     public function maxServices(): ?int
     {
         $levelAllowance = self::LEVEL_SERVICE_ALLOWANCE[$this->level] ?? self::LEVEL_SERVICE_ALLOWANCE['nouveau'];
-        $planLimit = $this->currentPlan()?->max_services;
+        $plan = $this->currentPlan();
 
-        if ($planLimit === null) {
+        if ($plan === null) {
+            return $levelAllowance;
+        }
+
+        if ($plan->max_services === null) {
             return null;
         }
 
-        return max($levelAllowance, $planLimit);
+        return max($levelAllowance, $plan->max_services);
     }
 
     // Anonymise puis supprime (soft delete) le compte. On ne fait pas de suppression

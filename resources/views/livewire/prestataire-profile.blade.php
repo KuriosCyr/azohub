@@ -129,7 +129,7 @@
                     <p class="text-sm text-ink-500">Commandes réalisées</p>
                 </div>
                 <div class="text-center">
-                    <p class="text-2xl font-bold text-ink-900 mb-1">{{ $stats['completion_rate'] }}%</p>
+                    <p class="text-2xl font-bold text-ink-900 mb-1">{{ $stats['completion_rate'] !== null ? $stats['completion_rate'] . '%' : '—' }}</p>
                     <p class="text-sm text-ink-500">Taux de réussite</p>
                 </div>
             </div>

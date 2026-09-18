@@ -89,10 +89,8 @@ class PrestataireProfile extends Component
             'total_orders' => $this->prestataire->completed_orders,
             'rating' => $this->prestataire->rating,
             'total_reviews' => $this->prestataire->receivedReviews()->count(),
-            'response_time' => '< 2h', // À calculer plus tard
-            'completion_rate' => $this->prestataire->completed_orders > 0 
-                ? round(($this->prestataire->completed_orders / ($this->prestataire->completed_orders + 1)) * 100) 
-                : 0,
+            'response_time' => $this->prestataire->responseTimeLabel(),
+            'completion_rate' => $this->prestataire->completionRate(),
         ];
 
         return view('livewire.prestataire-profile', $data)->layout('components.layouts.public');
