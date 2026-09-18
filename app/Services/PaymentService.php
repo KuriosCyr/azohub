@@ -26,7 +26,7 @@ class PaymentService
 
         $transaction = Transaction::create([
             'description' => "Paiement commande {$order->order_number} - Azohub",
-            'amount' => (int) round((float) $order->amount),
+            'amount' => (int) round((float) $order->total_charged),
             'currency' => ['iso' => 'XOF'],
             'callback_url' => route('payments.callback', ['order' => $order->id]),
             'customer' => [
@@ -47,7 +47,7 @@ class PaymentService
             'transaction_id' => (string) $transaction->id,
             'payment_method' => $paymentMethod,
             'phone_number' => $payer->phone,
-            'amount' => $order->amount,
+            'amount' => $order->total_charged,
             'status' => 'pending',
             'type' => 'order_payment',
             'gateway_reference' => $transaction->reference ?? null,

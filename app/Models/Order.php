@@ -20,6 +20,7 @@ class Order extends Model
         'requirements',
         'amount',
         'commission',
+        'client_fee',
         'prestataire_amount',
         'delivery_time',
         'expected_delivery_at',
@@ -41,6 +42,7 @@ class Order extends Model
     protected $casts = [
         'amount' => 'decimal:2',
         'commission' => 'decimal:2',
+        'client_fee' => 'decimal:2',
         'prestataire_amount' => 'decimal:2',
         'delivery_time' => 'integer',
         'deliverables' => 'array',
@@ -53,6 +55,16 @@ class Order extends Model
         'accepted_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
+
+    // Taux fixe des frais de service prélevés sur le CLIENT, en plus du prix.
+    // Contrairement à la commission prestataire, ce taux ne dépend pas du niveau.
+    public const CLIENT_FEE_RATE = 0.05;
+
+    // Montant total réellement débité au client (prix + frais de service client).
+    public function getTotalChargedAttribute()
+    {
+        return round((float) $this->amount + (float) $this->client_fee, 2);
+    }
 
     // Auto-générer le numéro de commande
     protected static function boot()

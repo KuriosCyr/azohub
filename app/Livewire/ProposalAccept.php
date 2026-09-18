@@ -36,13 +36,14 @@ class ProposalAccept extends Component
 
         $amount = (float) $this->proposal->proposed_price;
         $commission = round($amount * $this->proposal->prestataire->commissionRate(), 2);
+        $clientFee = round($amount * Order::CLIENT_FEE_RATE, 2);
 
         $previouslyPendingIds = $this->serviceRequest->proposals()
             ->where('id', '!=', $this->proposal->id)
             ->where('status', 'pending')
             ->pluck('id');
 
-        $order = DB::transaction(function () use ($amount, $commission) {
+        $order = DB::transaction(function () use ($amount, $commission, $clientFee) {
             $order = Order::create([
                 'client_id' => Auth::id(),
                 'prestataire_id' => $this->proposal->user_id,
@@ -51,6 +52,7 @@ class ProposalAccept extends Component
                 'requirements' => $this->serviceRequest->description,
                 'amount' => $amount,
                 'commission' => $commission,
+                'client_fee' => $clientFee,
                 'prestataire_amount' => $amount - $commission,
                 'delivery_time' => $this->proposal->delivery_time,
                 'status' => 'pending_payment',

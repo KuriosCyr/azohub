@@ -48,6 +48,7 @@ class OrderCreate extends Component
         ]);
 
         $commission = round($this->service->price * $this->service->prestataire->commissionRate(), 2);
+        $clientFee = round($this->service->price * Order::CLIENT_FEE_RATE, 2);
 
         $order = Order::create([
             'client_id'        => auth()->id(),
@@ -56,6 +57,7 @@ class OrderCreate extends Component
             'requirements'     => $this->requirements,
             'amount'           => $this->service->price,
             'commission'       => $commission,
+            'client_fee'       => $clientFee,
             'prestataire_amount' => $this->service->price - $commission,
             'delivery_time'    => $this->service->delivery_time,
             'status'           => 'pending_payment',

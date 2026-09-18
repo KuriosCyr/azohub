@@ -83,18 +83,21 @@
                 <div class="bg-cream-50 rounded-xl p-6 border border-ink-100 sticky top-24">
                     <h2 class="text-lg font-bold text-ink-900 mb-6">Récapitulatif</h2>
 
+                    @php
+                        $clientFee = $service->price * \App\Models\Order::CLIENT_FEE_RATE;
+                    @endphp
                     <div class="space-y-3 mb-6">
                         <div class="flex justify-between text-sm">
                             <span class="text-ink-500">Prix du service</span>
                             <span class="font-semibold">{{ number_format($service->price, 0) }} FCFA</span>
                         </div>
                         <div class="flex justify-between text-sm">
-                            <span class="text-ink-500">Frais de service (10%)</span>
-                            <span class="font-semibold">{{ number_format($service->price * 0.10, 0) }} FCFA</span>
+                            <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0) }}%)</span>
+                            <span class="font-semibold">{{ number_format($clientFee, 0) }} FCFA</span>
                         </div>
                         <div class="border-t border-ink-100 pt-3 flex justify-between font-bold text-lg">
                             <span>Total</span>
-                            <span class="text-ink-900">{{ number_format($service->price, 0) }} FCFA</span>
+                            <span class="text-ink-900">{{ number_format($service->price + $clientFee, 0) }} FCFA</span>
                         </div>
                     </div>
 

@@ -316,7 +316,7 @@
                             </div>
                             <button type="submit"
                                 class="w-full bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold px-6 py-4 rounded-lg transition">
-<x-app-icon name="card" class="w-5 h-5 inline-block" /> Payer {{ number_format($order->amount, 0, ',', ' ') }} FCFA
+<x-app-icon name="card" class="w-5 h-5 inline-block" /> Payer {{ number_format($order->total_charged, 0, ',', ' ') }} FCFA
                             </button>
                         </form>
                     </div>
@@ -449,13 +449,23 @@
                                 <span class="font-bold">{{ number_format($order->amount, 0) }} FCFA</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-ink-500">Frais plateforme</span>
-                                <span class="font-bold">{{ number_format($order->commission, 0) }} FCFA</span>
+                                <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0) }}%, client)</span>
+                                <span class="font-bold">{{ number_format($order->client_fee, 0) }} FCFA</span>
                             </div>
                             <div class="border-t pt-3 flex justify-between">
                                 <span class="font-bold text-ink-900">Total payé par le client</span>
-                                <span class="text-2xl font-bold text-ink-900">{{ number_format($order->amount, 0) }} FCFA</span>
+                                <span class="text-2xl font-bold text-ink-900">{{ number_format($order->total_charged, 0) }} FCFA</span>
                             </div>
+                            @if($userRole === 'prestataire')
+                                <div class="border-t pt-3 flex justify-between text-sm">
+                                    <span class="text-ink-500">Commission Azohub ({{ number_format(Auth::user()->commissionRate() * 100, 0) }}%, prestataire)</span>
+                                    <span class="font-semibold text-ink-700">-{{ number_format($order->commission, 0) }} FCFA</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="font-bold text-ink-900">Vous recevrez</span>
+                                    <span class="text-xl font-bold text-forest-700">{{ number_format($order->prestataire_amount, 0) }} FCFA</span>
+                                </div>
+                            @endif
                         </div>
 
                         <div class="mt-4 pt-4 border-t">
