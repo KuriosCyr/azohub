@@ -17,7 +17,7 @@
             {{-- Stats Cards --}}
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {{-- Portefeuille --}}
-                <div class="bg-cream-50/10 backdrop-blur-sm rounded-lg p-5 border border-cream-50/10">
+                <a href="{{ route('prestataire.wallet') }}" class="bg-cream-50/10 backdrop-blur-sm rounded-lg p-5 border border-cream-50/10 hover:bg-cream-50/20 transition">
                     <div class="flex items-center justify-between mb-3">
                         <div class="w-10 h-10 bg-cream-50/10 rounded-xl flex items-center justify-center">
                             <svg class="w-5 h-5 text-ochre-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,7 +28,7 @@
                     </div>
                     <p class="text-3xl font-bold text-cream-50">{{ number_format($stats['wallet_balance'], 0) }}</p>
                     <p class="text-cream-100/60 text-xs mt-0.5">FCFA disponible</p>
-                </div>
+                </a>
 
                 {{-- Commandes en cours --}}
                 <div class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm">

@@ -6,6 +6,7 @@ use App\Livewire\ServiceShow;
 use App\Livewire\OrderCreate;
 use App\Livewire\PrestataireProfile;
 use App\Livewire\PrestataireDashboard;
+use App\Livewire\PrestataireWallet;
 use App\Livewire\ClientDashboard;
 use App\Livewire\FaqPage;
 use App\Livewire\ServiceRequestCreate;
@@ -69,7 +70,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/prestataire/dashboard', PrestataireDashboard::class)
         ->middleware('prestataire')
         ->name('prestataire.dashboard');
-    
+
+    // Portefeuille prestataire
+    Route::get('/prestataire/wallet', PrestataireWallet::class)
+        ->middleware('prestataire')
+        ->name('prestataire.wallet');
+
     // Dashboard client
     Route::get('/client/dashboard', ClientDashboard::class)
         ->middleware('client')

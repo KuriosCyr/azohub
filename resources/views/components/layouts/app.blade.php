@@ -123,7 +123,7 @@
                                     <a href="{{ route('prestataire.services.index') }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                         Mes services
                                     </a>
-                                    <a href="#" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                    <a href="{{ route('prestataire.wallet') }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                         Portefeuille
                                         <span class="text-xs text-ink-400 ml-2">{{ number_format(Auth::user()->wallet_balance ?? 0, 0) }} FCFA</span>
                                     </a>
