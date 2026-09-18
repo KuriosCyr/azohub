@@ -32,6 +32,8 @@ class User extends Authenticatable implements FilamentUser
         'badges',
         'identity_verified',
         'identity_document',
+        'identity_verification_status',
+        'identity_rejection_reason',
         'wallet_balance',
         'is_active',
         'last_seen_at',
@@ -218,7 +220,7 @@ class User extends Authenticatable implements FilamentUser
         }
 
         if ($this->identity_document) {
-            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->identity_document);
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($this->identity_document);
         }
 
         $this->forceFill([
@@ -232,11 +234,47 @@ class User extends Authenticatable implements FilamentUser
             'service_areas' => null,
             'languages' => null,
             'identity_document' => null,
+            'identity_verification_status' => 'none',
+            'identity_verified' => false,
             'is_active' => false,
             'remember_token' => null,
         ])->save();
 
         $this->delete();
+    }
+
+    // Soumettre une pièce d'identité pour vérification (remplace un éventuel
+    // document précédent — refusé ou non).
+    public function submitIdentityDocument(string $path): void
+    {
+        if ($this->identity_document) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($this->identity_document);
+        }
+
+        $this->update([
+            'identity_document' => $path,
+            'identity_verification_status' => 'pending',
+            'identity_verified' => false,
+            'identity_rejection_reason' => null,
+        ]);
+    }
+
+    public function approveIdentityVerification(): void
+    {
+        $this->update([
+            'identity_verification_status' => 'verified',
+            'identity_verified' => true,
+            'identity_rejection_reason' => null,
+        ]);
+    }
+
+    public function rejectIdentityVerification(string $reason): void
+    {
+        $this->update([
+            'identity_verification_status' => 'rejected',
+            'identity_verified' => false,
+            'identity_rejection_reason' => $reason,
+        ]);
     }
 
     // Ajouter un badge

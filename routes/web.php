@@ -81,6 +81,15 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('password');
         Route::delete('/', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('destroy');
     });
+
+    // ============================================
+    // VÉRIFICATION D'IDENTITÉ
+    // ============================================
+
+    Route::prefix('identity-verification')->name('identity-verification.')->group(function () {
+        Route::post('/', [\App\Http\Controllers\IdentityVerificationController::class, 'store'])->name('store');
+        Route::get('/{user}/document', [\App\Http\Controllers\IdentityVerificationController::class, 'show'])->name('show');
+    });
     
     // ============================================
     // GESTION SERVICES (PRESTATAIRES)

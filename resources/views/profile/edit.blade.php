@@ -252,6 +252,45 @@
                         </div>
                     @endif
 
+                    {{-- Vérification d'identité --}}
+                    @if($user->isPrestataire())
+                        <div id="identity" class="bg-cream-50 rounded-xl p-8 border border-ink-100">
+                            <h2 class="text-2xl font-bold text-ink-900 mb-6"><x-app-icon name="shield-check" class="w-6 h-6 inline-block" /> Vérification d'identité</h2>
+
+                            @if($user->identity_verification_status === 'verified')
+                                <div class="flex items-center gap-3 bg-forest-600/10 border border-forest-600/30 rounded-lg p-4">
+                                    <x-app-icon name="shield-check" class="w-6 h-6 text-forest-700 flex-shrink-0" />
+                                    <p class="text-forest-700 font-semibold">Votre identité est vérifiée. Le badge "Vérifié" est visible sur votre profil public.</p>
+                                </div>
+                            @elseif($user->identity_verification_status === 'pending')
+                                <div class="flex items-center gap-3 bg-ochre-500/10 border border-ochre-500/30 rounded-lg p-4">
+                                    <x-app-icon name="cog" class="w-6 h-6 text-ochre-600 flex-shrink-0" />
+                                    <p class="text-ink-700 font-semibold">Votre document est en cours d'examen par notre équipe.</p>
+                                </div>
+                            @else
+                                @if($user->identity_verification_status === 'rejected')
+                                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                        <p class="text-red-700 font-semibold mb-1">Votre précédent document n'a pas été validé :</p>
+                                        <p class="text-red-600 text-sm">{{ $user->identity_rejection_reason }}</p>
+                                    </div>
+                                @endif
+                                <p class="text-ink-500 mb-4 text-sm">
+                                    Soumettez une pièce d'identité (CNI, passeport) pour obtenir le badge "Vérifié" sur votre profil. Format JPG, PNG ou PDF, 5 MB maximum.
+                                </p>
+                                <form method="POST" action="{{ route('identity-verification.store') }}" enctype="multipart/form-data" class="space-y-4">
+                                    @csrf
+                                    <input type="file" name="identity_document" accept=".jpg,.jpeg,.png,.pdf" required
+                                           class="w-full px-4 py-3 border-2 border-dashed border-ink-200 rounded-lg focus:border-terracotta-600 transition text-sm">
+                                    <x-input-error :messages="$errors->get('identity_document')" class="mt-2" />
+                                    <button type="submit"
+                                            class="bg-ink-900 hover:bg-ink-700 text-cream-50 font-bold px-8 py-3 rounded-lg transition">
+                                        Soumettre pour vérification
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    @endif
+
                     {{-- Mot de passe --}}
                     <div id="password" class="bg-cream-50 rounded-xl p-8 border border-ink-100">
                         <h2 class="text-2xl font-bold text-ink-900 mb-6"><x-app-icon name="lock" class="w-6 h-6 inline-block" /> Modifier le mot de passe</h2>
