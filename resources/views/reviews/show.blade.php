@@ -106,7 +106,7 @@
                     Voir la commande
                 </a>
                 @if($review->review_type === 'client_to_prestataire')
-                    <a href="{{ route('prestataire.profile', $review->reviewee->id) }}"
+                    <a href="{{ route('prestataire.profile', $review->reviewee->slug) }}"
                        class="flex-1 bg-ink-100/30 hover:bg-ink-100/50 text-ink-700 font-bold px-8 py-4 rounded-lg text-center transition">
                         Voir le profil du prestataire
                     </a>

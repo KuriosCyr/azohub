@@ -106,7 +106,7 @@
                 @forelse($earnings as $order)
                     <a href="{{ route('orders.show', $order) }}" class="flex items-center justify-between p-5 hover:bg-ink-100/20 transition">
                         <div class="min-w-0">
-                            <p class="font-semibold text-ink-900 truncate">{{ $order->service->title ?? 'Offre personnalisée' }}</p>
+                            <p class="font-semibold text-ink-900 truncate">{{ $order->display_title }}</p>
                             <p class="text-xs text-ink-400 mt-1">Commande {{ $order->order_number }} · {{ $order->validated_at?->format('d/m/Y') }}</p>
                         </div>
                         <p class="font-bold text-forest-700 flex-shrink-0">+{{ number_format($order->prestataire_amount, 0) }} FCFA</p>

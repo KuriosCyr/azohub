@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 
@@ -15,8 +16,34 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
     use HasFactory, Notifiable, SoftDeletes, MustVerifyEmailTrait;
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (User $user) {
+            if (empty($user->slug)) {
+                $user->slug = static::generateUniqueSlug($user->name);
+            }
+        });
+    }
+
+    // Génère un slug unique (ex: "yves-adjovi", puis "yves-adjovi-2" en cas de collision).
+    public static function generateUniqueSlug(string $name): string
+    {
+        $base = Str::slug($name) ?: 'utilisateur';
+        $slug = $base;
+        $i = 1;
+
+        while (static::withTrashed()->where('slug', $slug)->exists()) {
+            $slug = $base . '-' . (++$i);
+        }
+
+        return $slug;
+    }
+
     protected $fillable = [
         'name',
+        'slug',
         'email',
         'password',
         'phone',
@@ -242,6 +269,28 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         $planRate = $plan ? ((float) $plan->commission_rate) / 100 : $levelRate;
 
         return min($levelRate, $planRate);
+    }
+
+    // Nombre de services publiables gratuitement selon le niveau (gagné par la
+    // performance, indépendant de tout abonnement).
+    private const LEVEL_SERVICE_ALLOWANCE = [
+        'nouveau' => 6,
+        'confirme' => 10,
+        'expert' => 15,
+    ];
+
+    // Limite de services : le plus avantageux entre l'allocation gratuite du niveau
+    // et la limite de l'abonnement payant. Un plan à null (illimité) l'emporte toujours.
+    public function maxServices(): ?int
+    {
+        $levelAllowance = self::LEVEL_SERVICE_ALLOWANCE[$this->level] ?? self::LEVEL_SERVICE_ALLOWANCE['nouveau'];
+        $planLimit = $this->currentPlan()?->max_services;
+
+        if ($planLimit === null) {
+            return null;
+        }
+
+        return max($levelAllowance, $planLimit);
     }
 
     // Anonymise puis supprime (soft delete) le compte. On ne fait pas de suppression

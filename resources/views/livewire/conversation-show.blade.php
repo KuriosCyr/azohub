@@ -17,7 +17,7 @@
                      alt="{{ $other->name }}" class="w-11 h-11 rounded-full border border-ink-200 object-cover">
                 <div class="flex-1 min-w-0">
                     @if(Auth::user()->isClient())
-                        <a href="{{ route('prestataire.profile', $other->id) }}" class="font-bold text-ink-900 hover:text-terracotta-600 transition">{{ $other->name }}</a>
+                        <a href="{{ route('prestataire.profile', $other->slug) }}" class="font-bold text-ink-900 hover:text-terracotta-600 transition">{{ $other->name }}</a>
                     @else
                         <p class="font-bold text-ink-900">{{ $other->name }}</p>
                     @endif

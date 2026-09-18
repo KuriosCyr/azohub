@@ -61,6 +61,28 @@ class Order extends Model
     // Contrairement à la commission prestataire, ce taux ne dépend pas du niveau.
     public const CLIENT_FEE_RATE = 0.05;
 
+    // Les URLs utilisent le numéro de commande plutôt que l'ID brut de la table.
+    public function getRouteKeyName(): string
+    {
+        return 'order_number';
+    }
+
+    // Titre à afficher quelle que soit l'origine de la commande : service listé,
+    // demande négociée (service_request/proposal) ou offre personnalisée en chat direct.
+    public function getDisplayTitleAttribute(): string
+    {
+        return $this->service?->title
+            ?? $this->serviceRequest?->title
+            ?? $this->customOffer?->title
+            ?? 'Commande ' . $this->order_number;
+    }
+
+    public function getDisplayCategoryAttribute(): ?string
+    {
+        return $this->service?->category?->name
+            ?? $this->serviceRequest?->category?->name;
+    }
+
     // Montant total réellement débité au client (prix + frais de service client).
     public function getTotalChargedAttribute()
     {

@@ -261,7 +261,7 @@ class ServiceController extends Controller
      */
     private function guardServiceLimit(): void
     {
-        $maxServices = Auth::user()->currentPlan()?->max_services;
+        $maxServices = Auth::user()->maxServices();
 
         if ($maxServices !== null && Auth::user()->services()->count() >= $maxServices) {
             throw new \Illuminate\Http\Exceptions\HttpResponseException(redirect()

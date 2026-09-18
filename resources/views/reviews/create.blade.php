@@ -29,7 +29,7 @@
                     <div class="flex-1">
                         <p class="text-sm text-ink-400">Vous évaluez</p>
                         <p class="text-xl font-bold text-ink-900">{{ $reviewee->name }}</p>
-                        <p class="text-sm text-ink-500">{{ $order->service->title }}</p>
+                        <p class="text-sm text-ink-500">{{ $order->display_title }}</p>
                     </div>
 
                     <div class="text-right">

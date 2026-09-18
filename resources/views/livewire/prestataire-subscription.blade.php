@@ -29,6 +29,11 @@
                 <p class="text-ink-300 text-sm mb-1">Commission actuelle</p>
                 <p class="text-2xl font-bold text-ochre-500">{{ number_format(Auth::user()->commissionRate() * 100, 0) }}%</p>
             </div>
+            <div class="text-right">
+                <p class="text-ink-300 text-sm mb-1">Services publiables</p>
+                <p class="text-2xl font-bold text-ochre-500">{{ Auth::user()->maxServices() ?? '∞' }}</p>
+                <p class="text-ink-400 text-xs mt-0.5">Niveau {{ ucfirst(Auth::user()->level) }} + plan {{ $this->currentPlan?->name ?? 'Gratuit' }}</p>
+            </div>
         </div>
 
         {{-- Plans disponibles --}}

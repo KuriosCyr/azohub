@@ -98,12 +98,12 @@
                             @foreach($actionRequiredOrders as $order)
                                 <div class="bg-cream-50 rounded-xl p-4 flex items-center justify-between border border-ochre-500/20">
                                     <div class="flex items-center gap-3">
-                                        <img src="{{ $order->service->prestataire->avatar ? Storage::url($order->service->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($order->service->prestataire->name) }}"
-                                             alt="{{ $order->service->prestataire->name }}"
+                                        <img src="{{ $order->prestataire->avatar ? Storage::url($order->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($order->prestataire->name) }}"
+                                             alt="{{ $order->prestataire->name }}"
                                              class="w-10 h-10 rounded-full border-2 border-ochre-500/20">
                                         <div>
-                                            <p class="font-bold text-ink-900 text-sm">{{ $order->service->title }}</p>
-                                            <p class="text-xs text-ink-400">Par {{ $order->service->prestataire->name }}</p>
+                                            <p class="font-bold text-ink-900 text-sm">{{ $order->display_title }}</p>
+                                            <p class="text-xs text-ink-400">Par {{ $order->prestataire->name }}</p>
                                         </div>
                                     </div>
                                     <a href="{{ route('orders.show', $order) }}"
@@ -139,15 +139,15 @@
                         @forelse($recentOrders as $order)
                             <div class="px-6 py-4 hover:bg-ink-100/30 transition">
                                 <div class="flex items-start gap-4">
-                                    <img src="{{ $order->service->prestataire->avatar ? Storage::url($order->service->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($order->service->prestataire->name) }}"
-                                         alt="{{ $order->service->prestataire->name }}"
+                                    <img src="{{ $order->prestataire->avatar ? Storage::url($order->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($order->prestataire->name) }}"
+                                         alt="{{ $order->prestataire->name }}"
                                          class="w-12 h-12 rounded-xl border border-ink-100 flex-shrink-0">
 
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-start justify-between gap-2 mb-1">
                                             <div class="min-w-0">
-                                                <h3 class="font-bold text-ink-900 text-sm truncate">{{ $order->service->title }}</h3>
-                                                <p class="text-xs text-ink-400">Par {{ $order->service->prestataire->name }}</p>
+                                                <h3 class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</h3>
+                                                <p class="text-xs text-ink-400">Par {{ $order->prestataire->name }}</p>
                                             </div>
                                             @php
                                                 $statusMap = [
@@ -169,7 +169,7 @@
                                         <div class="flex items-center gap-4 text-xs text-ink-300 mb-2">
                                             <span class="flex items-center gap-1">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-                                                {{ $order->service->category->name }}
+                                                {{ $order->display_category ?? 'Offre personnalisée' }}
                                             </span>
                                             <span class="flex items-center gap-1">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -239,17 +239,17 @@
                         @forelse($orders as $order)
                             <div class="px-6 py-4 hover:bg-ink-100/30 transition">
                                 <div class="flex items-center gap-3">
-                                    <img src="{{ $order->service->prestataire->avatar ? Storage::url($order->service->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($order->service->prestataire->name) }}"
-                                         alt="{{ $order->service->prestataire->name }}"
+                                    <img src="{{ $order->prestataire->avatar ? Storage::url($order->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($order->prestataire->name) }}"
+                                         alt="{{ $order->prestataire->name }}"
                                          class="w-10 h-10 rounded-xl border border-ink-100 flex-shrink-0">
 
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center justify-between gap-2 mb-0.5">
-                                            <h3 class="font-bold text-ink-900 text-sm truncate">{{ $order->service->title }}</h3>
+                                            <h3 class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</h3>
                                             <span class="font-bold text-ink-900 text-sm whitespace-nowrap">{{ number_format($order->total_price, 0, ',', ' ') }} F</span>
                                         </div>
                                         <div class="flex items-center gap-3 text-xs text-ink-300 flex-wrap">
-                                            <span class="truncate">{{ $order->service->prestataire->name }}</span>
+                                            <span class="truncate">{{ $order->prestataire->name }}</span>
                                             <span>·</span>
                                             <span class="whitespace-nowrap">{{ $order->created_at->format('d/m/Y') }}</span>
                                             @php

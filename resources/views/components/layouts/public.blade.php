@@ -177,7 +177,7 @@
                                             <x-app-icon name="cog" class="w-4 h-4 text-ink-300" />
                                             Dashboard
                                         </a>
-                                        <a href="{{ route('prestataire.profile', Auth::user()->id) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                        <a href="{{ route('prestataire.profile', Auth::user()->slug) }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                             <x-app-icon name="user" class="w-4 h-4 text-ink-300" />
                                             Mon profil public
                                         </a>

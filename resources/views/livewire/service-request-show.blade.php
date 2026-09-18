@@ -143,7 +143,7 @@
                         <div class="space-y-4">
                             @forelse($serviceRequest->proposals->sortByDesc('created_at') as $proposal)
                                 <div class="border border-ink-100 rounded-lg p-4">
-                                    <a href="{{ route('prestataire.profile', $proposal->prestataire->id) }}"
+                                    <a href="{{ route('prestataire.profile', $proposal->prestataire->slug) }}"
                                        target="_blank"
                                        class="flex items-center gap-3 mb-3 group">
                                         <img src="{{ $proposal->prestataire->avatar ? Storage::url($proposal->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($proposal->prestataire->name) }}"

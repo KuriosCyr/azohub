@@ -14,10 +14,10 @@ $categoryStyles = [
     'Santé & Social' => ['icon' => 'shield-check', 'bg' => 'bg-emerald-800'],
 ];
 
-$categoryName = $service->category->name ?? null;
+$categoryName = $service?->category?->name;
 $style = $categoryStyles[$categoryName] ?? ['icon' => 'box', 'bg' => 'bg-terracotta-600'];
 
-$hasRealImage = filled($service->cover_image);
+$hasRealImage = $service && filled($service->cover_image);
 $imageUrl = $hasRealImage
     ? (\Illuminate\Support\Str::startsWith($service->cover_image, 'http')
         ? $service->cover_image
@@ -25,7 +25,12 @@ $imageUrl = $hasRealImage
     : null;
 @endphp
 
-@if($imageUrl)
+{{-- Commande sans service associé (négociation libre ou offre personnalisée) --}}
+@if(!$service)
+    <div class="{{ $class }} {{ $style['bg'] }} flex items-center justify-center">
+        <x-app-icon name="{{ $style['icon'] }}" class="w-1/3 h-1/3 text-cream-50/90" />
+    </div>
+@elseif($imageUrl)
     <img src="{{ $imageUrl }}" alt="{{ $service->title }}" class="{{ $class }}" loading="lazy"
          onerror="this.onerror=null;this.replaceWith(document.getElementById('{{ $service->id }}-cover-fallback').content.cloneNode(true).firstElementChild);">
     <template id="{{ $service->id }}-cover-fallback">

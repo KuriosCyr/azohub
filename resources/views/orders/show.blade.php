@@ -59,11 +59,33 @@
                             </div>
 
                             <div class="flex-1">
-                                <span class="px-3 py-1 bg-terracotta-50 text-terracotta-700 text-xs font-bold rounded-full mb-2 inline-block">
-                                    {{ $order->service->category->name }}
-                                </span>
-                                <h3 class="text-xl font-bold text-ink-900 mb-2">{{ $order->service->title }}</h3>
-                                <p class="text-ink-500 mb-4">{{ Str::limit($order->service->description, 150) }}</p>
+                                @if($order->service)
+                                    <span class="px-3 py-1 bg-terracotta-50 text-terracotta-700 text-xs font-bold rounded-full mb-2 inline-block">
+                                        {{ $order->service->category->name }}
+                                    </span>
+                                    <h3 class="text-xl font-bold text-ink-900 mb-2">{{ $order->service->title }}</h3>
+                                    <p class="text-ink-500 mb-4">{{ Str::limit($order->service->description, 150) }}</p>
+                                @elseif($order->serviceRequest)
+                                    <span class="px-3 py-1 bg-terracotta-50 text-terracotta-700 text-xs font-bold rounded-full mb-2 inline-block">
+                                        {{ $order->serviceRequest->category->name }}
+                                    </span>
+                                    <h3 class="text-xl font-bold text-ink-900 mb-2">{{ $order->serviceRequest->title }}</h3>
+                                    <p class="text-ink-500 mb-4">{{ Str::limit($order->requirements, 150) }}</p>
+                                @elseif($order->customOffer)
+                                    <span class="px-3 py-1 bg-terracotta-50 text-terracotta-700 text-xs font-bold rounded-full mb-2 inline-block">
+                                        Offre personnalisée
+                                    </span>
+                                    <h3 class="text-xl font-bold text-ink-900 mb-2">{{ $order->customOffer->title }}</h3>
+                                    <p class="text-ink-500 mb-4">{{ Str::limit($order->customOffer->description, 150) }}</p>
+                                @else
+                                    <span class="px-3 py-1 bg-terracotta-50 text-terracotta-700 text-xs font-bold rounded-full mb-2 inline-block">
+                                        Commande
+                                    </span>
+                                    <h3 class="text-xl font-bold text-ink-900 mb-2">Commande {{ $order->order_number }}</h3>
+                                    @if($order->requirements)
+                                        <p class="text-ink-500 mb-4">{{ Str::limit($order->requirements, 150) }}</p>
+                                    @endif
+                                @endif
 
                                 <div class="flex items-center gap-4">
                                     <div>
@@ -72,7 +94,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm text-ink-400">Délai</p>
-                                        <p class="font-bold text-ink-900">{{ $order->service->delivery_time }} jours</p>
+                                        <p class="font-bold text-ink-900">{{ $order->delivery_time }} jours</p>
                                     </div>
                                 </div>
                             </div>
@@ -461,7 +483,7 @@
                         </div>
 
                         @if($userRole === 'client')
-                        <a href="{{ route('prestataire.profile', $otherUser->id) }}"
+                        <a href="{{ route('prestataire.profile', $otherUser->slug) }}"
                             class="mt-4 block text-center bg-ink-100/30 hover:bg-ink-100/50 text-ink-700 font-bold px-4 py-3 rounded-xl transition">
                             Voir le profil
                         </a>

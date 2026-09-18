@@ -16,9 +16,8 @@ class PrestataireProfile extends Component
 
     public function mount($username)
     {
-        // Trouver le prestataire par son slug/username
         $this->prestataire = User::where('role', 'prestataire')
-            ->where('id', $username) // On utilisera l'ID pour l'instant
+            ->where('slug', $username)
             ->firstOrFail();
 
         // Vérifier que le compte est actif

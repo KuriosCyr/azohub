@@ -117,7 +117,7 @@
                                     <a href="{{ route('prestataire.dashboard') }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                         Dashboard
                                     </a>
-                                    <a href="{{ route('prestataire.profile', Auth::user()->id) }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                    <a href="{{ route('prestataire.profile', Auth::user()->slug) }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                         Mon profil public
                                     </a>
                                     <a href="{{ route('prestataire.services.index') }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">

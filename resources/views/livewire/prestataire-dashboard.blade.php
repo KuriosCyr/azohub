@@ -148,7 +148,7 @@
                                class="block px-6 py-4 hover:bg-ink-100/30 transition">
                                 <div class="flex justify-between items-start mb-2">
                                     <div class="flex-1 min-w-0 mr-3">
-                                        <p class="font-bold text-ink-900 text-sm truncate">{{ $order->service->title }}</p>
+                                        <p class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</p>
                                         <p class="text-xs text-ink-400">Client : {{ $order->client->name }}</p>
                                     </div>
                                     <span class="px-2.5 py-1 rounded-full text-xs font-bold flex-shrink-0
@@ -362,7 +362,7 @@
                                         @endphp
                                         <span class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">{{ $badgeLabel }}</span>
                                     </div>
-                                    <p class="font-bold text-ink-900 text-sm truncate">{{ $order->service->title }}</p>
+                                    <p class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</p>
                                     <p class="text-xs text-ink-400 mt-0.5">Client : {{ $order->client->name }}</p>
                                 </div>
                                 <div class="text-right flex-shrink-0">
