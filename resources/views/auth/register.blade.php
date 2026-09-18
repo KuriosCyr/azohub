@@ -159,8 +159,8 @@
                                required
                                class="mt-1 rounded border-ink-200 text-terracotta-600 focus:ring-terracotta-600 focus:ring-2">
                         <label class="ml-2 text-sm text-ink-700">
-                            J'accepte les <a href="#" class="font-bold text-terracotta-600 hover:text-terracotta-700">conditions d'utilisation</a>
-                            et la <a href="#" class="font-bold text-terracotta-600 hover:text-terracotta-700">politique de confidentialité</a>
+                            J'accepte les <a href="{{ route('terms') }}" target="_blank" class="font-bold text-terracotta-600 hover:text-terracotta-700">conditions d'utilisation</a>
+                            et la <a href="{{ route('privacy') }}" target="_blank" class="font-bold text-terracotta-600 hover:text-terracotta-700">politique de confidentialité</a>
                         </label>
                     </div>
 

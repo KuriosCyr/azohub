@@ -35,7 +35,7 @@
                              alt="{{ $service->prestataire->name }}"
                              class="w-16 h-16 rounded-full border-4 border-ink-100">
                         <div class="flex-1">
-                            <a href="#" class="text-xl font-bold text-ink-900 hover:text-terracotta-600">
+                            <a href="{{ route('prestataire.profile', $service->prestataire->id) }}" class="text-xl font-bold text-ink-900 hover:text-terracotta-600">
                                 {{ $service->prestataire->name }}
                             </a>
                             @if($service->prestataire->level === 'expert')
