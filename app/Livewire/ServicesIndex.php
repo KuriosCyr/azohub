@@ -79,9 +79,10 @@ class ServicesIndex extends Component
             ->leftJoin('subscription_plans', 'subscription_plans.id', '=', 'subscriptions.subscription_plan_id')
             ->addSelect('services.*')
             ->addSelect('subscription_plans.slug as prestataire_plan_slug')
-            ->selectRaw("CASE COALESCE(subscription_plans.slug, 'gratuit')
-                WHEN 'premium' THEN 2
-                WHEN 'pro' THEN 1
+            ->selectRaw("CASE
+                WHEN services.is_featured = 1 AND subscription_plans.slug = 'premium' THEN 3
+                WHEN subscription_plans.slug = 'premium' THEN 2
+                WHEN subscription_plans.slug = 'pro' THEN 1
                 ELSE 0
             END as plan_priority");
 

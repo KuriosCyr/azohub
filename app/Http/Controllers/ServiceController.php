@@ -219,6 +219,34 @@ class ServiceController extends Controller
     }
 
     /**
+     * Sponsoriser un service (avantage du plan Premium) : un seul service
+     * sponsorisé à la fois, choisir un nouveau désactive l'ancien.
+     */
+    public function toggleSponsored(Service $service)
+    {
+        if ($service->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if (Auth::user()->currentPlan()?->slug !== 'premium') {
+            return redirect()
+                ->back()
+                ->with('error', 'La sponsorisation de service est réservée au plan Premium.');
+        }
+
+        if ($service->is_featured) {
+            $service->update(['is_featured' => false]);
+
+            return redirect()->back()->with('success', 'Service retiré de la mise en avant.');
+        }
+
+        Auth::user()->services()->update(['is_featured' => false]);
+        $service->update(['is_featured' => true]);
+
+        return redirect()->back()->with('success', 'Ce service est maintenant mis en avant !');
+    }
+
+    /**
      * Remove the specified service from storage.
      */
     public function destroy(Service $service)

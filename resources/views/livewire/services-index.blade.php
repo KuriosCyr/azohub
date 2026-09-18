@@ -163,6 +163,14 @@
                                         Expert
                                     </span>
                                 @endif
+
+                                {{-- Sponsorisé (avantage Premium) --}}
+                                @if($service->is_featured && $service->prestataire_plan_slug === 'premium')
+                                    <span class="absolute bottom-3 left-3 inline-flex items-center gap-1 bg-gradient-to-r from-ochre-500 to-ochre-600 text-ink-900 px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                                        <x-app-icon name="sparkles" class="w-3 h-3" />
+                                        Sponsorisé
+                                    </span>
+                                @endif
                             </div>
 
                             {{-- Content --}}

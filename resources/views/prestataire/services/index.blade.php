@@ -94,6 +94,16 @@
 
                                     {{-- Actions --}}
                                     <div class="flex flex-wrap gap-2">
+                                        @if(Auth::user()->currentPlan()?->slug === 'premium')
+                                            <form action="{{ route('prestataire.services.sponsor', $service) }}" method="POST" class="flex-1">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="w-full {{ $service->is_featured ? 'bg-ochre-500 hover:bg-ochre-600 text-ink-900' : 'bg-ink-100/30 hover:bg-ink-100/50 text-ink-700' }} font-bold px-4 py-2 rounded-xl transition text-sm">
+                                                    <x-app-icon name="sparkles" class="w-4 h-4 inline-block align-text-bottom" />
+                                                    {{ $service->is_featured ? 'Sponsorisé' : 'Sponsoriser' }}
+                                                </button>
+                                            </form>
+                                        @endif
                                         <a href="{{ route('services.show', $service->slug) }}"
                                            target="_blank"
                                            class="flex-1 text-center bg-ink-100/30 hover:bg-ink-100/50 text-ink-700 font-bold px-4 py-2 rounded-xl transition text-sm">

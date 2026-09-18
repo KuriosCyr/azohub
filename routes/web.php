@@ -120,6 +120,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('prestataire')->prefix('prestataire')->name('prestataire.')->group(function () {
         Route::resource('services', ServiceController::class);
         Route::post('services/{service}/toggle', [ServiceController::class, 'toggleActive'])->name('services.toggle');
+        Route::post('services/{service}/sponsor', [ServiceController::class, 'toggleSponsored'])->name('services.sponsor');
     });
 
     // ============================================
