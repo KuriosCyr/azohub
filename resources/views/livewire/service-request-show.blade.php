@@ -143,31 +143,37 @@
                         <div class="space-y-4">
                             @forelse($serviceRequest->proposals->sortByDesc('created_at') as $proposal)
                                 <div class="border border-ink-100 rounded-lg p-4">
-                                    <div class="flex items-center gap-3 mb-3">
+                                    <a href="{{ route('prestataire.profile', $proposal->prestataire->id) }}"
+                                       target="_blank"
+                                       class="flex items-center gap-3 mb-3 group">
                                         <img src="{{ $proposal->prestataire->avatar ? Storage::url($proposal->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($proposal->prestataire->name) }}"
                                              alt="{{ $proposal->prestataire->name }}" class="w-9 h-9 rounded-full border border-ink-200">
                                         <div class="min-w-0 flex-1">
-                                            <p class="font-semibold text-ink-900 text-sm truncate">{{ $proposal->prestataire->name }}</p>
+                                            <p class="font-semibold text-ink-900 text-sm truncate group-hover:text-terracotta-600 transition">{{ $proposal->prestataire->name }}</p>
                                             <p class="text-xs text-ink-400 flex items-center gap-1">
                                                 <x-app-icon name="star" class="w-3 h-3 text-ochre-500" />
                                                 {{ number_format($proposal->prestataire->rating, 1) }} ({{ $proposal->prestataire->total_reviews }})
                                             </p>
                                         </div>
+                                        <span class="text-xs font-semibold text-terracotta-600 opacity-0 group-hover:opacity-100 transition">Voir le profil →</span>
+                                    </a>
+                                    <div x-data="{ expanded: false }">
+                                        <p class="text-sm text-ink-600 mb-1" :class="expanded ? '' : 'line-clamp-3'">{{ $proposal->message }}</p>
+                                        <button type="button" @click="expanded = !expanded" class="text-xs font-semibold text-terracotta-600 hover:text-terracotta-700 mb-2" x-text="expanded ? 'Voir moins' : 'Voir plus'"></button>
                                     </div>
-                                    <p class="text-sm text-ink-600 mb-3 line-clamp-3">{{ $proposal->message }}</p>
                                     <div class="flex items-center justify-between text-sm mb-3">
                                         <span class="font-bold text-ink-900">{{ number_format($proposal->proposed_price, 0) }} FCFA</span>
                                         <span class="text-ink-500">{{ $proposal->delivery_time }} jour(s)</span>
                                     </div>
 
                                     @if($proposal->status === 'pending')
-                                        <div class="flex gap-2">
+                                        <div class="flex gap-2" x-data>
                                             <a href="{{ route('service-requests.proposals.accept', [$serviceRequest, $proposal]) }}"
                                                class="flex-1 text-center bg-forest-600 hover:bg-forest-700 text-cream-50 font-semibold text-sm py-2 rounded-lg transition">
                                                 Accepter
                                             </a>
-                                            <button wire:click="rejectProposal({{ $proposal->id }})"
-                                                    wire:confirm="Refuser cette proposition ?"
+                                            <button type="button"
+                                                    @click="confirmAction('Refuser cette proposition ?', { confirmText: 'Refuser' }).then(ok => ok && $wire.rejectProposal({{ $proposal->id }}))"
                                                     class="flex-1 bg-cream-50 border border-ink-200 hover:border-red-300 text-ink-700 font-semibold text-sm py-2 rounded-lg transition">
                                                 Refuser
                                             </button>

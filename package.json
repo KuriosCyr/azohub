@@ -17,6 +17,7 @@
     },
     "dependencies": {
         "@alpinejs/intersect": "^3.17.3",
-        "choices.js": "^11.1.0"
+        "choices.js": "^11.1.0",
+        "sweetalert2": "^11.26.25"
     }
 }

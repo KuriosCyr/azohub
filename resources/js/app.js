@@ -2,8 +2,38 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import intersect from '@alpinejs/intersect';
+import Swal from 'sweetalert2';
 
 window.Alpine = Alpine;
+window.Swal = Swal;
+
+// Boîte de dialogue de confirmation stylée (remplace window.confirm()).
+// Utilisation : confirmAction('Message...', { danger: true, confirmText: 'Supprimer' }).then(ok => ok && ...)
+window.confirmAction = function (message, options = {}) {
+    return Swal.fire({
+        title: options.title ?? 'Confirmer',
+        text: message,
+        icon: options.icon ?? 'warning',
+        showCancelButton: true,
+        confirmButtonText: options.confirmText ?? 'Confirmer',
+        cancelButtonText: options.cancelText ?? 'Annuler',
+        confirmButtonColor: options.danger ? '#dc2626' : '#2563EB',
+        cancelButtonColor: '#94A3B8',
+        reverseButtons: true,
+        focusCancel: true,
+    }).then((result) => result.isConfirmed);
+};
+
+// Notification simple (succès/erreur/info), remplace les alert() natifs.
+window.notifyAction = function (message, options = {}) {
+    return Swal.fire({
+        title: options.title,
+        text: message,
+        icon: options.icon ?? 'success',
+        confirmButtonText: options.confirmText ?? 'OK',
+        confirmButtonColor: '#2563EB',
+    });
+};
 
 Alpine.plugin(intersect);
 

@@ -119,7 +119,8 @@
                                         <form action="{{ route('prestataire.services.destroy', $service) }}"
                                               method="POST"
                                               class="flex-1"
-                                              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce service ?')">
+                                              x-data
+                                              @submit.prevent="confirmAction('Êtes-vous sûr de vouloir supprimer ce service ? Cette action est irréversible.', { danger: true, confirmText: 'Supprimer' }).then(ok => ok && $el.submit())">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit"
