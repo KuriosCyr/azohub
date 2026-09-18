@@ -86,8 +86,10 @@ class Service extends Model
     // Scopes
     public function scopeActive($query)
     {
-        // Un service est actif si status='active' ET is_active=true
-        return $query->where('status', 'active')->where('is_active', true);
+        // Un service est actif si status='active' ET is_active=true.
+        // Colonnes qualifiées : les appelants peuvent joindre d'autres tables
+        // (ex: users/subscriptions) qui ont elles aussi une colonne "status".
+        return $query->where('services.status', 'active')->where('services.is_active', true);
     }
 
     public function scopeFeatured($query)

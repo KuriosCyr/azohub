@@ -25,7 +25,21 @@
 
                 {{-- Infos principales --}}
                 <div class="flex-1 text-center md:text-left">
-                    <h1 class="text-4xl font-serif font-medium mb-2">{{ $prestataire->name }}</h1>
+                    <h1 class="text-4xl font-serif font-medium mb-2 flex flex-wrap items-center justify-center md:justify-start gap-3">
+                        {{ $prestataire->name }}
+                        @php $plan = $prestataire->currentPlan(); @endphp
+                        @if($plan?->slug === 'premium')
+                            <span class="inline-flex items-center gap-1 bg-gradient-to-r from-ochre-500 to-ochre-600 text-ink-900 px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                                <x-app-icon name="sparkles" class="w-3.5 h-3.5" />
+                                Premium
+                            </span>
+                        @elseif($plan?->slug === 'pro')
+                            <span class="inline-flex items-center gap-1 bg-terracotta-600 text-cream-50 px-3 py-1 rounded-full text-sm font-bold">
+                                <x-app-icon name="star" class="w-3.5 h-3.5" />
+                                Pro
+                            </span>
+                        @endif
+                    </h1>
 
                     <div class="flex flex-wrap justify-center md:justify-start items-center gap-4 mb-4 text-ink-300">
                         <span class="flex items-center gap-1">

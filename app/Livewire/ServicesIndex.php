@@ -66,7 +66,24 @@ class ServicesIndex extends Component
     {
         $query = Service::active()
             ->with(['prestataire', 'category'])
-            ->withCount('orders');
+            ->withCount('orders')
+            // Avantage "apparition prioritaire" des plans payants : les prestataires
+            // Premium puis Pro remontent avant le tri choisi par l'utilisateur.
+            ->leftJoin('users', 'users.id', '=', 'services.user_id')
+            ->leftJoin('subscriptions', function ($join) {
+                $join->on('subscriptions.user_id', '=', 'users.id')
+                    ->where('subscriptions.status', 'active')
+                    ->where('subscriptions.starts_at', '<=', now())
+                    ->where('subscriptions.ends_at', '>=', now());
+            })
+            ->leftJoin('subscription_plans', 'subscription_plans.id', '=', 'subscriptions.subscription_plan_id')
+            ->addSelect('services.*')
+            ->addSelect('subscription_plans.slug as prestataire_plan_slug')
+            ->selectRaw("CASE COALESCE(subscription_plans.slug, 'gratuit')
+                WHEN 'premium' THEN 2
+                WHEN 'pro' THEN 1
+                ELSE 0
+            END as plan_priority");
 
         // Recherche par mot-clé
         if (!empty($this->search)) {
@@ -93,34 +110,36 @@ class ServicesIndex extends Component
 
         // Filtre par prix
         if (!empty($this->minPrice)) {
-            $query->where('price', '>=', $this->minPrice);
+            $query->where('services.price', '>=', $this->minPrice);
         }
         if (!empty($this->maxPrice)) {
-            $query->where('price', '<=', $this->maxPrice);
+            $query->where('services.price', '<=', $this->maxPrice);
         }
 
         // Filtre par note
         if (!empty($this->minRating)) {
-            $query->where('rating', '>=', $this->minRating);
+            $query->where('services.rating', '>=', $this->minRating);
         }
 
-        // Tri
+        // Tri : priorité au plan payant d'abord, puis le critère choisi par l'utilisateur
+        $query->orderBy('plan_priority', 'desc');
+
         switch ($this->sortBy) {
             case 'popular':
                 $query->orderBy('orders_count', 'desc');
                 break;
             case 'price_low':
-                $query->orderBy('price', 'asc');
+                $query->orderBy('services.price', 'asc');
                 break;
             case 'price_high':
-                $query->orderBy('price', 'desc');
+                $query->orderBy('services.price', 'desc');
                 break;
             case 'rating':
-                $query->orderBy('rating', 'desc');
+                $query->orderBy('services.rating', 'desc');
                 break;
             case 'recent':
             default:
-                $query->orderBy('created_at', 'desc');
+                $query->orderBy('services.created_at', 'desc');
                 break;
         }
 

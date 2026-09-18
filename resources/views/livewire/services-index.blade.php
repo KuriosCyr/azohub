@@ -177,7 +177,19 @@
                                          alt="{{ $service->prestataire->name }}"
                                          class="w-10 h-10 rounded-full border-2 border-ink-100">
                                     <div class="flex-1 min-w-0">
-                                        <p class="font-semibold text-ink-700 truncate">{{ $service->prestataire->name }}</p>
+                                        <p class="font-semibold text-ink-700 truncate flex items-center gap-1.5">
+                                            {{ $service->prestataire->name }}
+                                            @if($service->prestataire_plan_slug === 'premium')
+                                                <span class="inline-flex items-center gap-0.5 bg-gradient-to-r from-ochre-500 to-ochre-600 text-ink-900 px-1.5 py-0.5 rounded text-[10px] font-bold flex-shrink-0">
+                                                    <x-app-icon name="sparkles" class="w-2.5 h-2.5" />
+                                                    Premium
+                                                </span>
+                                            @elseif($service->prestataire_plan_slug === 'pro')
+                                                <span class="inline-flex items-center gap-0.5 bg-terracotta-600 text-cream-50 px-1.5 py-0.5 rounded text-[10px] font-bold flex-shrink-0">
+                                                    Pro
+                                                </span>
+                                            @endif
+                                        </p>
                                         <p class="text-xs text-ink-400 flex items-center gap-1">
                                             <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                             {{ $service->prestataire->city ?? 'Bénin' }}
