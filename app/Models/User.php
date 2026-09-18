@@ -183,20 +183,29 @@ class User extends Authenticatable implements FilamentUser
         $completedOrders = $this->completed_orders ?? 0;
         $rating = $this->rating ?? 0;
 
-        // Déterminer le niveau
-        if ($completedOrders >= 100 && $rating >= 4.8) {
+        // Déterminer le niveau (valeurs alignées sur l'enum users.level : nouveau/confirme/expert)
+        if ($completedOrders >= 50 && $rating >= 4.7) {
             $level = 'expert';
-        } elseif ($completedOrders >= 50 && $rating >= 4.5) {
-            $level = 'professionnel';
-        } elseif ($completedOrders >= 10 && $rating >= 4.0) {
-            $level = 'intermediaire';
+        } elseif ($completedOrders >= 15 && $rating >= 4.3) {
+            $level = 'confirme';
         } else {
-            $level = 'debutant';
+            $level = 'nouveau';
         }
 
         if ($this->level !== $level) {
             $this->update(['level' => $level]);
         }
+    }
+
+    // Taux de commission Azohub selon le niveau du prestataire (plus le niveau est
+    // élevé, plus la commission prélevée est faible — incite à la progression).
+    public function commissionRate(): float
+    {
+        return match ($this->level) {
+            'expert' => 0.08,
+            'confirme' => 0.12,
+            default => 0.15,
+        };
     }
 
     // Ajouter un badge

@@ -47,7 +47,7 @@ class OrderCreate extends Component
             'requirements.max' => 'La description ne peut pas dépasser 2000 caractères.',
         ]);
 
-        $commission = round($this->service->price * 0.10, 2);
+        $commission = round($this->service->price * $this->service->prestataire->commissionRate(), 2);
 
         $order = Order::create([
             'client_id'        => auth()->id(),

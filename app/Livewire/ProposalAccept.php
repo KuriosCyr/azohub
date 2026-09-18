@@ -35,7 +35,7 @@ class ProposalAccept extends Component
         ]);
 
         $amount = (float) $this->proposal->proposed_price;
-        $commission = round($amount * 0.10, 2);
+        $commission = round($amount * $this->proposal->prestataire->commissionRate(), 2);
 
         $previouslyPendingIds = $this->serviceRequest->proposals()
             ->where('id', '!=', $this->proposal->id)

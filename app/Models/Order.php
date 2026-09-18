@@ -268,6 +268,7 @@ class Order extends Model
         if ($this->prestataire) {
             $this->prestataire->increment('wallet_balance', $this->prestataire_amount);
             $this->prestataire->increment('completed_orders');
+            $this->prestataire->refresh()->updateLevel();
         }
 
         $this->service?->increment('total_orders');

@@ -99,7 +99,8 @@ class ReviewController extends Controller
         if ($isClient) {
             // Mise à jour du prestataire
             $order->prestataire->updateRating();
-            
+            $order->prestataire->updateLevel();
+
             // Mise à jour du service
             $order->service->updateRating();
         }

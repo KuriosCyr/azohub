@@ -77,6 +77,46 @@
 
     {{-- Contenu principal --}}
     <div class="container mx-auto px-4 py-8">
+        {{-- Niveau & Commission --}}
+        <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm p-6 mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center
+                        {{ Auth::user()->level === 'expert' ? 'bg-ochre-500/15' : (Auth::user()->level === 'confirme' ? 'bg-terracotta-50' : 'bg-ink-100/40') }}">
+                        <svg class="w-6 h-6 {{ Auth::user()->level === 'expert' ? 'text-ochre-600' : (Auth::user()->level === 'confirme' ? 'text-terracotta-600' : 'text-ink-400') }}" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-0.5">Votre niveau</p>
+                        <p class="text-lg font-bold text-ink-900">{{ ['nouveau' => 'Nouveau', 'confirme' => 'Confirmé', 'expert' => 'Expert'][Auth::user()->level] ?? ucfirst(Auth::user()->level) }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-0.5">Commission Azohub</p>
+                    <p class="text-lg font-bold text-terracotta-600">{{ number_format(Auth::user()->commissionRate() * 100, 0) }}%</p>
+                </div>
+            </div>
+
+            @if(Auth::user()->level !== 'expert')
+                @php
+                    $nextLevel = Auth::user()->level === 'nouveau'
+                        ? ['orders' => 15, 'rating' => 4.3, 'label' => 'Confirmé']
+                        : ['orders' => 50, 'rating' => 4.7, 'label' => 'Expert'];
+                    $ordersProgress = $nextLevel['orders'] > 0 ? min(100, ($stats['completed_orders'] / $nextLevel['orders']) * 100) : 100;
+                @endphp
+                <div class="mt-4 pt-4 border-t border-ink-100">
+                    <div class="flex justify-between text-xs text-ink-500 mb-1.5">
+                        <span>Progression vers <strong class="text-ink-700">{{ $nextLevel['label'] }}</strong> (commission réduite)</span>
+                        <span>{{ $stats['completed_orders'] }}/{{ $nextLevel['orders'] }} commandes · note ≥ {{ $nextLevel['rating'] }}</span>
+                    </div>
+                    <div class="h-2 bg-ink-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-terracotta-600 rounded-full" style="width: {{ $ordersProgress }}%"></div>
+                    </div>
+                </div>
+            @endif
+        </div>
+
         {{-- Onglets --}}
         <div class="bg-cream-50 rounded-lg shadow-sm border border-ink-100 mb-6 overflow-hidden">
             <div class="flex">
