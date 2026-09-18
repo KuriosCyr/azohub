@@ -21,6 +21,7 @@ class AdvertisementsTable
             ->columns([
                 ImageColumn::make('image')
                     ->label('')
+                    ->disk('public')
                     ->square(),
                 TextColumn::make('title')
                     ->label('Campagne')

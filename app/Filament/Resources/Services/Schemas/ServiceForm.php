@@ -45,7 +45,9 @@ class ServiceForm
                 Textarea::make('service_area')
                     ->columnSpanFull(),
                 FileUpload::make('cover_image')
-                    ->image(),
+                    ->image()
+                    ->disk('public')
+                    ->directory('services/covers'),
                 TextInput::make('rating')
                     ->required()
                     ->numeric()

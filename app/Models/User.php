@@ -208,6 +208,37 @@ class User extends Authenticatable implements FilamentUser
         };
     }
 
+    // Anonymise puis supprime (soft delete) le compte. On ne fait pas de suppression
+    // définitive : orders.client_id/prestataire_id sont en cascade, une vraie
+    // suppression casserait l'historique de commandes de l'autre partie.
+    public function anonymizeAndDelete(): void
+    {
+        if ($this->avatar) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->avatar);
+        }
+
+        if ($this->identity_document) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($this->identity_document);
+        }
+
+        $this->forceFill([
+            'name' => 'Utilisateur supprimé',
+            'email' => 'compte-supprime-' . $this->id . '-' . now()->timestamp . '@azohub.invalid',
+            'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(40)),
+            'phone' => null,
+            'avatar' => null,
+            'bio' => null,
+            'city' => null,
+            'service_areas' => null,
+            'languages' => null,
+            'identity_document' => null,
+            'is_active' => false,
+            'remember_token' => null,
+        ])->save();
+
+        $this->delete();
+    }
+
     // Ajouter un badge
     public function addBadge(string $badge)
     {

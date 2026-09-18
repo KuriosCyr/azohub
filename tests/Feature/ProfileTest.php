@@ -30,6 +30,8 @@ class ProfileTest extends TestCase
             ->patch('/profile', [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
+                'phone' => '+229 00 00 00 00',
+                'city' => 'Cotonou',
             ]);
 
         $response
@@ -52,6 +54,8 @@ class ProfileTest extends TestCase
             ->patch('/profile', [
                 'name' => 'Test User',
                 'email' => $user->email,
+                'phone' => '+229 00 00 00 00',
+                'city' => 'Cotonou',
             ]);
 
         $response
@@ -64,6 +68,7 @@ class ProfileTest extends TestCase
     public function test_user_can_delete_their_account(): void
     {
         $user = User::factory()->create();
+        $originalEmail = $user->email;
 
         $response = $this
             ->actingAs($user)
@@ -76,7 +81,16 @@ class ProfileTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+
+        // Le compte n'est pas supprimé pour de vrai (les commandes liées
+        // casseraient pour l'autre partie) : il est anonymisé puis soft-deleted.
+        $this->assertNull(User::find($user->id));
+        $deleted = User::withTrashed()->find($user->id);
+        $this->assertNotNull($deleted);
+        $this->assertTrue($deleted->trashed());
+        $this->assertNotSame($originalEmail, $deleted->email);
+        $this->assertSame('Utilisateur supprimé', $deleted->name);
+        $this->assertFalse($deleted->is_active);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

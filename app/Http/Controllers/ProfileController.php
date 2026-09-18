@@ -80,7 +80,7 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        $request->validate([
+        $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
@@ -88,12 +88,7 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        // Supprimer l'avatar
-        if ($user->avatar) {
-            Storage::disk('public')->delete($user->avatar);
-        }
-
-        $user->delete();
+        $user->anonymizeAndDelete();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

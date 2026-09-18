@@ -43,9 +43,9 @@ class AdminPanelProvider extends PanelProvider
 
             // Brand
             ->brandName('Azohub')
-            ->brandLogo(asset('images/logo.png'))
+            ->brandLogo(fn () => view('components.logo-lockup', ['class' => 'h-8 w-auto']))
             ->brandLogoHeight('2rem')
-            ->favicon(asset('favicon.ico'))
+            ->favicon(asset('favicon.svg'))
 
             // Thème : clair par défaut, dark mode disponible
             ->darkMode(true)
@@ -74,6 +74,8 @@ class AdminPanelProvider extends PanelProvider
                     ->icon('heroicon-o-shopping-bag'),
                 NavigationGroup::make('Paiements')
                     ->icon('heroicon-o-banknotes'),
+                NavigationGroup::make('Monétisation')
+                    ->icon('heroicon-o-megaphone'),
                 NavigationGroup::make('Modération')
                     ->icon('heroicon-o-shield-exclamation'),
                 NavigationGroup::make('Paramètres')

@@ -327,7 +327,7 @@
     </div>
 
     {{-- Modal de confirmation suppression --}}
-    <div id="delete-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div id="delete-modal" class="{{ $errors->userDeletion->isNotEmpty() ? '' : 'hidden' }} fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-cream-50 rounded-xl p-8 max-w-md mx-4">
             <h3 class="text-2xl font-bold text-ink-900 mb-4"><x-app-icon name="exclamation-triangle" class="w-6 h-6 inline-block" /> Confirmer la suppression</h3>
             <p class="text-ink-700 mb-6">
@@ -348,6 +348,9 @@
                            id="delete_password"
                            required
                            class="w-full px-4 py-3 border-2 border-ink-100 rounded-lg focus:border-red-600 focus:ring-4 focus:ring-red-100 transition">
+                    @error('password', 'userDeletion')
+                        <p class="text-red-600 text-sm font-semibold mt-2">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="flex gap-4">

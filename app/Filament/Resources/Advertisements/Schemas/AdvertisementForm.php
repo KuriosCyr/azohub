@@ -40,6 +40,7 @@ class AdvertisementForm
                         FileUpload::make('image')
                             ->label('Image de la bannière')
                             ->image()
+                            ->disk('public')
                             ->directory('advertisements')
                             ->required()
                             ->columnSpanFull(),
