@@ -33,10 +33,23 @@ class StatsOverview extends BaseWidget
         $ordersThisMonth = Order::whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->count();
         $activeOrders    = Order::whereIn('status', ['paid', 'in_progress', 'delivered'])->count();
 
-        // --- Revenus ---
-        $totalRevenue     = Payment::where('status', 'success')->sum('amount');
-        $revenueThisMonth = Payment::where('status', 'success')->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->sum('amount');
-        $revenueLastMonth = Payment::where('status', 'success')->whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year)->sum('amount');
+        // --- Bénéfices de la plateforme (commission prestataire + frais client) ---
+        // À ne pas confondre avec le volume payé par les clients (cf. $totalVolume) :
+        // la majeure partie de ce volume est reversée aux prestataires, ce n'est pas
+        // de l'argent qui appartient à Azohub.
+        $paidStatuses = ['held', 'released'];
+
+        $totalRevenue = (float) Order::whereIn('payment_status', $paidStatuses)
+            ->selectRaw('COALESCE(SUM(commission + client_fee), 0) as total')->value('total');
+        $revenueThisMonth = (float) Order::whereIn('payment_status', $paidStatuses)
+            ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)
+            ->selectRaw('COALESCE(SUM(commission + client_fee), 0) as total')->value('total');
+        $revenueLastMonth = (float) Order::whereIn('payment_status', $paidStatuses)
+            ->whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year)
+            ->selectRaw('COALESCE(SUM(commission + client_fee), 0) as total')->value('total');
+
+        // --- Volume total (ce que les clients ont payé, avant reversement aux prestataires) ---
+        $totalVolume = (float) Payment::where('status', 'success')->sum('amount');
 
         // --- Services ---
         $activeServices  = Service::where('status', 'active')->count();
@@ -45,9 +58,9 @@ class StatsOverview extends BaseWidget
         // --- Charts : 1 requête GROUP BY par modèle au lieu de 7 ---
         $start = $now->copy()->subMonths(6)->startOfMonth();
 
-        $revenueByMonth = Payment::where('status', 'success')
+        $revenueByMonth = Order::whereIn('payment_status', $paidStatuses)
             ->where('created_at', '>=', $start)
-            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(amount) as total')
+            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(commission + client_fee) as total')
             ->groupBy('y', 'm')
             ->get()
             ->keyBy(fn($r) => $r->y . '-' . str_pad($r->m, 2, '0', STR_PAD_LEFT));
@@ -91,11 +104,16 @@ class StatsOverview extends BaseWidget
                 ->color('primary')
                 ->chart($ordersChart),
 
-            Stat::make('Revenus', number_format($totalRevenue, 0, ',', ' ') . ' FCFA')
-                ->description(number_format($revenueThisMonth, 0, ',', ' ') . ' FCFA ce mois')
+            Stat::make('Bénéfices Azohub', number_format($totalRevenue, 0, ',', ' ') . ' FCFA')
+                ->description(number_format($revenueThisMonth, 0, ',', ' ') . ' FCFA ce mois · commissions + frais de service')
                 ->descriptionIcon($revenueIcon)
                 ->color($revenueColor)
                 ->chart($revenueChart),
+
+            Stat::make('Volume total', number_format($totalVolume, 0, ',', ' ') . ' FCFA')
+                ->description('Payé par les clients, avant reversement aux prestataires')
+                ->descriptionIcon('heroicon-m-banknotes')
+                ->color('gray'),
 
             Stat::make('Services actifs', number_format($activeServices))
                 ->description($pendingServices . ' en attente de validation')
