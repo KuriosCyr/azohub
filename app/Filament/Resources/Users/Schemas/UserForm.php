@@ -63,9 +63,11 @@ class UserForm
                     ->required(),
                 TextInput::make('identity_document'),
                 TextInput::make('wallet_balance')
-                    ->required()
                     ->numeric()
-                    ->default(0.0),
+                    ->default(0.0)
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->helperText('Lecture seule : ce solde ne doit être modifié que par le déroulement normal des commandes et des retraits, jamais manuellement.'),
                 Toggle::make('is_active')
                     ->required(),
                 DateTimePicker::make('last_seen_at'),
