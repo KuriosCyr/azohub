@@ -2,10 +2,11 @@
 
 namespace App\Filament\Resources\Disputes\Schemas;
 
+use App\Models\Dispute;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class DisputeForm
@@ -14,47 +15,76 @@ class DisputeForm
     {
         return $schema
             ->components([
-                TextInput::make('order_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('opened_by')
-                    ->required()
-                    ->numeric(),
-                Select::make('reason')
-                    ->options([
-            'work_not_delivered' => 'Work not delivered',
-            'work_not_conform' => 'Work not conform',
-            'poor_quality' => 'Poor quality',
-            'late_delivery' => 'Late delivery',
-            'payment_issue' => 'Payment issue',
-            'other' => 'Other',
-        ])
-                    ->required(),
-                Textarea::make('description')
-                    ->required()
-                    ->columnSpanFull(),
-                TextInput::make('evidences'),
-                Select::make('status')
-                    ->options([
-            'open' => 'Open',
-            'under_review' => 'Under review',
-            'resolved' => 'Resolved',
-            'cancelled' => 'Cancelled',
-        ])
-                    ->default('open')
-                    ->required(),
-                Select::make('resolution')
-                    ->options([
-            'refund_client' => 'Refund client',
-            'pay_prestataire' => 'Pay prestataire',
-            'partial_refund' => 'Partial refund',
-            'no_action' => 'No action',
-        ]),
-                Textarea::make('admin_note')
-                    ->columnSpanFull(),
-                TextInput::make('resolved_by')
-                    ->numeric(),
-                DateTimePicker::make('resolved_at'),
+                Section::make('Litige')
+                    ->schema([
+                        Select::make('order_id')
+                            ->label('Commande')
+                            ->relationship('order', 'order_number')
+                            ->searchable()
+                            ->required()
+                            ->disabled(),
+                        Select::make('opened_by')
+                            ->label('Ouvert par')
+                            ->relationship('openedBy', 'name')
+                            ->searchable()
+                            ->required()
+                            ->disabled(),
+                        Select::make('reason')
+                            ->label('Raison')
+                            ->options([
+                                'work_not_delivered' => 'Travail non livré',
+                                'work_not_conform' => 'Travail non conforme',
+                                'poor_quality' => 'Mauvaise qualité',
+                                'late_delivery' => 'Livraison en retard',
+                                'payment_issue' => 'Problème de paiement',
+                                'other' => 'Autre',
+                            ])
+                            ->required()
+                            ->disabled(),
+                        Select::make('status')
+                            ->label('Statut')
+                            ->options([
+                                'open' => 'Ouvert',
+                                'under_review' => 'En examen',
+                                'resolved' => 'Résolu',
+                                'cancelled' => 'Annulé',
+                            ])
+                            ->default('open')
+                            ->required()
+                            ->disabled(),
+                        Textarea::make('description')
+                            ->label('Description')
+                            ->required()
+                            ->disabled()
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Section::make('Résolution')
+                    ->description('Se renseigne uniquement via l\'action "Résoudre" du tableau — non modifiable directement ici.')
+                    ->schema([
+                        Select::make('resolution')
+                            ->label('Résolution')
+                            ->options([
+                                'refund_client' => 'Remboursement client',
+                                'pay_prestataire' => 'Paiement prestataire',
+                                'partial_refund' => 'Remboursement partiel',
+                                'no_action' => 'Aucune action',
+                            ])
+                            ->disabled(),
+                        Select::make('resolved_by')
+                            ->label('Résolu par')
+                            ->relationship('resolvedBy', 'name')
+                            ->disabled(),
+                        DateTimePicker::make('resolved_at')
+                            ->label('Résolu le')
+                            ->disabled(),
+                        Textarea::make('admin_note')
+                            ->label('Note admin')
+                            ->disabled()
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
             ]);
     }
 }

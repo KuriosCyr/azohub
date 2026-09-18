@@ -32,6 +32,7 @@ class OrderController extends Controller
             'service.category',
             'review',
             'payments',
+            'dispute',
         ]);
 
         // Déterminer le rôle de l'utilisateur pour cette commande

@@ -50,4 +50,16 @@ class DisputeResource extends Resource
             'edit' => EditDispute::route('/{record}/edit'),
         ];
     }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $count = static::getModel()::whereIn('status', ['open', 'under_review'])->count();
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
+    }
 }

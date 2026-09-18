@@ -350,6 +350,35 @@
                     </div>
                     @endif
 
+                    @if($order->canOpenDispute())
+                    <div class="bg-cream-50 rounded-xl border border-ink-100 p-6 mt-6">
+                        <p class="text-sm text-ink-500 mb-3">
+                            Un problème que la révision ne résout pas ? Vous pouvez signaler un litige — notre équipe examinera la situation.
+                        </p>
+                        <button onclick="document.getElementById('dispute-modal').classList.remove('hidden')"
+                            class="text-sm font-bold text-red-600 hover:text-red-700 transition">
+                            <x-app-icon name="exclamation-triangle" class="w-4 h-4 inline-block align-text-bottom" /> Signaler un litige
+                        </button>
+                    </div>
+                    @endif
+
+                    @if($order->status === 'disputed')
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-6 mt-6">
+                        <h3 class="text-lg font-bold text-red-900 mb-2">
+                            <x-app-icon name="exclamation-triangle" class="w-5 h-5 inline-block align-text-bottom" /> Litige en cours
+                        </h3>
+                        <p class="text-sm text-red-700 mb-1">
+                            Raison : <strong>{{ ['work_not_delivered' => 'Travail non livré', 'work_not_conform' => 'Travail non conforme', 'poor_quality' => 'Mauvaise qualité', 'late_delivery' => 'Livraison en retard', 'payment_issue' => 'Problème de paiement', 'other' => 'Autre'][$order->dispute->reason] ?? $order->dispute->reason }}</strong>
+                        </p>
+                        <p class="text-sm text-red-700">
+                            {{ $order->dispute->description }}
+                        </p>
+                        <p class="text-xs text-red-500 mt-3">
+                            Notre équipe examine la situation. La commande reste bloquée jusqu'à résolution.
+                        </p>
+                    </div>
+                    @endif
+
                     {{-- Section Avis - À ajouter dans orders/show.blade.php après la section chat --}}
 
                     @if($order->status === 'completed')
@@ -549,6 +578,55 @@
                     </button>
                     <button type="submit"
                         class="flex-1 bg-ochre-600 hover:bg-ochre-500 text-white font-bold px-6 py-3 rounded-lg transition">
+                        Envoyer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Modal Litige --}}
+    <div id="dispute-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-cream-50 rounded-xl p-8 max-w-md mx-4">
+            <h3 class="text-2xl font-serif font-medium text-ink-900 mb-4">Signaler un litige</h3>
+            <p class="text-ink-500 mb-6">
+                Notre équipe examinera la situation. La commande sera bloquée en attendant la résolution.
+            </p>
+
+            <form action="{{ route('orders.dispute.store', $order) }}" method="POST">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-ink-700 mb-2">
+                        Raison <span class="text-red-500">*</span>
+                    </label>
+                    <select name="reason" required
+                        class="w-full px-4 py-3 border-2 border-ink-200 rounded-lg focus:border-red-500 focus:ring-4 focus:ring-red-100 transition">
+                        <option value="">Sélectionnez une raison...</option>
+                        <option value="work_not_delivered">Travail non livré</option>
+                        <option value="work_not_conform">Travail non conforme</option>
+                        <option value="poor_quality">Mauvaise qualité</option>
+                        <option value="late_delivery">Livraison en retard</option>
+                        <option value="payment_issue">Problème de paiement</option>
+                        <option value="other">Autre</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-ink-700 mb-2">
+                        Description <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="description" rows="4" required minlength="20"
+                        class="w-full px-4 py-3 border-2 border-ink-200 rounded-lg focus:border-red-500 focus:ring-4 focus:ring-red-100 transition"
+                        placeholder="Décrivez précisément le problème (min. 20 caractères)..."></textarea>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="button"
+                        onclick="document.getElementById('dispute-modal').classList.add('hidden')"
+                        class="flex-1 bg-ink-100/30 hover:bg-ink-100/50 text-ink-700 font-bold px-6 py-3 rounded-lg transition">
+                        Annuler
+                    </button>
+                    <button type="submit"
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-lg transition">
                         Envoyer
                     </button>
                 </div>

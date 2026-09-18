@@ -240,6 +240,15 @@ class Order extends Model
         return $this->status === 'delivered';
     }
 
+    // Un litige peut être ouvert par le client ou le prestataire tant que la
+    // commande est en cours (prestataire silencieux) ou livrée (client pas
+    // satisfait, au-delà d'une simple demande de révision) — et seulement si
+    // aucun litige n'existe déjà dessus.
+    public function canOpenDispute()
+    {
+        return in_array($this->status, ['in_progress', 'delivered']) && !$this->dispute;
+    }
+
     // Rembourser le client (annulation ou litige tranché en sa faveur)
     // FedaPay n'expose pas d'API de remboursement automatique : un paiement déjà
     // encaissé passe en "refund_pending" et doit être traité manuellement par un

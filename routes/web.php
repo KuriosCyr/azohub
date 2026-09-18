@@ -20,6 +20,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AdvertisementController;
+use App\Http\Controllers\DisputeController;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
@@ -118,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
         // Actions communes
         Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('cancel');
         Route::get('/{order}/deliverable/{index}', [OrderController::class, 'downloadDeliverable'])->name('deliverable.download');
+        Route::post('/{order}/dispute', [DisputeController::class, 'store'])->name('dispute.store');
         
         // Messages
         Route::post('/{order}/messages', [MessageController::class, 'store'])->name('messages.store');

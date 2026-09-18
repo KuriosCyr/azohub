@@ -43,8 +43,12 @@ class Dispute extends Model
         return $this->belongsTo(User::class, 'resolved_by');
     }
 
-    // Résoudre le litige
-    public function resolve(string $resolution, int $adminId, string $action = 'refund')
+    // Résoudre le litige et débloquer la commande en conséquence.
+    // FedaPay n'ayant pas d'API de remboursement, refund_client/partial_refund
+    // passent la commande en "remboursement à traiter" (cf. Order::refund()) —
+    // le remboursement (total ou partiel) reste effectué manuellement par un
+    // administrateur, puis confirmé via l'action "Confirmer remboursement".
+    public function resolve(string $resolution, int $adminId, ?string $action = null): void
     {
         $this->resolution = $resolution;
         $this->status = 'resolved';
@@ -52,12 +56,17 @@ class Dispute extends Model
         $this->resolved_by = $adminId;
         $this->save();
 
-        // Appliquer l'action
-        if ($action === 'refund') {
-            $this->order->refund();
-        } elseif ($action === 'release') {
-            $this->order->releasePayment();
-        }
+        match ($resolution) {
+            'refund_client', 'partial_refund' => $this->order->refund(
+                'Litige résolu : ' . ($resolution === 'partial_refund' ? 'remboursement partiel' : 'remboursement client')
+            ),
+            'pay_prestataire' => $this->order->releasePayment(),
+            // "no_action" : la commande n'était pas réellement bloquée (litige
+            // non fondé) — elle redevient utilisable normalement.
+            default => $this->order->update([
+                'status' => $this->order->delivered_at ? 'delivered' : 'in_progress',
+            ]),
+        };
     }
 
     // Scope
