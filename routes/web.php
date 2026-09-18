@@ -19,6 +19,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\AdvertisementController;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
@@ -36,6 +37,8 @@ Route::get('/contact', [ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/privacy', 'pages.privacy')->name('privacy');
+
+Route::get('/ads/{advertisement}/click', [AdvertisementController::class, 'click'])->name('ads.click');
 
 // ============================================
 // AUTHENTIFICATION

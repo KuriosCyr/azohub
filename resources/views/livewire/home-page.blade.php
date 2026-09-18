@@ -167,6 +167,9 @@
         </div>
     </section>
 
+    {{-- Bannière publicitaire --}}
+    <x-ad-banner placement="home_banner" class="h-32 md:h-40" wrapper-class="container mx-auto px-4 py-6" />
+
     {{-- Popular Services Section --}}
     <section class="py-20 bg-cream">
         <div class="container mx-auto px-4">
