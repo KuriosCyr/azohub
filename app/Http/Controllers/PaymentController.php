@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Subscription;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -44,6 +45,17 @@ class PaymentController extends Controller
         return redirect()
             ->route('orders.show', $order)
             ->with('success', 'Paiement en cours de confirmation. Le statut sera mis à jour sous quelques instants.');
+    }
+
+    /**
+     * Retour navigateur après paiement d'un abonnement (informatif). La confirmation
+     * réelle se fait de façon asynchrone via le webhook.
+     */
+    public function subscriptionCallback(Subscription $subscription)
+    {
+        return redirect()
+            ->route('prestataire.subscription')
+            ->with('success', 'Paiement en cours de confirmation. Votre abonnement sera activé sous quelques instants.');
     }
 
     /**

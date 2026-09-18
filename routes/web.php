@@ -7,6 +7,7 @@ use App\Livewire\OrderCreate;
 use App\Livewire\PrestataireProfile;
 use App\Livewire\PrestataireDashboard;
 use App\Livewire\PrestataireWallet;
+use App\Livewire\PrestataireSubscription;
 use App\Livewire\ClientDashboard;
 use App\Livewire\FaqPage;
 use App\Livewire\ServiceRequestCreate;
@@ -75,6 +76,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/prestataire/wallet', PrestataireWallet::class)
         ->middleware('prestataire')
         ->name('prestataire.wallet');
+
+    // Abonnement prestataire
+    Route::get('/prestataire/abonnement', PrestataireSubscription::class)
+        ->middleware('prestataire')
+        ->name('prestataire.subscription');
 
     // Dashboard client
     Route::get('/client/dashboard', ClientDashboard::class)
@@ -204,6 +210,7 @@ Route::middleware(['auth'])->group(function () {
 // ============================================
 
 Route::get('/payments/callback/{order}', [PaymentController::class, 'callback'])->name('payments.callback');
+Route::get('/payments/subscription-callback/{subscription}', [PaymentController::class, 'subscriptionCallback'])->name('payments.subscription-callback');
 Route::post('/payments/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
 
 // ============================================

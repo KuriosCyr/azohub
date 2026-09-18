@@ -43,11 +43,11 @@ class Subscription extends Model
             && $this->ends_at >= now();
     }
 
-    // Renouveler l'abonnement
+    // Activer/renouveler l'abonnement (appelé après confirmation du paiement FedaPay)
     public function renew()
     {
         $this->starts_at = now();
-        $this->ends_at = now()->addMonth();
+        $this->ends_at = $this->plan->billing_period === 'yearly' ? now()->addYear() : now()->addMonth();
         $this->status = 'active';
         $this->save();
     }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\PaymentConfirmed;
+use App\Notifications\SubscriptionActivated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,7 @@ class Payment extends Model
 
     protected $fillable = [
         'order_id',
+        'subscription_id',
         'user_id',
         'transaction_id',
         'payment_method',
@@ -33,6 +35,11 @@ class Payment extends Model
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function subscription()
+    {
+        return $this->belongsTo(Subscription::class);
     }
 
     public function user()
@@ -59,6 +66,17 @@ class Payment extends Model
             ]);
 
             $this->order->prestataire->notify(new PaymentConfirmed($this->order));
+        }
+
+        // Un seul abonnement actif à la fois : celui-ci remplace tout abonnement en cours.
+        if ($this->subscription) {
+            Subscription::where('user_id', $this->subscription->user_id)
+                ->where('id', '!=', $this->subscription->id)
+                ->where('status', 'active')
+                ->update(['status' => 'cancelled']);
+
+            $this->subscription->renew();
+            $this->subscription->user->notify(new SubscriptionActivated($this->subscription));
         }
     }
 

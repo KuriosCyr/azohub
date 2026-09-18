@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Subscription;
 use FedaPay\FedaPay;
 use FedaPay\Transaction;
 use FedaPay\Webhook;
@@ -50,6 +51,47 @@ class PaymentService
             'amount' => $order->total_charged,
             'status' => 'pending',
             'type' => 'order_payment',
+            'gateway_reference' => $transaction->reference ?? null,
+        ]);
+
+        return $token->url;
+    }
+
+    /**
+     * Crée une transaction FedaPay pour un abonnement prestataire et renvoie l'URL
+     * de paiement vers laquelle rediriger le prestataire.
+     */
+    public function initiateForSubscription(Subscription $subscription, string $paymentMethod): string
+    {
+        $payer = $subscription->user;
+        $plan = $subscription->plan;
+
+        $transaction = Transaction::create([
+            'description' => "Abonnement {$plan->name} - Azohub",
+            'amount' => (int) round((float) $plan->price),
+            'currency' => ['iso' => 'XOF'],
+            'callback_url' => route('payments.subscription-callback', ['subscription' => $subscription->id]),
+            'customer' => [
+                'firstname' => $payer->name,
+                'email' => $payer->email,
+                'phone_number' => [
+                    'number' => preg_replace('/\D/', '', (string) $payer->phone),
+                    'country' => 'bj',
+                ],
+            ],
+        ]);
+
+        $token = $transaction->generateToken();
+
+        Payment::create([
+            'subscription_id' => $subscription->id,
+            'user_id' => $payer->id,
+            'transaction_id' => (string) $transaction->id,
+            'payment_method' => $paymentMethod,
+            'phone_number' => $payer->phone,
+            'amount' => $plan->price,
+            'status' => 'pending',
+            'type' => 'subscription',
             'gateway_reference' => $transaction->reference ?? null,
         ]);
 

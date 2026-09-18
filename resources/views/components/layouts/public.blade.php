@@ -190,6 +190,11 @@
                                             Portefeuille
                                             <span class="text-xs text-ink-400 ml-auto">{{ number_format(Auth::user()->wallet_balance ?? 0, 0) }} F</span>
                                         </a>
+                                        <a href="{{ route('prestataire.subscription') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                            <x-app-icon name="sparkles" class="w-4 h-4 text-ink-300" />
+                                            Abonnement
+                                            <span class="text-xs text-ink-400 ml-auto">{{ Auth::user()->currentPlan()?->name ?? 'Gratuit' }}</span>
+                                        </a>
                                     @else
                                         <a href="{{ route('client.dashboard') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                             <x-app-icon name="home" class="w-4 h-4 text-ink-300" />

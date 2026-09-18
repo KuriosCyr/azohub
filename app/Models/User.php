@@ -87,6 +87,26 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(Subscription::class);
     }
 
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activeSubscription()
+    {
+        return $this->hasOne(Subscription::class)
+            ->where('status', 'active')
+            ->where('starts_at', '<=', now())
+            ->where('ends_at', '>=', now())
+            ->latest('ends_at');
+    }
+
+    // Plan courant : celui de l'abonnement payant actif, sinon le plan Gratuit par défaut.
+    public function currentPlan(): ?SubscriptionPlan
+    {
+        return $this->activeSubscription?->plan ?? SubscriptionPlan::where('slug', 'gratuit')->first();
+    }
+
     public function receivedProposals()
     {
         return $this->hasManyThrough(Proposal::class, ServiceRequest::class, 'client_id', 'service_request_id');
@@ -204,15 +224,22 @@ class User extends Authenticatable implements FilamentUser
         }
     }
 
-    // Taux de commission Azohub selon le niveau du prestataire (plus le niveau est
-    // élevé, plus la commission prélevée est faible — incite à la progression).
+    // Taux de commission Azohub : le plus avantageux entre le niveau (gratuit, gagné
+    // par la performance) et l'abonnement payant en cours. Aucun des deux systèmes
+    // n'écrase l'autre — un expert sur le plan gratuit garde son taux, un nouveau
+    // prestataire abonné à un plan payant en profite immédiatement.
     public function commissionRate(): float
     {
-        return match ($this->level) {
+        $levelRate = match ($this->level) {
             'expert' => 0.08,
             'confirme' => 0.12,
             default => 0.15,
         };
+
+        $plan = $this->currentPlan();
+        $planRate = $plan ? ((float) $plan->commission_rate) / 100 : $levelRate;
+
+        return min($levelRate, $planRate);
     }
 
     // Anonymise puis supprime (soft delete) le compte. On ne fait pas de suppression

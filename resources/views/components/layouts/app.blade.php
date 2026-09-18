@@ -127,6 +127,10 @@
                                         Portefeuille
                                         <span class="text-xs text-ink-400 ml-2">{{ number_format(Auth::user()->wallet_balance ?? 0, 0) }} FCFA</span>
                                     </a>
+                                    <a href="{{ route('prestataire.subscription') }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                        Abonnement
+                                        <span class="text-xs text-ink-400 ml-2">{{ Auth::user()->currentPlan()?->name ?? 'Gratuit' }}</span>
+                                    </a>
                                 @else
                                     <a href="{{ route('client.dashboard') }}" class="block px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                         Dashboard
@@ -224,6 +228,14 @@
                     <a href="{{ route('service-requests.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
                         <x-app-icon name="clipboard" class="w-4 h-4" />
                         Opportunités
+                    </a>
+                    <a href="{{ route('prestataire.wallet') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                        <x-app-icon name="banknotes" class="w-4 h-4" />
+                        Portefeuille
+                    </a>
+                    <a href="{{ route('prestataire.subscription') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                        <x-app-icon name="sparkles" class="w-4 h-4" />
+                        Abonnement
                     </a>
                 @else
                     <a href="{{ route('service-requests.index', ['mine' => 1]) }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">

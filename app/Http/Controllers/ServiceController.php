@@ -39,8 +39,10 @@ class ServiceController extends Controller
      */
     public function create()
     {
+        $this->guardServiceLimit();
+
         $categories = Category::where('is_active', true)->get();
-        
+
         return view('prestataire.services.create', compact('categories'));
     }
 
@@ -49,6 +51,8 @@ class ServiceController extends Controller
      */
     public function store(Request $request)
     {
+        $this->guardServiceLimit();
+
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
             'title' => 'required|string|max:255',
@@ -249,5 +253,20 @@ class ServiceController extends Controller
         return redirect()
             ->route('prestataire.services.index')
             ->with('success', 'Service supprimé avec succès !');
+    }
+
+    /**
+     * Bloque la création si le prestataire a atteint le nombre de services
+     * autorisé par son plan d'abonnement (null = illimité).
+     */
+    private function guardServiceLimit(): void
+    {
+        $maxServices = Auth::user()->currentPlan()?->max_services;
+
+        if ($maxServices !== null && Auth::user()->services()->count() >= $maxServices) {
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(redirect()
+                ->route('prestataire.services.index')
+                ->with('error', "Vous avez atteint la limite de {$maxServices} service(s) de votre plan actuel. Passez à un plan supérieur pour en publier davantage."));
+        }
     }
 }
