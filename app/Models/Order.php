@@ -17,6 +17,7 @@ class Order extends Model
         'service_id',
         'service_request_id',
         'proposal_id',
+        'custom_offer_id',
         'requirements',
         'amount',
         'commission',
@@ -113,6 +114,11 @@ class Order extends Model
     public function proposal()
     {
         return $this->belongsTo(Proposal::class);
+    }
+
+    public function customOffer()
+    {
+        return $this->belongsTo(CustomOffer::class);
     }
 
     public function messages()

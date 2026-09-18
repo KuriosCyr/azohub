@@ -60,6 +60,16 @@
                             @endforeach
                         </div>
                     @endif
+
+                    @if(!Auth::check() || Auth::user()->isClient())
+                        <div class="mt-6">
+                            <button wire:click="contactPrestataire" wire:loading.attr="disabled" wire:target="contactPrestataire"
+                                    class="inline-flex items-center gap-2 bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold px-6 py-3 rounded-lg transition shadow-md disabled:opacity-60">
+                                <x-app-icon name="chat" class="w-4 h-4" />
+                                Contacter le prestataire
+                            </button>
+                        </div>
+                    @endif
                 </div>
 
                 {{-- Stats rapides --}}

@@ -192,7 +192,8 @@
                         Commander maintenant →
                     </button>
 
-                    <button class="w-full border-2 border-ink-900 text-ink-900 hover:bg-terracotta-50 font-bold py-4 rounded-lg transition">
+                    <button wire:click="contactPrestataire" wire:loading.attr="disabled" wire:target="contactPrestataire"
+                            class="w-full border-2 border-ink-900 text-ink-900 hover:bg-terracotta-50 font-bold py-4 rounded-lg transition disabled:opacity-60">
                         Contacter le prestataire
                     </button>
 

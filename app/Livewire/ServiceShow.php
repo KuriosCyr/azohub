@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Conversation;
 use App\Models\Service;
 use Livewire\Component;
 
@@ -45,6 +46,30 @@ class ServiceShow extends Component
             'service' => $this->service->id,
             'package' => $this->selectedPackage
         ]);
+    }
+
+    public function contactPrestataire()
+    {
+        if (!auth()->check()) {
+            return redirect()->route('login')
+                ->with('info', 'Veuillez vous connecter pour contacter ce prestataire.');
+        }
+
+        if (!auth()->user()->isClient()) {
+            session()->flash('error', 'Seuls les clients peuvent contacter directement un prestataire.');
+            return;
+        }
+
+        $conversation = Conversation::firstOrCreate(
+            ['client_id' => auth()->id(), 'prestataire_id' => $this->service->user_id],
+            ['service_id' => $this->service->id]
+        );
+
+        if (!$conversation->service_id) {
+            $conversation->update(['service_id' => $this->service->id]);
+        }
+
+        return redirect()->route('conversations.show', $conversation);
     }
 
     public function render()

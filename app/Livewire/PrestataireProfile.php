@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Conversation;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -30,6 +31,26 @@ class PrestataireProfile extends Component
     {
         $this->activeTab = $tab;
         $this->resetPage();
+    }
+
+    public function contactPrestataire()
+    {
+        if (!auth()->check()) {
+            return redirect()->route('login')
+                ->with('info', 'Veuillez vous connecter pour contacter ce prestataire.');
+        }
+
+        if (!auth()->user()->isClient()) {
+            session()->flash('error', 'Seuls les clients peuvent contacter directement un prestataire.');
+            return;
+        }
+
+        $conversation = Conversation::firstOrCreate([
+            'client_id' => auth()->id(),
+            'prestataire_id' => $this->prestataire->id,
+        ]);
+
+        return redirect()->route('conversations.show', $conversation);
     }
 
     public function render()

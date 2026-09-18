@@ -12,7 +12,11 @@ use App\Livewire\ServiceRequestCreate;
 use App\Livewire\ServiceRequestsIndex;
 use App\Livewire\ServiceRequestShow;
 use App\Livewire\ProposalAccept;
+use App\Livewire\ConversationsIndex;
+use App\Livewire\ConversationShow;
+use App\Livewire\CustomOfferAccept;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ReviewController;
@@ -147,6 +151,23 @@ Route::middleware(['auth'])->group(function () {
             ->middleware('client')
             ->name('proposals.accept');
     });
+
+    // ============================================
+    // MESSAGERIE DIRECTE & OFFRES PERSONNALISÉES
+    // ============================================
+
+    Route::prefix('messages')->name('conversations.')->group(function () {
+        Route::get('/', ConversationsIndex::class)->name('index');
+        Route::get('/{conversation}', ConversationShow::class)->name('show');
+    });
+
+    Route::post('/messages/start', [ConversationController::class, 'start'])
+        ->middleware('client')
+        ->name('conversations.start');
+
+    Route::get('/offres-personnalisees/{offer}/accepter', CustomOfferAccept::class)
+        ->middleware('client')
+        ->name('custom-offers.accept');
 
     // ============================================
     // GESTION AVIS

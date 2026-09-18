@@ -59,6 +59,10 @@
                         </a>
                     @endif
 
+                    <a href="{{ route('conversations.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('conversations.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
+                        Messages
+                    </a>
+
                     <a href="{{ route('how-it-works') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition">
                         Comment ça marche
                     </a>
@@ -227,6 +231,10 @@
                         Mes demandes
                     </a>
                 @endif
+                <a href="{{ route('conversations.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition {{ request()->routeIs('conversations.*') ? 'bg-terracotta-50 text-terracotta-700' : '' }}">
+                    <x-app-icon name="chat" class="w-4 h-4" />
+                    Messages
+                </a>
                 <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
                     <x-app-icon name="cog" class="w-4 h-4" />
                     Paramètres
