@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Order extends Model
 {
@@ -237,22 +238,41 @@ class Order extends Model
         $this->payments()->where('status', 'refund_pending')->update(['status' => 'refunded']);
     }
 
-    // Libérer le paiement au prestataire (validation client ou litige tranché en sa faveur)
-    public function releasePayment()
+    // Libérer le paiement au prestataire (validation client, auto-validation après
+    // délai, ou litige tranché en sa faveur). Verrouillée en transaction et gardée
+    // par un contrôle de payment_status pour éviter un double crédit du portefeuille
+    // si deux déclencheurs (client + cron d'auto-validation) se chevauchent.
+    public function releasePayment(bool $autoValidated = false)
     {
-        $this->update([
-            'status' => 'completed',
-            'payment_status' => 'released',
-            'validated_at' => $this->validated_at ?? now(),
-        ]);
+        DB::transaction(function () use ($autoValidated) {
+            $order = static::whereKey($this->id)->lockForUpdate()->first();
 
-        if ($this->prestataire) {
-            $this->prestataire->increment('wallet_balance', $this->prestataire_amount);
-            $this->prestataire->increment('completed_orders');
-            $this->prestataire->refresh()->updateLevel();
-        }
+            if (!$order || $order->payment_status === 'released') {
+                return;
+            }
 
-        $this->service?->increment('total_orders');
+            $updateData = [
+                'status' => 'completed',
+                'payment_status' => 'released',
+                'validated_at' => $order->validated_at ?? now(),
+            ];
+
+            if ($autoValidated) {
+                $updateData['auto_validated'] = true;
+            }
+
+            $order->update($updateData);
+
+            if ($order->prestataire) {
+                $order->prestataire->increment('wallet_balance', $order->prestataire_amount);
+                $order->prestataire->increment('completed_orders');
+                $order->prestataire->refresh()->updateLevel();
+            }
+
+            $order->service?->increment('total_orders');
+        });
+
+        $this->refresh();
     }
 
     // Helper pour obtenir le libellé du statut

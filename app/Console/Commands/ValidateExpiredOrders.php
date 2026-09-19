@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\Order;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class ValidateExpiredOrders extends Command
 {
@@ -27,23 +26,7 @@ class ValidateExpiredOrders extends Command
         $count = 0;
 
         foreach ($orders as $order) {
-            DB::transaction(function () use ($order) {
-                $order->update([
-                    'status'         => 'completed',
-                    'validated_at'   => now(),
-                    'auto_validated' => true,
-                ]);
-
-                // Libérer les fonds vers le prestataire
-                $order->prestataire->increment('wallet_balance', $order->prestataire_amount);
-
-                // Incrémenter les stats du prestataire
-                $order->prestataire->increment('completed_orders');
-                $order->prestataire->refresh()->updateLevel();
-
-                // Incrémenter les stats du service
-                $order->service?->incrementOrders();
-            });
+            $order->releasePayment(autoValidated: true);
 
             $count++;
             $this->line("  Commande #{$order->order_number} auto-validée.");
