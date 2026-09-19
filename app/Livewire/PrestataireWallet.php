@@ -81,7 +81,7 @@ class PrestataireWallet extends Component
 
         $earnings = Order::where('prestataire_id', $user->id)
             ->where('payment_status', 'released')
-            ->with('service')
+            ->with(['service', 'serviceRequest.category', 'customOffer'])
             ->latest('validated_at')
             ->paginate(10, ['*'], 'earnings');
 

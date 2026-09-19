@@ -47,7 +47,7 @@ class PrestataireDashboard extends Component
 
         // Commandes en cours
         $activeOrders = $user->prestataireOrders()
-            ->with(['client', 'service'])
+            ->with(['client', 'service', 'serviceRequest.category', 'customOffer'])
             ->whereIn('status', ['paid', 'in_progress'])
             ->latest()
             ->take(10)
@@ -55,7 +55,7 @@ class PrestataireDashboard extends Component
 
         // Commandes récentes terminées
         $recentCompletedOrders = $user->prestataireOrders()
-            ->with(['client', 'service'])
+            ->with(['client', 'service', 'serviceRequest.category', 'customOffer'])
             ->where('status', 'completed')
             ->latest()
             ->take(5)

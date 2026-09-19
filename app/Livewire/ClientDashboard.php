@@ -46,7 +46,7 @@ class ClientDashboard extends Component
     public function getRecentOrdersProperty()
     {
         return Order::where('client_id', Auth::id())
-            ->with(['service.prestataire', 'service.category'])
+            ->with(['service.prestataire', 'service.category', 'serviceRequest.category', 'customOffer'])
             ->latest()
             ->take(5)
             ->get();
@@ -59,7 +59,7 @@ class ClientDashboard extends Component
     {
         return Order::where('client_id', Auth::id())
             ->where('status', 'delivered')
-            ->with(['service.prestataire', 'service.category'])
+            ->with(['service.prestataire', 'service.category', 'serviceRequest.category', 'customOffer'])
             ->latest()
             ->get();
     }
@@ -70,7 +70,7 @@ class ClientDashboard extends Component
     public function getOrdersProperty()
     {
         $query = Order::where('client_id', Auth::id())
-            ->with(['service.prestataire', 'service.category']);
+            ->with(['service.prestataire', 'service.category', 'serviceRequest.category', 'customOffer']);
 
         // Filtre par statut
         if ($this->statusFilter !== 'all') {
