@@ -341,6 +341,30 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         if ($this->level !== $level) {
             $this->update(['level' => $level]);
         }
+
+        $this->awardMilestoneBadges($completedOrders, $rating);
+    }
+
+    // Badges d'étape gagnés automatiquement selon les commandes réalisées et la note
+    // moyenne. Cumulatifs : jamais retirés une fois obtenus, même si la note baisse
+    // ensuite (ce sont des jalons atteints, pas un statut courant).
+    private function awardMilestoneBadges(int $completedOrders, float $rating): void
+    {
+        $orderMilestones = [
+            10 => '10 commandes',
+            50 => '50 commandes',
+            100 => '100 commandes',
+        ];
+
+        foreach ($orderMilestones as $threshold => $badge) {
+            if ($completedOrders >= $threshold) {
+                $this->addBadge($badge);
+            }
+        }
+
+        if ($completedOrders >= 20 && $rating >= 4.8) {
+            $this->addBadge('Top Rated');
+        }
     }
 
     // Taux de commission Azohub : le plus avantageux entre le niveau (gratuit, gagné

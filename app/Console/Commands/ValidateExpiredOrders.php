@@ -39,6 +39,7 @@ class ValidateExpiredOrders extends Command
 
                 // Incrémenter les stats du prestataire
                 $order->prestataire->increment('completed_orders');
+                $order->prestataire->refresh()->updateLevel();
 
                 // Incrémenter les stats du service
                 $order->service?->incrementOrders();
