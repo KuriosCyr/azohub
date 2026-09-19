@@ -93,12 +93,36 @@ class Order extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($order) {
             if (empty($order->order_number)) {
                 $order->order_number = 'AZH-' . date('Y') . '-' . str_pad(self::max('id') + 1, 5, '0', STR_PAD_LEFT);
             }
         });
+
+        // Historique des statuts : une ligne à la création, puis une à chaque
+        // changement, quel que soit le code qui déclenche le changement (contrôleur,
+        // commande planifiée, résolution de litige...).
+        static::created(function (Order $order) {
+            $order->statusHistory()->create([
+                'status' => $order->status,
+                'updated_by' => \Illuminate\Support\Facades\Auth::id(),
+            ]);
+        });
+
+        static::updated(function (Order $order) {
+            if ($order->wasChanged('status')) {
+                $order->statusHistory()->create([
+                    'status' => $order->status,
+                    'updated_by' => \Illuminate\Support\Facades\Auth::id(),
+                ]);
+            }
+        });
+    }
+
+    public function statusHistory()
+    {
+        return $this->hasMany(OrderStatus::class)->latest();
     }
 
     // Accesseurs pour compatibilité avec le code existant
@@ -326,7 +350,12 @@ class Order extends Model
     // Helper pour obtenir le libellé du statut
     public function getStatusLabelAttribute()
     {
-        return match($this->status) {
+        return self::statusLabel($this->status);
+    }
+
+    public static function statusLabel(string $status): string
+    {
+        return match($status) {
             'pending_payment' => 'En attente de paiement',
             'paid' => 'Payée',
             'in_progress' => 'En cours',
@@ -334,7 +363,7 @@ class Order extends Model
             'completed' => 'Terminée',
             'cancelled' => 'Annulée',
             'disputed' => 'Litige',
-            default => ucfirst($this->status),
+            default => ucfirst($status),
         };
     }
 

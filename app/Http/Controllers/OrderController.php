@@ -33,6 +33,7 @@ class OrderController extends Controller
             'review',
             'payments',
             'dispute',
+            'statusHistory.updatedBy',
         ]);
 
         // Déterminer le rôle de l'utilisateur pour cette commande

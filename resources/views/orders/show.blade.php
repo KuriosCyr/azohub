@@ -222,6 +222,28 @@
                         </div>
                     </div>
 
+                    {{-- Historique détaillé des statuts --}}
+                    @if($order->statusHistory->count() > 1)
+                    <details class="bg-cream-50 rounded-xl border border-ink-100">
+                        <summary class="cursor-pointer p-5 font-bold text-ink-900 text-sm select-none">
+                            Historique détaillé ({{ $order->statusHistory->count() }} changements)
+                        </summary>
+                        <div class="px-5 pb-5 space-y-2">
+                            @foreach($order->statusHistory as $entry)
+                                <div class="flex items-center justify-between text-sm border-t border-ink-100 pt-2">
+                                    <span class="text-ink-700 font-semibold">{{ \App\Models\Order::statusLabel($entry->status) }}</span>
+                                    <span class="text-ink-400">
+                                        {{ $entry->created_at->format('d/m/Y H:i') }}
+                                        @if($entry->updatedBy)
+                                            · {{ $entry->updatedBy->name }}
+                                        @endif
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </details>
+                    @endif
+
                     {{-- Livrables --}}
                     @if($order->deliverables)
                     <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">

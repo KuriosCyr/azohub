@@ -12,8 +12,8 @@ class OrderStatus extends Model
     protected $fillable = [
         'order_id',
         'status',
-        'comment',
-        'changed_by',
+        'note',
+        'updated_by',
     ];
 
     // Relations
@@ -22,8 +22,8 @@ class OrderStatus extends Model
         return $this->belongsTo(Order::class);
     }
 
-    public function changedBy()
+    public function updatedBy()
     {
-        return $this->belongsTo(User::class, 'changed_by');
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }
