@@ -637,7 +637,7 @@
                 Notre équipe examinera la situation. La commande sera bloquée en attendant la résolution.
             </p>
 
-            <form action="{{ route('orders.dispute.store', $order) }}" method="POST">
+            <form action="{{ route('orders.dispute.store', $order) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-sm font-bold text-ink-700 mb-2">
@@ -654,13 +654,21 @@
                         <option value="other">Autre</option>
                     </select>
                 </div>
-                <div class="mb-6">
+                <div class="mb-4">
                     <label class="block text-sm font-bold text-ink-700 mb-2">
                         Description <span class="text-red-500">*</span>
                     </label>
                     <textarea name="description" rows="4" required minlength="20"
                         class="w-full px-4 py-3 border-2 border-ink-200 rounded-lg focus:border-red-500 focus:ring-4 focus:ring-red-100 transition"
                         placeholder="Décrivez précisément le problème (min. 20 caractères)..."></textarea>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-ink-700 mb-2">
+                        Preuves <span class="text-ink-400 font-normal">(optionnel — photos, captures d'écran...)</span>
+                    </label>
+                    <input type="file" name="evidences[]" multiple accept="image/*,.pdf"
+                        class="w-full px-4 py-3 border-2 border-ink-200 rounded-lg focus:border-red-500 focus:ring-4 focus:ring-red-100 transition text-sm">
+                    <p class="text-xs text-ink-400 mt-1">5 fichiers max, 5 MB chacun.</p>
                 </div>
 
                 <div class="flex gap-4">

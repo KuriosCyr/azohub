@@ -4,10 +4,13 @@ namespace App\Filament\Resources\Disputes\Schemas;
 
 use App\Models\Dispute;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 
 class DisputeForm
 {
@@ -56,6 +59,21 @@ class DisputeForm
                             ->label('Description')
                             ->required()
                             ->disabled()
+                            ->columnSpanFull(),
+                        Placeholder::make('evidences')
+                            ->label('Preuves jointes')
+                            ->content(function (Dispute $record) {
+                                if (empty($record->evidences)) {
+                                    return 'Aucune preuve jointe.';
+                                }
+
+                                $links = collect($record->evidences)->map(
+                                    fn (array $file) => '<a href="' . e(Storage::disk('public')->url($file['path'])) . '" target="_blank" class="underline text-primary-600">' . e($file['name']) . '</a>'
+                                )->implode('<br>');
+
+                                return new HtmlString($links);
+                            })
+                            ->html()
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
