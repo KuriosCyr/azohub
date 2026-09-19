@@ -89,10 +89,4 @@ class Payment extends Model
         }
         $this->save();
     }
-
-    // Scope
-    public function scopeSuccessful($query)
-    {
-        return $query->where('status', 'success');
-    }
 }

@@ -49,11 +49,6 @@ class ServiceRequest extends Model
         return $this->hasMany(Proposal::class);
     }
 
-    public function acceptedProposal()
-    {
-        return $this->hasOne(Proposal::class)->where('status', 'accepted');
-    }
-
     // Scopes
     public function scopeOpen($query)
     {

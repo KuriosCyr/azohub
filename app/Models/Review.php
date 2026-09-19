@@ -97,9 +97,4 @@ class Review extends Model
         return $query->where('is_visible', true);
     }
 
-    public function scopeForPrestataire($query, $prestataireId)
-    {
-        return $query->where('reviewee_id', $prestataireId)
-                     ->where('review_type', 'client_to_prestataire');
-    }
 }

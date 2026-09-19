@@ -22,9 +22,4 @@ class ProfileView extends Model
     {
         return $this->belongsTo(User::class, 'prestataire_id');
     }
-
-    public function viewer()
-    {
-        return $this->belongsTo(User::class, 'viewer_id');
-    }
 }

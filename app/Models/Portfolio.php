@@ -27,15 +27,4 @@ class Portfolio extends Model
     {
         return $this->belongsTo(Service::class);
     }
-
-    // Vérifier le type de fichier
-    public function isImage(): bool
-    {
-        return $this->file_type === 'image';
-    }
-
-    public function isVideo(): bool
-    {
-        return $this->file_type === 'video';
-    }
 }

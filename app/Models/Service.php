@@ -92,13 +92,6 @@ class Service extends Model
         return $query->where('services.status', 'active')->where('services.is_active', true);
     }
 
-    public function scopeFeatured($query)
-    {
-        return $query->where('is_featured', true)
-            ->where('rating', '>=', 4.5)
-            ->where('total_reviews', '>=', 10);
-    }
-
     // Methods
     /**
      * Mettre à jour la note moyenne du service

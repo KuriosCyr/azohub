@@ -143,27 +143,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->activeSubscription?->plan ?? SubscriptionPlan::where('slug', 'gratuit')->first();
     }
 
-    public function receivedProposals()
-    {
-        return $this->hasManyThrough(Proposal::class, ServiceRequest::class, 'client_id', 'service_request_id');
-    }
-
-    public function sentProposals()
-    {
-        // CORRECTION: user_id au lieu de prestataire_id
-        return $this->hasMany(Proposal::class, 'user_id');
-    }
-
     // Relations pour les clients
     public function serviceRequests()
     {
         return $this->hasMany(ServiceRequest::class, 'client_id');
-    }
-
-    // Orders en tant que client
-    public function clientOrders()
-    {
-        return $this->hasMany(Order::class, 'client_id');
     }
 
     // Orders en tant que prestataire
@@ -251,23 +234,6 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function withdrawalRequests()
     {
         return $this->hasMany(WithdrawalRequest::class, 'prestataire_id');
-    }
-
-    public function profileViews()
-    {
-        return $this->hasMany(ProfileView::class, 'prestataire_id');
-    }
-
-    // Messages envoyés
-    public function sentMessages()
-    {
-        return $this->hasMany(Message::class, 'sender_id');
-    }
-
-    // Avis donnés
-    public function givenReviews()
-    {
-        return $this->hasMany(Review::class, 'reviewer_id');
     }
 
     // Avis reçus

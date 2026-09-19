@@ -40,48 +40,6 @@ class Report extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
-    // Scopes
-    public function scopePending($query)
-    {
-        return $query->where('status', 'pending');
-    }
-
-    public function scopeReviewing($query)
-    {
-        return $query->where('status', 'reviewing');
-    }
-
-    public function scopeResolved($query)
-    {
-        return $query->where('status', 'resolved');
-    }
-
-    public function scopeDismissed($query)
-    {
-        return $query->where('status', 'dismissed');
-    }
-
-    // Helpers
-    public function isPending()
-    {
-        return $this->status === 'pending';
-    }
-
-    public function isReviewing()
-    {
-        return $this->status === 'reviewing';
-    }
-
-    public function isResolved()
-    {
-        return $this->status === 'resolved';
-    }
-
-    public function isDismissed()
-    {
-        return $this->status === 'dismissed';
-    }
-
     // Libellés des raisons
     public static function reasonLabels()
     {

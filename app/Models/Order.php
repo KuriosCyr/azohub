@@ -194,102 +194,10 @@ class Order extends Model
         return $this->hasOne(Dispute::class);
     }
 
-    // Scopes
-    public function scopePendingPayment($query)
-    {
-        return $query->where('status', 'pending_payment');
-    }
-
-    public function scopePaid($query)
-    {
-        return $query->where('status', 'paid');
-    }
-
-    public function scopeInProgress($query)
-    {
-        return $query->where('status', 'in_progress');
-    }
-
-    public function scopeDelivered($query)
-    {
-        return $query->where('status', 'delivered');
-    }
-
-    public function scopeCompleted($query)
-    {
-        return $query->where('status', 'completed');
-    }
-
-    public function scopeCancelled($query)
-    {
-        return $query->where('status', 'cancelled');
-    }
-
     // Helpers de statut
     public function isPendingPayment()
     {
         return $this->status === 'pending_payment';
-    }
-
-    public function isPaid()
-    {
-        return $this->status === 'paid';
-    }
-
-    public function isInProgress()
-    {
-        return $this->status === 'in_progress';
-    }
-
-    public function isDelivered()
-    {
-        return $this->status === 'delivered';
-    }
-
-    public function isCompleted()
-    {
-        return $this->status === 'completed';
-    }
-
-    public function isCancelled()
-    {
-        return $this->status === 'cancelled';
-    }
-
-    public function isDisputed()
-    {
-        return $this->status === 'disputed';
-    }
-
-    // Helpers de permission
-    public function canBeAccepted()
-    {
-        return $this->status === 'paid';
-    }
-
-    public function canBeRefused()
-    {
-        return $this->status === 'paid';
-    }
-
-    public function canBeDelivered()
-    {
-        return $this->status === 'in_progress';
-    }
-
-    public function canBeValidated()
-    {
-        return $this->status === 'delivered';
-    }
-
-    public function canBeCancelled()
-    {
-        return in_array($this->status, ['pending_payment', 'paid']);
-    }
-
-    public function canRequestRevision()
-    {
-        return $this->status === 'delivered';
     }
 
     // Un litige peut être ouvert par le client ou le prestataire tant que la
