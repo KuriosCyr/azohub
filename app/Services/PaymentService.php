@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use FedaPay\FedaPay;
 use FedaPay\Transaction;
 use FedaPay\Webhook;
+use Illuminate\Support\Facades\DB;
 
 class PaymentService
 {
@@ -116,16 +117,35 @@ class PaymentService
 
         $transaction = Transaction::retrieve($event->object_id);
 
-        $payment = Payment::where('transaction_id', (string) $transaction->id)->first();
+        $this->processTransactionUpdate(
+            (string) $transaction->id,
+            $transaction->wasPaid(),
+            (string) $transaction->status,
+            $transaction->__toJSON()
+        );
+    }
 
-        if (!$payment || $payment->status !== 'pending') {
-            return;
-        }
+    // Verrouillé + gardé par le statut : FedaPay peut livrer le même événement
+    // plusieurs fois (retries), et sans ça deux livraisons concurrentes liraient
+    // toutes les deux "pending" avant qu'aucune n'ait écrit, traitant deux fois
+    // le paiement (ex. double renouvellement d'abonnement). Extrait de
+    // handleWebhook() pour rester testable sans dépendre du SDK FedaPay.
+    public function processTransactionUpdate(string $transactionId, bool $wasPaid, string $status, ?string $gatewayResponse): void
+    {
+        DB::transaction(function () use ($transactionId, $wasPaid, $status, $gatewayResponse) {
+            $payment = Payment::where('transaction_id', $transactionId)
+                ->lockForUpdate()
+                ->first();
 
-        if ($transaction->wasPaid()) {
-            $payment->markAsPaid($transaction->__toJSON());
-        } elseif (in_array($transaction->status, ['declined', 'canceled'], true)) {
-            $payment->markAsFailed($transaction->__toJSON());
-        }
+            if (!$payment || $payment->status !== 'pending') {
+                return;
+            }
+
+            if ($wasPaid) {
+                $payment->markAsPaid($gatewayResponse);
+            } elseif (in_array($status, ['declined', 'canceled'], true)) {
+                $payment->markAsFailed($gatewayResponse);
+            }
+        });
     }
 }
