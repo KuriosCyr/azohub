@@ -34,32 +34,43 @@ class ProposalAccept extends Component
             'paymentMethod' => 'required|in:mtn_momo,moov_money,celtiis_cash,card',
         ]);
 
-        $amount = (float) $this->proposal->proposed_price;
-        $commission = round($amount * $this->proposal->prestataire->commissionRate(), 2);
-        $clientFee = round($amount * Order::CLIENT_FEE_RATE, 2);
-
         $previouslyPendingIds = $this->serviceRequest->proposals()
             ->where('id', '!=', $this->proposal->id)
             ->where('status', 'pending')
             ->pluck('id');
 
-        $order = DB::transaction(function () use ($amount, $commission, $clientFee) {
+        // La proposition et la demande sont revérifiées à l'intérieur même de la
+        // transaction (verrouillées), pas seulement au chargement de la page : sans
+        // ça, une proposition déjà acceptée/rejetée entre-temps (ou une demande
+        // fermée par une autre acceptation) pourrait quand même générer une commande.
+        $order = DB::transaction(function () {
+            $proposal = Proposal::whereKey($this->proposal->id)->lockForUpdate()->first();
+            $serviceRequest = ServiceRequest::whereKey($this->serviceRequest->id)->lockForUpdate()->first();
+
+            if (!$proposal || $proposal->status !== 'pending' || !$serviceRequest || $serviceRequest->status !== 'open') {
+                abort(403, 'Cette proposition ne peut plus être acceptée.');
+            }
+
+            $amount = (float) $proposal->proposed_price;
+            $commission = round($amount * $proposal->prestataire->commissionRate(), 2);
+            $clientFee = round($amount * Order::CLIENT_FEE_RATE, 2);
+
             $order = Order::create([
                 'client_id' => Auth::id(),
-                'prestataire_id' => $this->proposal->user_id,
-                'service_request_id' => $this->serviceRequest->id,
-                'proposal_id' => $this->proposal->id,
-                'requirements' => $this->serviceRequest->description,
+                'prestataire_id' => $proposal->user_id,
+                'service_request_id' => $serviceRequest->id,
+                'proposal_id' => $proposal->id,
+                'requirements' => $serviceRequest->description,
                 'amount' => $amount,
                 'commission' => $commission,
                 'client_fee' => $clientFee,
                 'prestataire_amount' => $amount - $commission,
-                'delivery_time' => $this->proposal->delivery_time,
+                'delivery_time' => $proposal->delivery_time,
                 'status' => 'pending_payment',
                 'payment_status' => 'pending',
             ]);
 
-            $this->proposal->accept();
+            $proposal->accept();
 
             return $order;
         });

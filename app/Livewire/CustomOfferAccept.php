@@ -28,27 +28,36 @@ class CustomOfferAccept extends Component
             'paymentMethod' => 'required|in:mtn_momo,moov_money,celtiis_cash,card',
         ]);
 
-        $amount = (float) $this->offer->price;
-        $commission = round($amount * $this->offer->prestataire->commissionRate(), 2);
-        $clientFee = round($amount * Order::CLIENT_FEE_RATE, 2);
+        // L'offre est revérifiée à l'intérieur même de la transaction (verrouillée),
+        // pas seulement au chargement de la page : sans ça, une offre déjà acceptée
+        // ou déclinée entre-temps pourrait quand même générer une seconde commande.
+        $order = DB::transaction(function () {
+            $offer = CustomOffer::whereKey($this->offer->id)->lockForUpdate()->first();
 
-        $order = DB::transaction(function () use ($amount, $commission, $clientFee) {
+            if (!$offer || $offer->status !== 'pending') {
+                abort(403, 'Cette offre ne peut plus être acceptée.');
+            }
+
+            $amount = (float) $offer->price;
+            $commission = round($amount * $offer->prestataire->commissionRate(), 2);
+            $clientFee = round($amount * Order::CLIENT_FEE_RATE, 2);
+
             $order = Order::create([
                 'client_id' => Auth::id(),
-                'prestataire_id' => $this->offer->prestataire_id,
-                'service_id' => $this->offer->service_id,
-                'custom_offer_id' => $this->offer->id,
-                'requirements' => $this->offer->description,
+                'prestataire_id' => $offer->prestataire_id,
+                'service_id' => $offer->service_id,
+                'custom_offer_id' => $offer->id,
+                'requirements' => $offer->description,
                 'amount' => $amount,
                 'commission' => $commission,
                 'client_fee' => $clientFee,
                 'prestataire_amount' => $amount - $commission,
-                'delivery_time' => $this->offer->delivery_days,
+                'delivery_time' => $offer->delivery_days,
                 'status' => 'pending_payment',
                 'payment_status' => 'pending',
             ]);
 
-            $this->offer->update(['status' => 'accepted']);
+            $offer->update(['status' => 'accepted']);
 
             return $order;
         });
