@@ -97,7 +97,11 @@ class Order extends Model
 
         static::creating(function ($order) {
             if (empty($order->order_number)) {
-                $order->order_number = 'AZH-' . date('Y') . '-' . str_pad(self::max('id') + 1, 5, '0', STR_PAD_LEFT);
+                // Valeur temporaire unique le temps que l'ID auto-incrémenté soit
+                // connu : max('id')+1 pouvait produire le même numéro pour deux
+                // commandes créées au même instant, faisant planter l'une des deux
+                // sur la contrainte unique.
+                $order->order_number = 'TMP-' . (string) \Illuminate\Support\Str::uuid();
             }
         });
 
@@ -105,6 +109,14 @@ class Order extends Model
         // changement, quel que soit le code qui déclenche le changement (contrôleur,
         // commande planifiée, résolution de litige...).
         static::created(function (Order $order) {
+            if (str_starts_with($order->order_number, 'TMP-')) {
+                // L'ID auto-incrémenté est unique et définitif : plus de risque de
+                // collision, contrairement à un numéro deviné avant l'insertion.
+                $order->updateQuietly([
+                    'order_number' => 'AZH-' . $order->created_at->format('Y') . '-' . str_pad($order->id, 5, '0', STR_PAD_LEFT),
+                ]);
+            }
+
             $order->statusHistory()->create([
                 'status' => $order->status,
                 'updated_by' => \Illuminate\Support\Facades\Auth::id(),
