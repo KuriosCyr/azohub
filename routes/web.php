@@ -42,7 +42,7 @@ Route::get('/services/{service:slug}', ServiceShow::class)->name('services.show'
 Route::view('/how-it-works', 'pages.how-it-works')->name('how-it-works');
 Route::get('/faq', FaqPage::class)->name('faq');
 Route::get('/contact', [ContactController::class, 'index'])->name('contact');
-Route::post('/contact', [ContactController::class, 'send'])->name('contact.send');
+Route::post('/contact', [ContactController::class, 'send'])->middleware('throttle:6,1')->name('contact.send');
 Route::view('/terms', 'pages.terms')->name('terms');
 Route::view('/privacy', 'pages.privacy')->name('privacy');
 

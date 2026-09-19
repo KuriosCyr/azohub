@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\ContactMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ContactController extends Controller
@@ -34,7 +35,16 @@ class ContactController extends Controller
             'message.required' => 'Le message est obligatoire.',
         ]);
 
-        Mail::to(config('services.azohub.support_email'))->send(new ContactMessage($validated));
+        try {
+            Mail::to(config('services.azohub.support_email'))->send(new ContactMessage($validated));
+        } catch (\Throwable $e) {
+            Log::error('Échec envoi du formulaire de contact : ' . $e->getMessage());
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Votre message n\'a pas pu être envoyé. Réessayez dans quelques instants.');
+        }
 
         return redirect()
             ->back()
