@@ -40,7 +40,9 @@ class ReviewController extends Controller
 
         $order->load(['client', 'prestataire', 'service']);
 
-        return view('reviews.create', compact('order'));
+        $isClient = $order->client_id === Auth::id();
+
+        return view('reviews.create', compact('order', 'isClient'));
     }
 
     /**
@@ -71,17 +73,24 @@ class ReviewController extends Controller
                 ->with('error', 'Vous avez déjà laissé un avis pour cette commande.');
         }
 
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'quality_rating' => 'required|integer|min:1|max:5',
-            'communication_rating' => 'required|integer|min:1|max:5',
-            'timeliness_rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
-        ]);
-
         // Déterminer le type d'avis et la personne évaluée
         $isClient = $order->client_id === Auth::id();
-        
+
+        $validated = $isClient
+            ? $request->validate([
+                'rating' => 'required|integer|min:1|max:5',
+                'quality_rating' => 'required|integer|min:1|max:5',
+                'communication_rating' => 'required|integer|min:1|max:5',
+                'timeliness_rating' => 'required|integer|min:1|max:5',
+                'comment' => 'nullable|string|max:1000',
+            ])
+            : $request->validate([
+                'rating' => 'required|integer|min:1|max:5',
+                'clarity_rating' => 'required|integer|min:1|max:5',
+                'responsiveness_rating' => 'required|integer|min:1|max:5',
+                'comment' => 'nullable|string|max:1000',
+            ]);
+
         $review = Review::create([
             'order_id' => $order->id,
             'reviewer_id' => Auth::id(),
@@ -89,9 +98,11 @@ class ReviewController extends Controller
             'service_id' => $order->service_id,
             'review_type' => $isClient ? 'client_to_prestataire' : 'prestataire_to_client',
             'rating' => $validated['rating'],
-            'quality_rating' => $validated['quality_rating'],
-            'communication_rating' => $validated['communication_rating'],
-            'timeliness_rating' => $validated['timeliness_rating'],
+            'quality_rating' => $validated['quality_rating'] ?? null,
+            'communication_rating' => $validated['communication_rating'] ?? null,
+            'timeliness_rating' => $validated['timeliness_rating'] ?? null,
+            'clarity_rating' => $validated['clarity_rating'] ?? null,
+            'responsiveness_rating' => $validated['responsiveness_rating'] ?? null,
             'comment' => $validated['comment'] ?? null,
         ]);
 
@@ -101,8 +112,8 @@ class ReviewController extends Controller
             $order->prestataire->updateRating();
             $order->prestataire->updateLevel();
 
-            // Mise à jour du service
-            $order->service->updateRating();
+            // Mise à jour du service (une commande négociée/offre personnalisée n'en a pas)
+            $order->service?->updateRating();
         }
 
         $review->reviewee->notify(new NewReviewReceived($review));
@@ -117,6 +128,11 @@ class ReviewController extends Controller
      */
     public function show(Review $review)
     {
+        // Un avis masqué par l'admin n'est visible que par l'admin lui-même.
+        if (!$review->is_visible && Auth::user()->role !== 'admin') {
+            abort(404);
+        }
+
         $review->load(['reviewer', 'reviewee', 'order.service']);
 
         return view('reviews.show', compact('review'));

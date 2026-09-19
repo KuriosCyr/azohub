@@ -78,6 +78,7 @@ class PrestataireProfile extends Component
                 ->paginate(12);
         } elseif ($this->activeTab === 'reviews') {
             $data['reviews'] = $this->prestataire->receivedReviews()
+                ->visible()
                 ->with(['reviewer', 'order.service'])
                 ->latest()
                 ->paginate(10);
@@ -88,7 +89,7 @@ class PrestataireProfile extends Component
             'services_count' => $this->prestataire->services()->active()->count(),
             'total_orders' => $this->prestataire->completed_orders,
             'rating' => $this->prestataire->rating,
-            'total_reviews' => $this->prestataire->receivedReviews()->count(),
+            'total_reviews' => $this->prestataire->receivedReviews()->visible()->count(),
             'response_time' => $this->prestataire->responseTimeLabel(),
             'completion_rate' => $this->prestataire->completionRate(),
         ];

@@ -9,6 +9,18 @@ class Review extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        // Un avis masqué/réaffiché par l'admin doit immédiatement changer la note
+        // moyenne affichée sur le profil et le service concernés.
+        static::updated(function (Review $review) {
+            if ($review->wasChanged('is_visible') && $review->review_type === 'client_to_prestataire') {
+                $review->reviewee?->updateRating();
+                $review->service?->updateRating();
+            }
+        });
+    }
+
     protected $fillable = [
         'order_id',
         'reviewer_id',

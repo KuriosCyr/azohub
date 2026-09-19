@@ -15,39 +15,33 @@ class ReviewsTable
     {
         return $table
             ->columns([
-                TextColumn::make('order_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('reviewer_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('reviewee_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('service_id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('reviewer.name')
+                    ->label('Auteur')
+                    ->searchable(),
+                TextColumn::make('reviewee.name')
+                    ->label('Destinataire')
+                    ->searchable(),
+                TextColumn::make('order.order_number')
+                    ->label('Commande')
+                    ->searchable(),
                 TextColumn::make('rating')
+                    ->label('Note')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('quality_rating')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('communication_rating')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('deadline_rating')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('clarity_rating')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('responsiveness_rating')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('comment')
+                    ->label('Commentaire')
+                    ->limit(50)
+                    ->toggleable(),
                 TextColumn::make('review_type')
+                    ->label('Type')
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'client_to_prestataire' => 'Client → prestataire',
+                        'prestataire_to_client' => 'Prestataire → client',
+                        default => $state,
+                    })
                     ->badge(),
                 IconColumn::make('is_visible')
+                    ->label('Visible')
                     ->boolean(),
                 TextColumn::make('created_at')
                     ->dateTime()

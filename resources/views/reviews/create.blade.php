@@ -72,82 +72,136 @@
                 </div>
 
                 {{-- Notes détaillées --}}
-                <div class="grid md:grid-cols-3 gap-6">
-                    {{-- Qualité --}}
-                    <div>
-                        <label class="block font-bold text-ink-900 mb-3">
-                            Qualité du travail <span class="text-red-500">*</span>
-                        </label>
-                        <div class="space-y-2" x-data="{ quality: {{ old('quality_rating', 0) }} }">
-                            @for($i = 1; $i <= 5; $i++)
-                                <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-terracotta-50 transition">
-                                    <input
-                                        type="radio"
-                                        name="quality_rating"
-                                        value="{{ $i }}"
-                                        x-model="quality"
-                                        class="w-4 h-4 text-terracotta-600 focus:ring-terracotta-600"
-                                        {{ old('quality_rating') == $i ? 'checked' : '' }}
-                                    >
-                                    <x-star-rating :rating="$i" class="w-4 h-4" />
-                                </label>
-                            @endfor
+                @if($isClient)
+                    <div class="grid md:grid-cols-3 gap-6">
+                        {{-- Qualité --}}
+                        <div>
+                            <label class="block font-bold text-ink-900 mb-3">
+                                Qualité du travail <span class="text-red-500">*</span>
+                            </label>
+                            <div class="space-y-2" x-data="{ quality: {{ old('quality_rating', 0) }} }">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-terracotta-50 transition">
+                                        <input
+                                            type="radio"
+                                            name="quality_rating"
+                                            value="{{ $i }}"
+                                            x-model="quality"
+                                            class="w-4 h-4 text-terracotta-600 focus:ring-terracotta-600"
+                                            {{ old('quality_rating') == $i ? 'checked' : '' }}
+                                        >
+                                        <x-star-rating :rating="$i" class="w-4 h-4" />
+                                    </label>
+                                @endfor
+                            </div>
+                            @error('quality_rating')
+                                <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                            @enderror
                         </div>
-                        @error('quality_rating')
-                            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
-                        @enderror
-                    </div>
 
-                    {{-- Communication --}}
-                    <div>
-                        <label class="block font-bold text-ink-900 mb-3">
-                            Communication <span class="text-red-500">*</span>
-                        </label>
-                        <div class="space-y-2" x-data="{ communication: {{ old('communication_rating', 0) }} }">
-                            @for($i = 1; $i <= 5; $i++)
-                                <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-terracotta-50 transition">
-                                    <input
-                                        type="radio"
-                                        name="communication_rating"
-                                        value="{{ $i }}"
-                                        x-model="communication"
-                                        class="w-4 h-4 text-terracotta-600 focus:ring-terracotta-600"
-                                        {{ old('communication_rating') == $i ? 'checked' : '' }}
-                                    >
-                                    <x-star-rating :rating="$i" class="w-4 h-4" />
-                                </label>
-                            @endfor
+                        {{-- Communication --}}
+                        <div>
+                            <label class="block font-bold text-ink-900 mb-3">
+                                Communication <span class="text-red-500">*</span>
+                            </label>
+                            <div class="space-y-2" x-data="{ communication: {{ old('communication_rating', 0) }} }">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-terracotta-50 transition">
+                                        <input
+                                            type="radio"
+                                            name="communication_rating"
+                                            value="{{ $i }}"
+                                            x-model="communication"
+                                            class="w-4 h-4 text-terracotta-600 focus:ring-terracotta-600"
+                                            {{ old('communication_rating') == $i ? 'checked' : '' }}
+                                        >
+                                        <x-star-rating :rating="$i" class="w-4 h-4" />
+                                    </label>
+                                @endfor
+                            </div>
+                            @error('communication_rating')
+                                <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                            @enderror
                         </div>
-                        @error('communication_rating')
-                            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
-                        @enderror
-                    </div>
 
-                    {{-- Délais --}}
-                    <div>
-                        <label class="block font-bold text-ink-900 mb-3">
-                            Respect des délais <span class="text-red-500">*</span>
-                        </label>
-                        <div class="space-y-2" x-data="{ timeliness: {{ old('timeliness_rating', 0) }} }">
-                            @for($i = 1; $i <= 5; $i++)
-                                <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-terracotta-50 transition">
-                                    <input
-                                        type="radio"
-                                        name="timeliness_rating"
-                                        value="{{ $i }}"
-                                        x-model="timeliness"
-                                        class="w-4 h-4 text-terracotta-600 focus:ring-terracotta-600"
-                                        {{ old('timeliness_rating') == $i ? 'checked' : '' }}
-                                    >
-                                    <x-star-rating :rating="$i" class="w-4 h-4" />
-                                </label>
-                            @endfor
+                        {{-- Délais --}}
+                        <div>
+                            <label class="block font-bold text-ink-900 mb-3">
+                                Respect des délais <span class="text-red-500">*</span>
+                            </label>
+                            <div class="space-y-2" x-data="{ timeliness: {{ old('timeliness_rating', 0) }} }">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-terracotta-50 transition">
+                                        <input
+                                            type="radio"
+                                            name="timeliness_rating"
+                                            value="{{ $i }}"
+                                            x-model="timeliness"
+                                            class="w-4 h-4 text-terracotta-600 focus:ring-terracotta-600"
+                                            {{ old('timeliness_rating') == $i ? 'checked' : '' }}
+                                        >
+                                        <x-star-rating :rating="$i" class="w-4 h-4" />
+                                    </label>
+                                @endfor
+                            </div>
+                            @error('timeliness_rating')
+                                <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                            @enderror
                         </div>
-                        @error('timeliness_rating')
-                            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
-                        @enderror
                     </div>
-                </div>
+                @else
+                    <div class="grid md:grid-cols-2 gap-6">
+                        {{-- Clarté des consignes --}}
+                        <div>
+                            <label class="block font-bold text-ink-900 mb-3">
+                                Clarté des consignes <span class="text-red-500">*</span>
+                            </label>
+                            <div class="space-y-2" x-data="{ clarity: {{ old('clarity_rating', 0) }} }">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-terracotta-50 transition">
+                                        <input
+                                            type="radio"
+                                            name="clarity_rating"
+                                            value="{{ $i }}"
+                                            x-model="clarity"
+                                            class="w-4 h-4 text-terracotta-600 focus:ring-terracotta-600"
+                                            {{ old('clarity_rating') == $i ? 'checked' : '' }}
+                                        >
+                                        <x-star-rating :rating="$i" class="w-4 h-4" />
+                                    </label>
+                                @endfor
+                            </div>
+                            @error('clarity_rating')
+                                <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Réactivité --}}
+                        <div>
+                            <label class="block font-bold text-ink-900 mb-3">
+                                Réactivité <span class="text-red-500">*</span>
+                            </label>
+                            <div class="space-y-2" x-data="{ responsiveness: {{ old('responsiveness_rating', 0) }} }">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <label class="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-terracotta-50 transition">
+                                        <input
+                                            type="radio"
+                                            name="responsiveness_rating"
+                                            value="{{ $i }}"
+                                            x-model="responsiveness"
+                                            class="w-4 h-4 text-terracotta-600 focus:ring-terracotta-600"
+                                            {{ old('responsiveness_rating') == $i ? 'checked' : '' }}
+                                        >
+                                        <x-star-rating :rating="$i" class="w-4 h-4" />
+                                    </label>
+                                @endfor
+                            </div>
+                            @error('responsiveness_rating')
+                                <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                @endif
 
                 {{-- Commentaire --}}
                 <div>

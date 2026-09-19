@@ -80,7 +80,7 @@ class ServiceShow extends Component
             'category',
             'portfolios',
             'reviews' => function($query) {
-                $query->latest()->take(10);
+                $query->visible()->latest()->take(10);
             },
             'reviews.reviewer'
         ]);

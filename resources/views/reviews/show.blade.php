@@ -79,7 +79,7 @@
                     <div class="grid md:grid-cols-2 gap-6">
                         <div>
                             <p class="text-sm text-ink-500 mb-1">Service</p>
-                            <p class="font-bold text-ink-900">{{ $review->order->service->title }}</p>
+                            <p class="font-bold text-ink-900">{{ $review->order->display_title }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-ink-500 mb-1">{{ $review->review_type === 'client_to_prestataire' ? 'Prestataire' : 'Client' }}</p>

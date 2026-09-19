@@ -299,9 +299,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
         $reviews = $this->receivedReviews()
             ->where('review_type', 'client_to_prestataire')
+            ->visible()
             ->get();
 
         if ($reviews->isEmpty()) {
+            $this->update(['rating' => 0, 'total_reviews' => 0]);
             return;
         }
 
