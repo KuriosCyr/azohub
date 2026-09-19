@@ -73,7 +73,22 @@
                                 </div>
                             @else
                                 <div class="{{ $isMine ? 'bg-ink-900 text-cream-50' : 'bg-ink-100/40 text-ink-900' }} rounded-2xl px-4 py-3">
-                                    <p class="text-sm whitespace-pre-line">{{ $msg->message }}</p>
+                                    @if(filled($msg->message))
+                                        <p class="text-sm whitespace-pre-line">{{ $msg->message }}</p>
+                                    @endif
+
+                                    @if($msg->attachments)
+                                        <div class="{{ filled($msg->message) ? 'mt-2' : '' }} space-y-2">
+                                            @foreach($msg->attachments as $index => $file)
+                                                <a href="{{ route('conversations.attachment.download', [$msg, $index]) }}"
+                                                   class="flex items-center gap-2 px-3 py-2 rounded-lg {{ $isMine ? 'bg-white bg-opacity-10 hover:bg-opacity-20' : 'bg-cream-50 hover:bg-cream-100' }} transition text-sm">
+                                                    <x-app-icon name="paperclip" class="w-4 h-4 flex-shrink-0" />
+                                                    <span class="truncate">{{ $file['name'] }}</span>
+                                                    <span class="text-xs opacity-70 flex-shrink-0">({{ number_format($file['size'] / 1024, 1) }} KB)</span>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
                             <p class="text-xs text-ink-400 mt-1 {{ $isMine ? 'text-right' : '' }}">{{ $msg->created_at->format('d/m/Y H:i') }}</p>
@@ -126,6 +141,20 @@
 
             {{-- Composer --}}
             <div class="p-5 border-t border-ink-100">
+                @if(!empty($attachments))
+                    <div class="mb-3 flex flex-wrap gap-2">
+                        @foreach($attachments as $index => $file)
+                            <span class="inline-flex items-center gap-2 px-3 py-1 bg-terracotta-50 text-terracotta-700 rounded-full text-xs">
+                                {{ is_string($file) ? $file : $file->getClientOriginalName() }}
+                                <button type="button" wire:click="$set('attachments.{{ $index }}', null)" class="hover:text-red-600">
+                                    <x-app-icon name="x-mark" class="w-3.5 h-3.5 inline-block" />
+                                </button>
+                            </span>
+                        @endforeach
+                    </div>
+                @endif
+                @error('attachments.*') <p class="text-red-500 text-xs mb-2">{{ $message }}</p> @enderror
+
                 <div class="flex items-end gap-3">
                     @if($this->isPrestataire && !$showOfferForm)
                         <button wire:click="toggleOfferForm" type="button"
@@ -134,12 +163,16 @@
                             <x-app-icon name="clipboard" class="w-5 h-5" />
                         </button>
                     @endif
+                    <label class="flex-shrink-0 w-11 h-11 rounded-lg border border-ink-200 text-ink-500 hover:text-terracotta-600 hover:border-terracotta-600/40 transition flex items-center justify-center cursor-pointer" title="Joindre un fichier">
+                        <x-app-icon name="paperclip" class="w-5 h-5" />
+                        <input type="file" wire:model="attachments" multiple class="hidden">
+                    </label>
                     <div class="flex-1">
                         <textarea wire:model="message" rows="1" placeholder="Écrivez votre message..."
                                   class="w-full px-4 py-3 rounded-lg border border-ink-200 text-sm focus:ring-2 focus:ring-terracotta-600 focus:border-transparent resize-none"></textarea>
                         @error('message') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
-                    <button wire:click="sendMessage" wire:loading.attr="disabled" wire:target="sendMessage"
+                    <button wire:click="sendMessage" wire:loading.attr="disabled" wire:target="sendMessage,attachments"
                             class="flex-shrink-0 bg-ink-900 hover:bg-ink-700 text-cream-50 font-bold px-5 py-3 rounded-lg transition disabled:opacity-60">
                         Envoyer
                     </button>

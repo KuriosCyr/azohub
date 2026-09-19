@@ -24,7 +24,13 @@
                         </div>
                         <p class="text-sm text-ink-500 truncate mt-0.5">
                             @if($lastMessage)
-                                {{ $lastMessage->custom_offer_id ? '📋 Offre personnalisée envoyée' : Str::limit($lastMessage->message, 60) }}
+                                @if($lastMessage->custom_offer_id)
+                                    📋 Offre personnalisée envoyée
+                                @elseif(filled($lastMessage->message))
+                                    {{ Str::limit($lastMessage->message, 60) }}
+                                @else
+                                    📎 Pièce(s) jointe(s)
+                                @endif
                             @else
                                 Aucun message pour l'instant
                             @endif

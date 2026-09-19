@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
+use App\Models\ConversationMessage;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ConversationController extends Controller
 {
@@ -31,5 +33,29 @@ class ConversationController extends Controller
         }
 
         return redirect()->route('conversations.show', $conversation);
+    }
+
+    /**
+     * Télécharger une pièce jointe d'un message de conversation directe.
+     */
+    public function downloadAttachment(ConversationMessage $message, int $index)
+    {
+        if (!$message->conversation->hasParticipant(Auth::id())) {
+            abort(403);
+        }
+
+        $attachments = $message->attachments;
+
+        if (!isset($attachments[$index])) {
+            abort(404);
+        }
+
+        $file = $attachments[$index];
+
+        if (!Storage::disk('public')->exists($file['path'])) {
+            abort(404);
+        }
+
+        return Storage::disk('public')->download($file['path'], $file['name']);
     }
 }

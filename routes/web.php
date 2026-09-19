@@ -178,6 +178,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('messages')->name('conversations.')->group(function () {
         Route::get('/', ConversationsIndex::class)->name('index');
         Route::get('/{conversation}', ConversationShow::class)->name('show');
+        Route::get('/attachment/{message}/{index}', [ConversationController::class, 'downloadAttachment'])
+            ->name('attachment.download');
     });
 
     Route::post('/messages/start', [ConversationController::class, 'start'])

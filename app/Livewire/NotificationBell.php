@@ -23,8 +23,9 @@ class NotificationBell extends Component
 
     public function render()
     {
-        $notifications = Auth::user()->notifications()->latest()->take(10)->get();
+        // Uniquement le non-lu : une fois marquée lue, la notification disparaît de la cloche.
         $unreadCount = Auth::user()->unreadNotifications()->count();
+        $notifications = Auth::user()->unreadNotifications()->latest()->take(10)->get();
 
         return view('livewire.notification-bell', compact('notifications', 'unreadCount'));
     }

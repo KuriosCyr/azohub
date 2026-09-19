@@ -9,12 +9,16 @@ use App\Notifications\CustomOfferReceived;
 use App\Notifications\NewConversationMessage;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class ConversationShow extends Component
 {
+    use WithFileUploads;
+
     public Conversation $conversation;
 
     public string $message = '';
+    public $attachments = [];
 
     public bool $showOfferForm = false;
     public string $offerTitle = '';
@@ -42,14 +46,31 @@ class ConversationShow extends Component
     public function sendMessage()
     {
         $this->validate([
-            'message' => 'required|string|max:2000',
+            'message' => 'nullable|string|max:2000',
+            'attachments.*' => 'nullable|file|max:10240',
         ]);
 
-        $receiverId = $this->conversation->otherParticipant(Auth::id())->id;
+        if (blank($this->message) && empty($this->attachments)) {
+            $this->addError('message', 'Écrivez un message ou joignez au moins un fichier.');
+            return;
+        }
+
+        $uploadedAttachments = [];
+        foreach ($this->attachments as $file) {
+            $path = $file->store('messages/conversations/' . $this->conversation->id, 'public');
+            $uploadedAttachments[] = [
+                'name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'size' => $file->getSize(),
+                'type' => $file->getMimeType(),
+                'uploaded_at' => now()->toDateTimeString(),
+            ];
+        }
 
         $msg = $this->conversation->messages()->create([
             'sender_id' => Auth::id(),
-            'message' => $this->message,
+            'message' => $this->message ?: null,
+            'attachments' => !empty($uploadedAttachments) ? $uploadedAttachments : null,
         ]);
 
         $this->conversation->update(['last_message_at' => now()]);
@@ -57,7 +78,7 @@ class ConversationShow extends Component
         $receiver = $this->conversation->otherParticipant(Auth::id());
         $receiver->notify(new NewConversationMessage($msg));
 
-        $this->reset('message');
+        $this->reset(['message', 'attachments']);
         $this->conversation->refresh();
     }
 

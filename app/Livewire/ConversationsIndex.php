@@ -17,6 +17,7 @@ class ConversationsIndex extends Component
         $column = Auth::user()->isPrestataire() ? 'prestataire_id' : 'client_id';
 
         $conversations = Conversation::where($column, $userId)
+            ->has('messages')
             ->with(['client', 'prestataire', 'service'])
             ->withCount(['messages as unread_count' => function ($query) use ($userId) {
                 $query->where('is_read', false)->where('sender_id', '!=', $userId);
