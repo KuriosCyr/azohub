@@ -153,9 +153,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{order}/deliverable/{index}', [OrderController::class, 'downloadDeliverable'])->name('deliverable.download');
         Route::post('/{order}/dispute', [DisputeController::class, 'store'])->name('dispute.store');
         
-        // Messages
-        Route::post('/{order}/messages', [MessageController::class, 'store'])->name('messages.store');
-        Route::post('/{order}/messages/read', [MessageController::class, 'markAsRead'])->name('messages.read');
     });
 
     // ============================================
