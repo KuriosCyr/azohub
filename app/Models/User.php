@@ -457,11 +457,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         }
     }
 
-    // Créditer le portefeuille
+    // Créditer le portefeuille (increment() = requête atomique côté DB, pas de
+    // perte d'écriture si deux crédits arrivent en même temps sur le même compte).
     public function creditWallet(float $amount)
     {
-        $this->wallet_balance += $amount;
-        $this->save();
+        $this->increment('wallet_balance', $amount);
     }
 
     // Débiter le portefeuille

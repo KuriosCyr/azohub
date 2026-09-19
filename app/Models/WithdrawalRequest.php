@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class WithdrawalRequest extends Model
 {
@@ -36,25 +37,48 @@ class WithdrawalRequest extends Model
     }
 
     // Le solde a déjà été débité à la création de la demande (voir PrestataireWallet::requestWithdrawal).
+    // Verrouillé + gardé par le statut pour éviter qu'un double clic admin (ou deux
+    // admins sur la même demande) ne traite deux fois la même demande.
     public function markAsPaid(int $adminId): void
     {
-        $this->update([
-            'status' => 'paid',
-            'processed_by' => $adminId,
-            'processed_at' => now(),
-        ]);
+        DB::transaction(function () use ($adminId) {
+            $record = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if (!$record || $record->status !== 'pending') {
+                return;
+            }
+
+            $record->update([
+                'status' => 'paid',
+                'processed_by' => $adminId,
+                'processed_at' => now(),
+            ]);
+        });
+
+        $this->refresh();
     }
 
     // Recrédite le prestataire puisque le montant avait été débité à la demande.
+    // Même garde que markAsPaid() : sans elle, un double clic recréditerait deux fois.
     public function reject(int $adminId, string $reason): void
     {
-        $this->prestataire->creditWallet((float) $this->amount);
+        DB::transaction(function () use ($adminId, $reason) {
+            $record = static::whereKey($this->id)->lockForUpdate()->first();
 
-        $this->update([
-            'status' => 'rejected',
-            'admin_note' => $reason,
-            'processed_by' => $adminId,
-            'processed_at' => now(),
-        ]);
+            if (!$record || $record->status !== 'pending') {
+                return;
+            }
+
+            $record->prestataire->creditWallet((float) $record->amount);
+
+            $record->update([
+                'status' => 'rejected',
+                'admin_note' => $reason,
+                'processed_by' => $adminId,
+                'processed_at' => now(),
+            ]);
+        });
+
+        $this->refresh();
     }
 }
