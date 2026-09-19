@@ -1,7 +1,7 @@
 <div>
     {{-- Hero Section --}}
-    <section class="bg-cream relative overflow-hidden">
-        <div class="absolute inset-0 pointer-events-none opacity-40" style="background-image: radial-gradient(#94A3B8 1px, transparent 1px); background-size: 22px 22px;"></div>
+    <section class="bg-gradient-to-br from-ink-200/60 via-cream to-terracotta-50 relative overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none opacity-25" style="background-image: radial-gradient(#94A3B8 1px, transparent 1px); background-size: 22px 22px;"></div>
 
         <div class="container mx-auto px-4 relative py-16 md:py-24">
             <div class="grid md:grid-cols-2 gap-16 items-end">
@@ -92,9 +92,9 @@
                         <div class="absolute inset-0 bg-ink-900/40"></div>
                         <x-app-icon name="wrench" class="w-8 h-8 text-cream-50 relative" />
                     </div>
-                    <div class="h-40 mt-16 rounded-lg bg-terracotta-700 flex items-end p-5 overflow-hidden relative" style="animation: float 7s ease-in-out infinite; animation-delay: .3s;">
+                    <div class="h-40 mt-16 rounded-lg bg-ink-700 flex items-end p-5 overflow-hidden relative" style="animation: float 7s ease-in-out infinite; animation-delay: .3s;">
                         <img src="https://images.unsplash.com/photo-1740657254989-42fe9c3b8cce?w=500&h=400&fit=crop&q=80" alt="" class="absolute inset-0 w-full h-full object-cover opacity-55 mix-blend-luminosity" loading="lazy">
-                        <div class="absolute inset-0 bg-terracotta-700/40"></div>
+                        <div class="absolute inset-0 bg-ink-700/40"></div>
                         <x-app-icon name="home" class="w-7 h-7 text-cream-50 relative" />
                     </div>
                     <div class="h-40 rounded-lg bg-clay-600 flex items-end p-5 overflow-hidden relative" style="animation: float 8s ease-in-out infinite; animation-delay: 1s;">

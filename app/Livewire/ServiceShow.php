@@ -99,6 +99,6 @@ class ServiceShow extends Component
 
         return view('livewire.service-show', [
             'similarServices' => $similarServices,
-        ])->layout('components.layouts.public');
+        ])->layout('components.layouts.app');
     }
 }

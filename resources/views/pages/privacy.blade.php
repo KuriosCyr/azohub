@@ -1,4 +1,4 @@
-<x-public-layout>
+<x-app-layout>
     <div class="min-h-screen bg-cream">
         {{-- Hero Section --}}
         <div class="bg-ink-900 text-cream-50 py-16">
@@ -269,4 +269,4 @@
             </div>
         </div>
     </div>
-</x-public-layout>
+</x-app-layout>

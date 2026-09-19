@@ -94,6 +94,6 @@ class PrestataireProfile extends Component
             'completion_rate' => $this->prestataire->completionRate(),
         ];
 
-        return view('livewire.prestataire-profile', $data)->layout('components.layouts.public');
+        return view('livewire.prestataire-profile', $data)->layout('components.layouts.app');
     }
 }

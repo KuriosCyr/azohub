@@ -28,7 +28,7 @@ class HomePage extends Component
                 'prestataires' => User::where('role', 'prestataire')->count(),
                 'orders' => \App\Models\Order::where('status', 'completed')->count(),
             ]
-        ])->layout('components.layouts.public');
+        ])->layout('components.layouts.app');
     }
 
     public function searchServices()

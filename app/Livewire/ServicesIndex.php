@@ -161,6 +161,6 @@ class ServicesIndex extends Component
             'services' => $services,
             'categories' => $categories,
             'cities' => $cities,
-        ])->layout('components.layouts.public');
+        ])->layout('components.layouts.app');
     }
 }

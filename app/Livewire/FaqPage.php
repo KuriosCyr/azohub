@@ -84,6 +84,6 @@ class FaqPage extends Component
             'faqs' => $this->faqs,
             'faqsByCategory' => $this->faqsByCategory,
             'categories' => Faq::categories(),
-        ])->layout('components.layouts.public');  // ← AJOUTÉ ICI !
+        ])->layout('components.layouts.app');
     }
 }

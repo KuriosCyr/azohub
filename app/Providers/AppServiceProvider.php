@@ -24,8 +24,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
-        // Enregistrer les composants layouts
-        Blade::component('components.layouts.public', 'public-layout');
+        // Layout unique de l'app, utilisé partout via <x-app-layout>.
         Blade::component('components.layouts.app', 'app-layout');
 
         VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
