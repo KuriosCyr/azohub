@@ -19,7 +19,7 @@
                 <p>
                     Azohub est une plateforme numérique opérant au Bénin, qui met en relation des clients recherchant 
                     des services avec des prestataires qualifiés. La plateforme est accessible via le site web 
-                    <strong>azohub.com</strong>.
+                    <strong>azohub.bj</strong>.
                 </p>
 
                 <h2>2. Acceptation des conditions</h2>
@@ -68,7 +68,8 @@
                 <h3>5.1 Prix et commissions</h3>
                 <ul>
                     <li>Les prix sont affichés en Francs CFA (FCFA)</li>
-                    <li>Azohub prélève une commission de <strong>10%</strong> sur chaque transaction</li>
+                    <li>Azohub prélève sur le prestataire une commission comprise entre <strong>5% et 15%</strong>, selon son niveau de performance (nouveau, confirmé, expert) et son plan d'abonnement (Gratuit, Pro, Premium) — plus le niveau ou le plan est élevé, plus la commission est faible</li>
+                    <li>Un frais de service fixe de <strong>5%</strong> est ajouté au prix affiché et payé par le client, quel que soit le niveau du prestataire</li>
                     <li>Les frais de transaction peuvent s'appliquer selon le mode de paiement</li>
                 </ul>
 
@@ -89,9 +90,9 @@
 
                 <h2>6. Retraits (pour les prestataires)</h2>
                 <ul>
-                    <li>Retrait minimum : 10 000 FCFA</li>
+                    <li>Retrait minimum : 1 000 FCFA</li>
                     <li>Délai de traitement : 24-48h ouvrées</li>
-                    <li>Modes de retrait : Mobile Money (MTN, Moov)</li>
+                    <li>Modes de retrait : Mobile Money (MTN, Moov, Celtiis Cash)</li>
                     <li>Les retraits sont soumis à vérification d'identité</li>
                 </ul>
 
@@ -186,7 +187,7 @@
                     Pour toute question concernant ces conditions, contactez-nous :
                 </p>
                 <ul>
-                    <li><strong>Email :</strong> legal@azohub.com</li>
+                    <li><strong>Email :</strong> legal@azohub.bj</li>
                     <li><strong>Adresse :</strong> Cotonou, Bénin</li>
                 </ul>
 

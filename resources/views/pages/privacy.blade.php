@@ -27,7 +27,7 @@
                 <ul>
                     <li><strong>Nom :</strong> Azohub</li>
                     <li><strong>Adresse :</strong> Cotonou, Bénin</li>
-                    <li><strong>Email :</strong> privacy@azohub.com</li>
+                    <li><strong>Email :</strong> privacy@azohub.bj</li>
                 </ul>
 
                 <h2>2. Données collectées</h2>
@@ -141,7 +141,7 @@
                 <h2>6. Durée de conservation</h2>
                 <ul>
                     <li><strong>Compte actif :</strong> Tant que votre compte existe</li>
-                    <li><strong>Après suppression :</strong> 30 jours (puis suppression définitive)</li>
+                    <li><strong>Après suppression :</strong> vos données identifiantes (nom, email, téléphone, photo, pièce d'identité) sont anonymisées immédiatement et de façon irréversible ; certaines données non identifiantes liées à vos commandes passées sont conservées pour préserver l'historique des autres utilisateurs concernés</li>
                     <li><strong>Données fiscales :</strong> 10 ans (obligation légale)</li>
                     <li><strong>Données de transaction :</strong> 5 ans</li>
                     <li><strong>Logs techniques :</strong> 12 mois</li>
@@ -194,7 +194,7 @@
 
                 <h3>8.7 Exercice de vos droits</h3>
                 <p>
-                    Pour exercer vos droits, contactez-nous à : <strong>privacy@azohub.com</strong>
+                    Pour exercer vos droits, contactez-nous à : <strong>privacy@azohub.bj</strong>
                 </p>
                 <p>
                     Nous répondrons dans un délai de 30 jours maximum.
@@ -241,7 +241,7 @@
                     Pour toute question concernant cette politique de confidentialité :
                 </p>
                 <ul>
-                    <li><strong>Email :</strong> privacy@azohub.com</li>
+                    <li><strong>Email :</strong> privacy@azohub.bj</li>
                     <li><strong>Formulaire de contact :</strong> <a href="{{ route('contact') }}" class="text-terracotta-600 hover:text-terracotta-700 font-bold">Nous contacter</a></li>
                 </ul>
 

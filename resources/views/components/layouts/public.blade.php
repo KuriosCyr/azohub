@@ -465,10 +465,12 @@
                             <x-app-icon name="envelope" class="w-4 h-4 text-ochre-500 flex-shrink-0" />
                             contact@azohub.bj
                         </li>
-                        <li class="flex items-center gap-2">
-                            <x-app-icon name="phone" class="w-4 h-4 text-ochre-500 flex-shrink-0" />
-                            +229 XX XX XX XX
-                        </li>
+                        @if(config('services.azohub.support_phone'))
+                            <li class="flex items-center gap-2">
+                                <x-app-icon name="phone" class="w-4 h-4 text-ochre-500 flex-shrink-0" />
+                                {{ config('services.azohub.support_phone') }}
+                            </li>
+                        @endif
                         <li class="flex items-center gap-2">
                             <x-app-icon name="map-pin" class="w-4 h-4 text-ochre-500 flex-shrink-0" />
                             Cotonou, Bénin

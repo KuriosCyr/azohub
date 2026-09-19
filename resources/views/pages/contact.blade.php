@@ -131,35 +131,39 @@
                                     </div>
                                     <div>
                                         <p class="font-bold text-ink-900">Email</p>
-                                        <a href="mailto:support@azohub.com" class="text-terracotta-600 hover:text-terracotta-700">
-                                            support@azohub.com
+                                        <a href="mailto:{{ config('services.azohub.support_email') }}" class="text-terracotta-600 hover:text-terracotta-700">
+                                            {{ config('services.azohub.support_email') }}
                                         </a>
                                     </div>
                                 </div>
 
-                                <div class="flex items-start gap-4">
-                                    <div class="w-12 h-12 bg-forest-600/10 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <x-app-icon name="phone" class="w-6 h-6 text-forest-700" />
+                                @if(config('services.azohub.support_phone'))
+                                    <div class="flex items-start gap-4">
+                                        <div class="w-12 h-12 bg-forest-600/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <x-app-icon name="phone" class="w-6 h-6 text-forest-700" />
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-ink-900">Téléphone</p>
+                                            <a href="tel:{{ config('services.azohub.support_phone') }}" class="text-terracotta-600 hover:text-terracotta-700">
+                                                {{ config('services.azohub.support_phone') }}
+                                            </a>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p class="font-bold text-ink-900">Téléphone</p>
-                                        <a href="tel:+22900000000" class="text-terracotta-600 hover:text-terracotta-700">
-                                            +229 XX XX XX XX
-                                        </a>
-                                    </div>
-                                </div>
+                                @endif
 
-                                <div class="flex items-start gap-4">
-                                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <x-app-icon name="chat" class="w-6 h-6 text-purple-600" />
+                                @if(config('services.azohub.support_whatsapp'))
+                                    <div class="flex items-start gap-4">
+                                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                            <x-app-icon name="chat" class="w-6 h-6 text-purple-600" />
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-ink-900">WhatsApp</p>
+                                            <a href="https://wa.me/{{ config('services.azohub.support_whatsapp') }}" class="text-terracotta-600 hover:text-terracotta-700" target="_blank">
+                                                {{ config('services.azohub.support_phone') ?? config('services.azohub.support_whatsapp') }}
+                                            </a>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p class="font-bold text-ink-900">WhatsApp</p>
-                                        <a href="https://wa.me/22900000000" class="text-terracotta-600 hover:text-terracotta-700" target="_blank">
-                                            +229 XX XX XX XX
-                                        </a>
-                                    </div>
-                                </div>
+                                @endif
 
                                 <div class="flex items-start gap-4">
                                     <div class="w-12 h-12 bg-ochre-500/15 rounded-full flex items-center justify-center flex-shrink-0">
@@ -180,9 +184,6 @@
                                 <p><strong class="text-cream-50">Lundi - Vendredi:</strong> 8h - 18h</p>
                                 <p><strong class="text-cream-50">Samedi:</strong> 9h - 14h</p>
                                 <p><strong class="text-cream-50">Dimanche:</strong> Fermé</p>
-                            </div>
-                            <div class="mt-4 pt-4 border-t border-ink-700">
-                                <p class="text-sm">Temps de réponse moyen: <strong class="text-ochre-500">2h</strong></p>
                             </div>
                         </div>
 

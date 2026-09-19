@@ -39,6 +39,10 @@ return [
 
     'azohub' => [
         'support_email' => env('SUPPORT_EMAIL', 'support@azohub.bj'),
+        // Pas de valeur par défaut : tant que ce n'est pas réglé dans .env, les vues
+        // masquent le numéro plutôt que d'afficher un faux "+229 XX XX XX XX".
+        'support_phone' => env('SUPPORT_PHONE'),
+        'support_whatsapp' => env('SUPPORT_WHATSAPP'),
     ],
 
 ];
