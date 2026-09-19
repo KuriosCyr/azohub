@@ -31,7 +31,15 @@ class PaymentController extends Controller
             'payment_method' => 'required|in:mtn_momo,moov_money,celtiis_cash,card',
         ]);
 
-        $url = $payments->initiateForOrder($order, $validated['payment_method']);
+        try {
+            $url = $payments->initiateForOrder($order, $validated['payment_method']);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()
+                ->route('orders.show', $order)
+                ->with('error', 'Le paiement n\'a pas pu être initié. Réessayez dans quelques instants.');
+        }
 
         return redirect()->away($url);
     }
