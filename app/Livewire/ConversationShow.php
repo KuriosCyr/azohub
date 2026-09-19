@@ -65,7 +65,7 @@ class ConversationShow extends Component
 
         $uploadedAttachments = [];
         foreach ($this->attachments as $file) {
-            $path = $file->store('messages/conversations/' . $this->conversation->id, 'public');
+            $path = $file->store('messages/conversations/' . $this->conversation->id, 'local');
             $uploadedAttachments[] = [
                 'name' => $file->getClientOriginalName(),
                 'path' => $path,

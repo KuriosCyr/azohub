@@ -209,6 +209,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::get('/messages/{message}/attachment/{index}', [MessageController::class, 'downloadAttachment'])
         ->name('messages.attachment.download');
+
+    // ============================================
+    // TÉLÉCHARGEMENT PREUVES DE LITIGE (admin uniquement)
+    // ============================================
+
+    Route::get('/disputes/{dispute}/evidence/{index}', [DisputeController::class, 'downloadEvidence'])
+        ->name('disputes.evidence.download');
 });
 
 // ============================================

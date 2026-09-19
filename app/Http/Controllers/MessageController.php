@@ -26,10 +26,10 @@ class MessageController extends Controller
 
         $file = $attachments[$index];
         
-        if (!Storage::disk('public')->exists($file['path'])) {
+        if (!Storage::disk('local')->exists($file['path'])) {
             abort(404);
         }
 
-        return Storage::disk('public')->download($file['path'], $file['name']);
+        return Storage::disk('local')->download($file['path'], $file['name']);
     }
 }

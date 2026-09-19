@@ -66,7 +66,7 @@ class OrderChat extends Component
         $uploadedAttachments = [];
         if (!empty($this->attachments)) {
             foreach ($this->attachments as $file) {
-                $path = $file->store('messages/' . $this->order->id, 'public');
+                $path = $file->store('messages/' . $this->order->id, 'local');
                 $uploadedAttachments[] = [
                     'name' => $file->getClientOriginalName(),
                     'path' => $path,

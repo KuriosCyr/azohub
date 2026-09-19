@@ -9,7 +9,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class DisputeForm
@@ -68,7 +67,7 @@ class DisputeForm
                                 }
 
                                 $links = collect($record->evidences)->map(
-                                    fn (array $file) => '<a href="' . e(Storage::disk('public')->url($file['path'])) . '" target="_blank" class="underline text-primary-600">' . e($file['name']) . '</a>'
+                                    fn (array $file, int $index) => '<a href="' . e(route('disputes.evidence.download', [$record, $index])) . '" target="_blank" class="underline text-primary-600">' . e($file['name']) . '</a>'
                                 )->implode('<br>');
 
                                 return new HtmlString($links);

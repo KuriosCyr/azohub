@@ -128,7 +128,7 @@ class OrderController extends Controller
         $deliverables = [];
         if ($request->hasFile('deliverables')) {
             foreach ($request->file('deliverables') as $file) {
-                $path = $file->store('deliverables/' . $order->id, 'public');
+                $path = $file->store('deliverables/' . $order->id, 'local');
                 $deliverables[] = [
                     'name' => $file->getClientOriginalName(),
                     'path' => $path,
@@ -270,10 +270,10 @@ class OrderController extends Controller
 
         $file = $deliverables[$index];
         
-        if (!Storage::disk('public')->exists($file['path'])) {
+        if (!Storage::disk('local')->exists($file['path'])) {
             abort(404);
         }
 
-        return Storage::disk('public')->download($file['path'], $file['name']);
+        return Storage::disk('local')->download($file['path'], $file['name']);
     }
 }

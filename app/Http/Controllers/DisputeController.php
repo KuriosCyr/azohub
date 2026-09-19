@@ -43,7 +43,7 @@ class DisputeController extends Controller
         $evidences = [];
         if ($request->hasFile('evidences')) {
             foreach ($request->file('evidences') as $file) {
-                $path = $file->store('disputes/' . $order->id, 'public');
+                $path = $file->store('disputes/' . $order->id, 'local');
                 $evidences[] = [
                     'name' => $file->getClientOriginalName(),
                     'path' => $path,
@@ -70,5 +70,27 @@ class DisputeController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Votre litige a été enregistré. Notre équipe va examiner la situation sous peu.');
+    }
+
+    /**
+     * Télécharger une preuve jointe à un litige (réservé aux admins, depuis le panel).
+     */
+    public function downloadEvidence(Dispute $dispute, int $index)
+    {
+        abort_unless(Auth::user()?->role === 'admin', 403);
+
+        $evidences = $dispute->evidences ?? [];
+
+        if (!isset($evidences[$index])) {
+            abort(404);
+        }
+
+        $file = $evidences[$index];
+
+        if (!Storage::disk('local')->exists($file['path'])) {
+            abort(404);
+        }
+
+        return Storage::disk('local')->download($file['path'], $file['name']);
     }
 }
