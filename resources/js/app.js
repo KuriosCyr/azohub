@@ -1,10 +1,17 @@
 import './bootstrap';
 
-import Alpine from 'alpinejs';
+// Alpine et Livewire partagent la même instance (bundle officiel Livewire), au
+// lieu d'un Alpine.start() séparé qui entrait en conflit avec celui que
+// @livewireScripts démarre de son côté : les x-data des composants Livewire
+// (ex. la cloche de notifications) perdaient leur état (ex. dropdown qui se
+// referme tout seul) après un aller-retour serveur, car deux instances Alpine
+// coexistaient et Livewire ne savait préserver l'état que de la sienne.
+import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 import intersect from '@alpinejs/intersect';
 import Swal from 'sweetalert2';
 
 window.Alpine = Alpine;
+window.Livewire = Livewire;
 window.Swal = Swal;
 
 // Boîte de dialogue de confirmation stylée (remplace window.confirm()).
@@ -54,7 +61,7 @@ Alpine.data('counter', (target = 0, duration = 1200) => ({
     },
 }));
 
-Alpine.start();
+Livewire.start();
 
 // Import Choices.js
 import Choices from 'choices.js';

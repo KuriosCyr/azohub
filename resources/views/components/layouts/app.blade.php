@@ -111,11 +111,23 @@
                         </a>
 
                         @if(Auth::user()->isPrestataire())
+                            @php
+                                // Opportunités ouvertes dont la catégorie correspond à au moins un des
+                                // services du prestataire connecté (pas toutes les opportunités).
+                                $myOpenOpportunitiesCount = \App\Models\ServiceRequest::open()
+                                    ->whereIn('category_id', \App\Models\Service::where('user_id', Auth::id())->pluck('category_id')->unique())
+                                    ->count();
+                            @endphp
                             <a href="{{ route('prestataire.services.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('prestataire.services.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                                 Mes services
                             </a>
-                            <a href="{{ route('service-requests.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('service-requests.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
+                            <a href="{{ route('service-requests.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition inline-flex items-center gap-1.5 {{ request()->routeIs('service-requests.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                                 Opportunités
+                                @if($myOpenOpportunitiesCount > 0)
+                                    <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-terracotta-600 text-cream-50 text-[10px] font-semibold leading-none">
+                                        {{ $myOpenOpportunitiesCount > 99 ? '99+' : $myOpenOpportunitiesCount }}
+                                    </span>
+                                @endif
                             </a>
                         @else
                             <a href="{{ route('service-requests.index', ['mine' => 1]) }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('service-requests.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
@@ -326,6 +338,11 @@
                         <a href="{{ route('service-requests.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
                             <x-app-icon name="clipboard" class="w-4 h-4" />
                             Opportunités
+                            @if($myOpenOpportunitiesCount > 0)
+                                <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-terracotta-600 text-cream-50 text-[10px] font-semibold leading-none ml-auto">
+                                    {{ $myOpenOpportunitiesCount > 99 ? '99+' : $myOpenOpportunitiesCount }}
+                                </span>
+                            @endif
                         </a>
                         <a href="{{ route('prestataire.wallet') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
                             <x-app-icon name="banknotes" class="w-4 h-4" />
@@ -527,7 +544,9 @@
         </div>
     </footer>
 
-    @livewireScripts
+    {{-- Livewire.start() est appelé depuis resources/js/app.js (bundle Vite partagé
+         avec Alpine) plutôt que via @livewireScripts, pour éviter deux instances
+         Alpine concurrentes. @livewireStyles (dans le <head>) reste nécessaire. --}}
     @stack('scripts')
 </body>
 </html>

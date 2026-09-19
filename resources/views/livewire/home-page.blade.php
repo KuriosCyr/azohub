@@ -1,6 +1,6 @@
 <div>
     {{-- Hero Section --}}
-    <section class="bg-gradient-to-br from-ink-200/60 via-cream to-terracotta-50 relative overflow-hidden">
+    <section class="bg-gradient-to-br from-ink-200 via-cream-100 to-terracotta-50 relative overflow-hidden">
         <div class="absolute inset-0 pointer-events-none opacity-25" style="background-image: radial-gradient(#94A3B8 1px, transparent 1px); background-size: 22px 22px;"></div>
 
         <div class="container mx-auto px-4 relative py-16 md:py-24">
