@@ -25,7 +25,7 @@ class OrderAccepted extends Notification
         return (new MailMessage)
             ->subject('Votre commande a été acceptée')
             ->greeting('Bonne nouvelle, ' . $notifiable->name . ' !')
-            ->line("Votre commande {$this->order->order_number} pour « {$this->order->service->title} » a été acceptée par le prestataire.")
+            ->line("Votre commande {$this->order->order_number} pour « {$this->order->display_title} » a été acceptée par le prestataire.")
             ->action('Voir la commande', route('orders.show', $this->order))
             ->line('Le travail va commencer sous peu.');
     }

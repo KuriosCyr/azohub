@@ -25,7 +25,7 @@ class OrderRefused extends Notification
         return (new MailMessage)
             ->subject('Votre commande a été refusée')
             ->greeting('Bonjour ' . $notifiable->name . ',')
-            ->line("Votre commande {$this->order->order_number} pour « {$this->order->service->title} » a été refusée par le prestataire.")
+            ->line("Votre commande {$this->order->order_number} pour « {$this->order->display_title} » a été refusée par le prestataire.")
             ->line($this->order->cancellation_reason ? 'Raison : ' . $this->order->cancellation_reason : 'Vous serez remboursé intégralement.')
             ->action('Voir la commande', route('orders.show', $this->order));
     }

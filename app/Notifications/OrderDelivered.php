@@ -25,7 +25,7 @@ class OrderDelivered extends Notification
         return (new MailMessage)
             ->subject('Votre commande a été livrée')
             ->greeting('Bonjour ' . $notifiable->name . ',')
-            ->line("Le prestataire a livré votre commande {$this->order->order_number} pour « {$this->order->service->title} ».")
+            ->line("Le prestataire a livré votre commande {$this->order->order_number} pour « {$this->order->display_title} ».")
             ->line('Merci de vérifier le travail et de le valider pour libérer le paiement.')
             ->action('Vérifier et valider', route('orders.show', $this->order));
     }

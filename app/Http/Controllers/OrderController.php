@@ -144,6 +144,7 @@ class OrderController extends Controller
             'delivered_at' => now(),
             'delivery_note' => $validated['delivery_notes'] ?? null,
             'deliverables' => !empty($deliverables) ? $deliverables : null,
+            'validation_deadline' => now()->addHours(72),
         ]);
 
         $order->client->notify(new OrderDelivered($order));

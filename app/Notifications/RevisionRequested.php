@@ -25,7 +25,7 @@ class RevisionRequested extends Notification
         return (new MailMessage)
             ->subject('Le client demande une révision')
             ->greeting('Bonjour ' . $notifiable->name . ',')
-            ->line("Le client demande une révision sur la commande {$this->order->order_number} pour « {$this->order->service->title} ».")
+            ->line("Le client demande une révision sur la commande {$this->order->order_number} pour « {$this->order->display_title} ».")
             ->line($this->order->revision_notes ? 'Détails : ' . $this->order->revision_notes : '')
             ->action('Voir la demande', route('orders.show', $this->order));
     }

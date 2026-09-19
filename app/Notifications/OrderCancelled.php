@@ -30,7 +30,7 @@ class OrderCancelled extends Notification
         return (new MailMessage)
             ->subject('Commande annulée')
             ->greeting('Bonjour ' . $notifiable->name . ',')
-            ->line("La commande {$this->order->order_number} pour « {$this->order->service->title} » a été annulée par {$this->initiator()}.")
+            ->line("La commande {$this->order->order_number} pour « {$this->order->display_title} » a été annulée par {$this->initiator()}.")
             ->line($this->order->cancellation_reason ? 'Raison : ' . $this->order->cancellation_reason : '')
             ->action('Voir la commande', route('orders.show', $this->order));
     }

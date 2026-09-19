@@ -25,7 +25,7 @@ class PaymentConfirmed extends Notification
         return (new MailMessage)
             ->subject('Nouvelle commande payée')
             ->greeting('Bonjour ' . $notifiable->name . ',')
-            ->line("Vous avez reçu une nouvelle commande payée : {$this->order->order_number} pour « {$this->order->service->title} ».")
+            ->line("Vous avez reçu une nouvelle commande payée : {$this->order->order_number} pour « {$this->order->display_title} ».")
             ->line('Acceptez-la rapidement pour commencer le travail.')
             ->action('Voir la commande', route('orders.show', $this->order));
     }
