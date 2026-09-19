@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Models\User;
+use App\Notifications\AccountStatusChanged;
 use App\Notifications\AdminWarning;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -114,6 +115,44 @@ class UsersTable
                             ->success()
                             ->send();
                     }),
+
+                Action::make('deactivate')
+                    ->label('Désactiver')
+                    ->icon('heroicon-o-no-symbol')
+                    ->color('danger')
+                    ->visible(fn (User $record) => $record->is_active)
+                    ->form([
+                        Textarea::make('reason')
+                            ->label('Motif de la désactivation')
+                            ->required()
+                            ->rows(3),
+                    ])
+                    ->action(function (User $record, array $data) {
+                        $record->update(['is_active' => false]);
+                        $record->notify(new AccountStatusChanged(false, $data['reason']));
+
+                        Notification::make()
+                            ->title('Compte de ' . $record->name . ' désactivé')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('reactivate')
+                    ->label('Réactiver')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (User $record) => !$record->is_active)
+                    ->requiresConfirmation()
+                    ->action(function (User $record) {
+                        $record->update(['is_active' => true]);
+                        $record->notify(new AccountStatusChanged(true));
+
+                        Notification::make()
+                            ->title('Compte de ' . $record->name . ' réactivé')
+                            ->success()
+                            ->send();
+                    }),
+
                 EditAction::make(),
             ])
             ->toolbarActions([

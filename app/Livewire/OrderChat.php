@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Order;
 use App\Models\Message;
 use App\Notifications\NewMessageReceived;
+use App\Support\ContactInfoDetector;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,11 @@ class OrderChat extends Component
         'message' => 'required|string|max:2000',
         'attachments.*' => 'nullable|file|max:10240',
     ];
+
+    public function getContainsContactInfoProperty(): bool
+    {
+        return ContactInfoDetector::detect($this->message);
+    }
 
     protected $messages = [
         'message.required' => 'Veuillez saisir un message.',

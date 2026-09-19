@@ -69,7 +69,9 @@ class UserForm
                     ->dehydrated(false)
                     ->helperText('Lecture seule : ce solde ne doit être modifié que par le déroulement normal des commandes et des retraits, jamais manuellement.'),
                 Toggle::make('is_active')
-                    ->required(),
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->helperText('Lecture seule : utilisez les actions « Désactiver »/« Réactiver » de la liste pour changer ce statut (le compte reçoit un motif et une notification).'),
                 DateTimePicker::make('last_seen_at'),
             ]);
     }

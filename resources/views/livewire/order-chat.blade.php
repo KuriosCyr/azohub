@@ -77,7 +77,7 @@
             <div>
                 <textarea
                     id="message-input"
-                    wire:model="message"
+                    wire:model.live.debounce.500ms="message"
                     rows="3"
                     placeholder="Écrivez votre message..."
                     class="w-full px-4 py-3 border-2 border-ink-200 rounded-xl focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition resize-none"
@@ -86,6 +86,13 @@
                 @error('message')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
+
+                @if($this->containsContactInfo)
+                    <div class="mt-2 flex items-start gap-2 bg-ochre-100 border border-ochre-300 text-ink-800 rounded-lg px-4 py-3 text-xs">
+                        <x-app-icon name="exclamation-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5 text-ochre-700" />
+                        <p>Votre message semble contenir un email, un numéro ou un lien. Pour votre sécurité, échangez et payez sur Azohub — c'est ce qui vous protège en cas de litige. (Une adresse reste normale pour certains services à domicile.)</p>
+                    </div>
+                @endif
             </div>
 
             {{-- Upload fichiers --}}

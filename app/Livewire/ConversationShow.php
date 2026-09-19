@@ -7,6 +7,7 @@ use App\Models\CustomOffer;
 use App\Notifications\CustomOfferDeclined;
 use App\Notifications\CustomOfferReceived;
 use App\Notifications\NewConversationMessage;
+use App\Support\ContactInfoDetector;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -19,6 +20,11 @@ class ConversationShow extends Component
 
     public string $message = '';
     public $attachments = [];
+
+    public function getContainsContactInfoProperty(): bool
+    {
+        return ContactInfoDetector::detect($this->message);
+    }
 
     public bool $showOfferForm = false;
     public string $offerTitle = '';
