@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Dispute extends Model
 {
@@ -48,25 +49,40 @@ class Dispute extends Model
     // passent la commande en "remboursement à traiter" (cf. Order::refund()) —
     // le remboursement (total ou partiel) reste effectué manuellement par un
     // administrateur, puis confirmé via l'action "Confirmer remboursement".
+    // Verrouillé + gardé par le statut : sans ça, un double clic admin (ou une
+    // résolution relancée avec une résolution différente) pourrait déclencher deux
+    // branches d'argent contradictoires (ex. paiement prestataire ET remboursement
+    // client) sur le même litige.
     public function resolve(string $resolution, int $adminId, ?string $action = null): void
     {
-        $this->resolution = $resolution;
-        $this->status = 'resolved';
-        $this->resolved_at = now();
-        $this->resolved_by = $adminId;
-        $this->save();
+        DB::transaction(function () use ($resolution, $adminId) {
+            $dispute = static::whereKey($this->id)->lockForUpdate()->first();
 
-        match ($resolution) {
-            'refund_client', 'partial_refund' => $this->order->refund(
-                'Litige résolu : ' . ($resolution === 'partial_refund' ? 'remboursement partiel' : 'remboursement client')
-            ),
-            'pay_prestataire' => $this->order->releasePayment(),
-            // "no_action" : la commande n'était pas réellement bloquée (litige
-            // non fondé) — elle redevient utilisable normalement.
-            default => $this->order->update([
-                'status' => $this->order->delivered_at ? 'delivered' : 'in_progress',
-            ]),
-        };
+            if (!$dispute || $dispute->status === 'resolved') {
+                return;
+            }
+
+            $dispute->update([
+                'resolution' => $resolution,
+                'status' => 'resolved',
+                'resolved_at' => now(),
+                'resolved_by' => $adminId,
+            ]);
+
+            match ($resolution) {
+                'refund_client', 'partial_refund' => $dispute->order->refund(
+                    'Litige résolu : ' . ($resolution === 'partial_refund' ? 'remboursement partiel' : 'remboursement client')
+                ),
+                'pay_prestataire' => $dispute->order->releasePayment(),
+                // "no_action" : la commande n'était pas réellement bloquée (litige
+                // non fondé) — elle redevient utilisable normalement.
+                default => $dispute->order->update([
+                    'status' => $dispute->order->delivered_at ? 'delivered' : 'in_progress',
+                ]),
+            };
+        });
+
+        $this->refresh();
     }
 
     // Scope
