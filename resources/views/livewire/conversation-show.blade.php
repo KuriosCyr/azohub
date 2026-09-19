@@ -13,14 +13,24 @@
         <div class="bg-cream-50 rounded-xl border border-ink-100 overflow-hidden flex flex-col" style="height: 70vh;">
             {{-- En-tête --}}
             <div class="flex items-center gap-4 p-5 border-b border-ink-100">
-                <img src="{{ $other->avatar ? Storage::url($other->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($other->name) }}"
-                     alt="{{ $other->name }}" class="w-11 h-11 rounded-full border border-ink-200 object-cover">
-                <div class="flex-1 min-w-0">
-                    @if(Auth::user()->isClient())
-                        <a href="{{ route('prestataire.profile', $other->slug) }}" class="font-bold text-ink-900 hover:text-terracotta-600 transition">{{ $other->name }}</a>
-                    @else
-                        <p class="font-bold text-ink-900">{{ $other->name }}</p>
+                <div class="relative flex-shrink-0">
+                    <img src="{{ $other->avatar ? Storage::url($other->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($other->name) }}"
+                         alt="{{ $other->name }}" class="w-11 h-11 rounded-full border border-ink-200 object-cover">
+                    @if($other->isOnline())
+                        <span class="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-forest-600 border-2 border-cream-50" title="En ligne"></span>
                     @endif
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        @if(Auth::user()->isClient())
+                            <a href="{{ route('prestataire.profile', $other->slug) }}" class="font-bold text-ink-900 hover:text-terracotta-600 transition">{{ $other->name }}</a>
+                        @else
+                            <p class="font-bold text-ink-900">{{ $other->name }}</p>
+                        @endif
+                        @if($other->isOnline())
+                            <span class="text-xs text-forest-700 font-semibold">En ligne</span>
+                        @endif
+                    </div>
                     @if($conversation->service)
                         <p class="text-xs text-ink-400">À propos de « {{ Str::limit($conversation->service->title, 40) }} »</p>
                     @endif

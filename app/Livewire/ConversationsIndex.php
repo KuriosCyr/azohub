@@ -11,13 +11,27 @@ class ConversationsIndex extends Component
 {
     use WithPagination;
 
+    public string $search = '';
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
         $userId = Auth::id();
-        $column = Auth::user()->isPrestataire() ? 'prestataire_id' : 'client_id';
+        $isPrestataire = Auth::user()->isPrestataire();
+        $column = $isPrestataire ? 'prestataire_id' : 'client_id';
+        $otherRelation = $isPrestataire ? 'client' : 'prestataire';
 
         $conversations = Conversation::where($column, $userId)
             ->has('messages')
+            ->when($this->search !== '', function ($query) use ($otherRelation) {
+                $query->whereHas($otherRelation, function ($q) {
+                    $q->where('name', 'like', '%' . $this->search . '%');
+                });
+            })
             ->with(['client', 'prestataire', 'service'])
             ->withCount(['messages as unread_count' => function ($query) use ($userId) {
                 $query->where('is_read', false)->where('sender_id', '!=', $userId);

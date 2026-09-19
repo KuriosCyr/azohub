@@ -9,6 +9,10 @@
                          alt="{{ $prestataire->name }}"
                          class="w-32 h-32 md:w-40 md:h-40 rounded-full border-8 border-cream-50 shadow-2xl">
 
+                    @if($prestataire->isOnline())
+                        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-forest-600 border-4 border-cream-50" title="En ligne"></span>
+                    @endif
+
                     {{-- Badge niveau --}}
                     @if($prestataire->level === 'expert')
                         <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-terracotta-600 text-cream-50 px-4 py-1 rounded-full text-sm font-bold shadow-lg flex items-center gap-1 whitespace-nowrap">

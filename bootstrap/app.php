@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         'client' => \App\Http\Middleware\EnsureUserIsClient::class,
     ]);
 
+        $middleware->web(append: [
+            \App\Http\Middleware\UpdateLastSeen::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'payments/webhook',
         ]);

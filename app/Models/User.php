@@ -98,6 +98,13 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->role === 'prestataire';
     }
 
+    // "En ligne" : vu il y a moins de 5 minutes (mis à jour par UpdateLastSeen sur
+    // chaque requête authentifiée). Pas de temps réel, juste un indicateur approximatif.
+    public function isOnline(): bool
+    {
+        return $this->last_seen_at !== null && $this->last_seen_at->gt(now()->subMinutes(5));
+    }
+
     // Vérifier si l'utilisateur est un client
     public function isClient(): bool
     {
