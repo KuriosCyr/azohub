@@ -21,7 +21,7 @@ class OrderChat extends Component
 
     protected $rules = [
         'message' => 'required|string|max:2000',
-        'attachments.*' => 'nullable|file|max:10240',
+        'attachments.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,mp4,mp3,mov',
     ];
 
     public function getContainsContactInfoProperty(): bool
@@ -33,6 +33,7 @@ class OrderChat extends Component
         'message.required' => 'Veuillez saisir un message.',
         'message.max' => 'Le message ne peut pas dépasser 2000 caractères.',
         'attachments.*.max' => 'Chaque fichier ne peut pas dépasser 10 MB.',
+        'attachments.*.mimes' => 'Type de fichier non autorisé.',
     ];
 
     public function mount(Order $order)

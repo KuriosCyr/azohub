@@ -53,7 +53,9 @@ class ConversationShow extends Component
     {
         $this->validate([
             'message' => 'nullable|string|max:2000',
-            'attachments.*' => 'nullable|file|max:10240',
+            'attachments.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,mp4,mp3,mov',
+        ], [
+            'attachments.*.mimes' => 'Type de fichier non autorisé.',
         ]);
 
         if (blank($this->message) && empty($this->attachments)) {

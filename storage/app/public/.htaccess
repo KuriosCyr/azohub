@@ -1,0 +1,20 @@
+# Ce dossier ne contient que des fichiers envoyés par les utilisateurs (images,
+# PDF, pièces jointes...). Il ne doit JAMAIS exécuter de code, quelle que soit
+# l'extension du fichier téléversé — seconde ligne de défense derrière la
+# validation applicative (qui peut avoir des trous, comme découvert lors de
+# l'audit de sécurité).
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+
+<FilesMatch "\.(php|php\d?|phtml|phar|pht|cgi|pl|py|sh|exe)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+Options -ExecCGI

@@ -29,7 +29,7 @@ class ServiceRequestCreate extends Component
         'deadline' => 'nullable|integer|min:1|max:365',
         'city' => 'required|string|max:100',
         'address' => 'nullable|string|max:255',
-        'attachments.*' => 'nullable|file|max:10240',
+        'attachments.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,mp4,mp3,mov',
     ];
 
     protected $messages = [
@@ -40,6 +40,7 @@ class ServiceRequestCreate extends Component
         'description.min' => 'La description doit faire au moins 20 caractères.',
         'city.required' => 'Veuillez indiquer votre ville.',
         'attachments.*.max' => 'Chaque fichier ne peut pas dépasser 10 MB.',
+        'attachments.*.mimes' => 'Type de fichier non autorisé.',
     ];
 
     public function submit()

@@ -121,7 +121,7 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'delivery_notes' => 'nullable|string|max:1000',
-            'deliverables.*' => 'nullable|file|max:10240', // 10MB max
+            'deliverables.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,mp4,mp3,mov', // 10MB max
         ]);
 
         // Upload des livrables
