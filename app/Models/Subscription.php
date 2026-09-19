@@ -63,6 +63,14 @@ class Subscription extends Model
         $this->save();
     }
 
+    // "Renouvellement automatique" : FedaPay ne permet pas de prélèvement silencieux
+    // (pas de carte enregistrée), donc ça ne prélève jamais seul. Ça personnalise
+    // juste le rappel d'expiration avec un lien de renouvellement rapide pré-rempli.
+    public function toggleAutoRenew(): void
+    {
+        $this->update(['auto_renew' => !$this->auto_renew]);
+    }
+
     // Scope
     public function scopeActive($query)
     {

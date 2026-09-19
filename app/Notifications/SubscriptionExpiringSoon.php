@@ -22,21 +22,30 @@ class SubscriptionExpiringSoon extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        $renewUrl = route('prestataire.subscription', $this->subscription->auto_renew ? ['renew' => $this->subscription->subscription_plan_id] : []);
+
+        $mail = (new MailMessage)
             ->subject('Votre abonnement ' . $this->subscription->plan->name . ' expire bientôt')
             ->greeting('Bonjour ' . $notifiable->name . ',')
             ->line("Votre abonnement au plan « {$this->subscription->plan->name} » expire le {$this->subscription->ends_at->format('d/m/Y')}.")
-            ->line('Renouvelez-le dès maintenant pour continuer à profiter de votre commission réduite et de votre limite de services.')
-            ->action('Renouveler mon abonnement', route('prestataire.subscription'));
+            ->line('Renouvelez-le dès maintenant pour continuer à profiter de votre commission réduite et de votre limite de services.');
+
+        if (!$this->subscription->auto_renew) {
+            $mail->line('Astuce : activez le rappel de renouvellement rapide depuis votre page d\'abonnement pour un lien de renouvellement pré-rempli la prochaine fois.');
+        }
+
+        return $mail->action($this->subscription->auto_renew ? 'Renouveler en un clic' : 'Renouveler mon abonnement', $renewUrl);
     }
 
     public function toArray(object $notifiable): array
     {
+        $renewUrl = route('prestataire.subscription', $this->subscription->auto_renew ? ['renew' => $this->subscription->subscription_plan_id] : []);
+
         return [
             'title' => 'Abonnement bientôt expiré',
             'message' => 'Votre abonnement « ' . $this->subscription->plan->name . ' » expire le ' . $this->subscription->ends_at->format('d/m/Y') . '. Pensez à le renouveler.',
             'icon' => 'exclamation-triangle',
-            'url' => route('prestataire.subscription'),
+            'url' => $renewUrl,
         ];
     }
 }

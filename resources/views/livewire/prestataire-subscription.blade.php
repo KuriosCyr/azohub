@@ -22,7 +22,12 @@
                 <p class="text-ink-300 text-sm mb-1">Plan actuel</p>
                 <p class="text-2xl font-serif font-medium">{{ $this->currentPlan?->name ?? 'Gratuit' }}</p>
                 @if($this->activeSubscription)
-                    <p class="text-ink-300 text-sm mt-1">Renouvellement le {{ $this->activeSubscription->ends_at->format('d/m/Y') }}</p>
+                    <p class="text-ink-300 text-sm mt-1">Expire le {{ $this->activeSubscription->ends_at->format('d/m/Y') }}</p>
+                    <label class="flex items-center gap-2 mt-3 cursor-pointer">
+                        <input type="checkbox" wire:click="toggleAutoRenew" @checked($this->activeSubscription->auto_renew)
+                               class="w-4 h-4 rounded border-ink-300 text-terracotta-600 focus:ring-terracotta-600">
+                        <span class="text-xs text-ink-300">Me rappeler et me proposer un renouvellement rapide avant l'expiration</span>
+                    </label>
                 @endif
             </div>
             <div class="text-right">

@@ -13,6 +13,16 @@ class PrestataireSubscription extends Component
     public ?int $selectedPlanId = null;
     public string $paymentMethod = 'mtn_momo';
 
+    public function mount()
+    {
+        // Lien de renouvellement rapide envoyé par le rappel d'expiration
+        // (?renew=<plan_id>) : présélectionne directement le plan concerné.
+        $renewPlanId = request()->query('renew');
+        if ($renewPlanId && SubscriptionPlan::active()->whereKey($renewPlanId)->exists()) {
+            $this->selectedPlanId = (int) $renewPlanId;
+        }
+    }
+
     public function getPlansProperty()
     {
         return SubscriptionPlan::active()->get();
@@ -31,6 +41,15 @@ class PrestataireSubscription extends Component
     public function selectPlan(int $planId)
     {
         $this->selectedPlanId = $planId;
+    }
+
+    public function toggleAutoRenew()
+    {
+        if (!$this->activeSubscription) {
+            return;
+        }
+
+        $this->activeSubscription->toggleAutoRenew();
     }
 
     public function choosePlan(int $planId, PaymentService $payments)
