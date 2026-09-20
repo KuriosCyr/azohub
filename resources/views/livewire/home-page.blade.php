@@ -1,6 +1,6 @@
 <div>
     {{-- Hero Section --}}
-    <section class="bg-gradient-to-br from-[#BFDBFE] via-[#DBEAFE] to-[#93C5FD] relative overflow-hidden">
+    <section class="bg-gradient-to-br from-ink-900 via-ink-900 to-ink-700 relative overflow-hidden">
 
         <div class="container mx-auto px-4 relative py-16 md:py-24">
             <div class="grid md:grid-cols-2 gap-16 items-end">
@@ -9,15 +9,15 @@
                      :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
                      class="transition-all duration-700 ease-out">
                     <div class="inline-flex items-center gap-2 mb-7">
-                        <div class="w-7 h-0.5 bg-terracotta-600"></div>
-                        <span class="text-xs font-semibold tracking-widest uppercase text-terracotta-600">Services locaux au Bénin</span>
+                        <div class="w-7 h-0.5 bg-clay-500"></div>
+                        <span class="text-xs font-semibold tracking-widest uppercase text-clay-500">Services locaux au Bénin</span>
                     </div>
 
-                    <h1 class="font-serif text-5xl md:text-6xl font-medium leading-[1.05] text-ink-900 mb-6">
+                    <h1 class="font-serif text-5xl md:text-6xl font-medium leading-[1.05] text-cream-50 mb-6">
                         Le savoir-faire d'ici,<br>à portée de main.
                     </h1>
 
-                    <p class="text-lg text-ink-500 max-w-md mb-10 leading-relaxed">
+                    <p class="text-lg text-cream-100/75 max-w-md mb-10 leading-relaxed">
                         Plombiers, développeurs, professeurs, décorateurs&hellip; trouvez un prestataire vérifié près de chez vous, du premier échange au paiement sécurisé.
                     </p>
 
@@ -68,18 +68,18 @@
                     </form>
 
                     {{-- Stats rapides --}}
-                    <div class="flex gap-10 pt-6 border-t border-ink-100">
+                    <div class="flex gap-10 pt-6 border-t border-cream-50/15">
                         <div>
-                            <div class="font-serif text-2xl font-medium text-ink-900">{{ number_format($stats['services']) }}+</div>
-                            <div class="text-xs text-ink-400 mt-1">services disponibles</div>
+                            <div class="font-serif text-2xl font-medium text-cream-50">{{ number_format($stats['services']) }}+</div>
+                            <div class="text-xs text-cream-100/60 mt-1">services disponibles</div>
                         </div>
                         <div>
-                            <div class="font-serif text-2xl font-medium text-ink-900">{{ number_format($stats['prestataires']) }}+</div>
-                            <div class="text-xs text-ink-400 mt-1">prestataires vérifiés</div>
+                            <div class="font-serif text-2xl font-medium text-cream-50">{{ number_format($stats['prestataires']) }}+</div>
+                            <div class="text-xs text-cream-100/60 mt-1">prestataires vérifiés</div>
                         </div>
                         <div>
-                            <div class="font-serif text-2xl font-medium text-ink-900">{{ number_format($stats['orders']) }}+</div>
-                            <div class="text-xs text-ink-400 mt-1">missions réussies</div>
+                            <div class="font-serif text-2xl font-medium text-cream-50">{{ number_format($stats['orders']) }}+</div>
+                            <div class="text-xs text-cream-100/60 mt-1">missions réussies</div>
                         </div>
                     </div>
                 </div>
