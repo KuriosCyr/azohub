@@ -84,3 +84,37 @@
 .choices__list--single {
     padding: 0;
 }
+
+/* Contenu des pages légales (CGU, confidentialité) : le plugin Tailwind Typography
+   n'est pas installé, on style donc explicitement le HTML éditorial. */
+.legal-content {
+    @apply text-[16.5px] leading-relaxed text-ink-500;
+}
+.legal-content p {
+    @apply mb-3;
+}
+.legal-content h3 {
+    @apply mb-2 mt-6 text-base font-bold text-ink-900;
+}
+.legal-content h3:first-child {
+    @apply mt-0;
+}
+.legal-content ul {
+    @apply mb-3 space-y-2;
+}
+.legal-content li {
+    @apply relative pl-5;
+}
+.legal-content li::before {
+    content: '';
+    @apply absolute left-0 top-[0.7em] h-1.5 w-1.5 rounded-full bg-terracotta-600;
+}
+.legal-content strong {
+    @apply font-semibold text-ink-900;
+}
+.legal-content a {
+    @apply font-semibold text-terracotta-600 underline underline-offset-2 hover:text-terracotta-700;
+}
+.legal-content > :last-child {
+    @apply mb-0;
+}
