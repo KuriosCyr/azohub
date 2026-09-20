@@ -114,7 +114,7 @@ return [
     |
     */
 
-    'inject_assets' => true,
+    'inject_assets' => false, // Livewire est démarré depuis resources/js/app.js (bundle Vite) ; @livewireScriptConfig dans le layout.
 
     /*
     |---------------------------------------------------------------------------

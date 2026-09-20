@@ -64,6 +64,17 @@ class ServicesIndex extends Component
 
     public function render()
     {
+        // Ces filtres viennent du navigateur : on borne/assainit avant de les injecter dans la requête.
+        $this->search = mb_substr((string) $this->search, 0, 100);
+        $this->city = mb_substr((string) $this->city, 0, 100);
+        $this->category = mb_substr((string) $this->category, 0, 100);
+        $this->minPrice = is_numeric($this->minPrice) ? $this->minPrice : '';
+        $this->maxPrice = is_numeric($this->maxPrice) ? $this->maxPrice : '';
+        $this->minRating = is_numeric($this->minRating) ? min(5, max(0, (float) $this->minRating)) : '';
+        if (!in_array($this->sortBy, ['recent', 'popular', 'price_low', 'price_high', 'rating'], true)) {
+            $this->sortBy = 'recent';
+        }
+
         $query = Service::active()
             ->with(['prestataire', 'category'])
             ->withCount('orders')

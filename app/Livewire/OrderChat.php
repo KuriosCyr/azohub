@@ -38,6 +38,11 @@ class OrderChat extends Component
 
     public function mount(Order $order)
     {
+        abort_unless(
+            $order->client_id === Auth::id() || $order->prestataire_id === Auth::id(),
+            403
+        );
+
         $this->order = $order;
         $this->markMessagesAsRead();
     }

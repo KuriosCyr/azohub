@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,10 +19,17 @@ class ConversationController extends Controller
     {
         $validated = $request->validate([
             'prestataire_id' => 'required|exists:users,id',
-            'service_id' => 'nullable|exists:services,id',
+            'service_id' => 'nullable|integer',
         ]);
 
         $prestataire = User::where('role', 'prestataire')->findOrFail($validated['prestataire_id']);
+
+        // Le service doit appartenir à ce prestataire, sinon il pourrait être associé
+        // à la conversation (et recopié dans les offres/commandes) par un tiers.
+        if (!empty($validated['service_id'])
+            && !Service::where('id', $validated['service_id'])->where('user_id', $prestataire->id)->exists()) {
+            $validated['service_id'] = null;
+        }
 
         $conversation = Conversation::firstOrCreate(
             ['client_id' => Auth::id(), 'prestataire_id' => $prestataire->id],

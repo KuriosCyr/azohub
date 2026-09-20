@@ -158,12 +158,13 @@
                 </div>
 
                 <!-- Auth / User Menu -->
-                <div class="hidden md:flex items-center space-x-4">
+                <div class="flex items-center gap-1 md:gap-4">
                     @auth
+                        {{-- Une seule cloche pour desktop et mobile (deux instances = 2x les requêtes de polling). --}}
                         <livewire:notification-bell />
 
-                        <!-- User Dropdown -->
-                        <div x-data="{ open: false }" @click.away="open = false" class="relative">
+                        <!-- User Dropdown (desktop) -->
+                        <div x-data="{ open: false }" @click.away="open = false" class="relative hidden md:block">
                             <button @click="open = !open" class="flex items-center gap-3 hover:bg-ink-100/40 rounded-lg px-3 py-2 transition">
                                 <img src="{{ Auth::user()->avatar ? Storage::url(Auth::user()->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) }}"
                                      alt="{{ Auth::user()->name }}"
@@ -259,23 +260,19 @@
                             </div>
                         </div>
                     @else
-                        <!-- Non connecté -->
-                        <a href="{{ route('login') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition">
-                            Connexion
-                        </a>
-                        <a href="{{ route('register') }}" class="bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-semibold px-5 py-2.5 rounded-lg transition text-sm">
-                            S'inscrire gratuitement
-                        </a>
-                    @endauth
-                </div>
-
-                <!-- Mobile menu button -->
-                <div class="md:hidden flex items-center gap-1">
-                    @auth
-                        <livewire:notification-bell />
+                        <!-- Non connecté (desktop) -->
+                        <div class="hidden md:flex items-center gap-4">
+                            <a href="{{ route('login') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition">
+                                Connexion
+                            </a>
+                            <a href="{{ route('register') }}" class="bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-semibold px-5 py-2.5 rounded-lg transition text-sm">
+                                S'inscrire gratuitement
+                            </a>
+                        </div>
                     @endauth
 
-                    <button x-data @click="$dispatch('toggle-mobile-menu')" class="text-ink-700 hover:text-ink-900 p-2 rounded-lg hover:bg-ink-100/40 transition">
+                    <!-- Mobile menu button -->
+                    <button x-data @click="$dispatch('toggle-mobile-menu')" class="md:hidden text-ink-700 hover:text-ink-900 p-2 rounded-lg hover:bg-ink-100/40 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
@@ -567,7 +564,10 @@
 
     {{-- Livewire.start() est appelé depuis resources/js/app.js (bundle Vite partagé
          avec Alpine) plutôt que via @livewireScripts, pour éviter deux instances
-         Alpine concurrentes. @livewireStyles (dans le <head>) reste nécessaire. --}}
+         Alpine concurrentes. @livewireScriptConfig fournit l'URL de mise à jour et le
+         jeton CSRF au bundle (et l'empêche de se démarrer une 2e fois tout seul).
+         @livewireStyles (dans le <head>) reste nécessaire. --}}
+    @livewireScriptConfig
     @stack('scripts')
 </body>
 </html>

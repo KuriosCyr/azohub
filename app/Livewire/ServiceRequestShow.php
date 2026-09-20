@@ -65,14 +65,20 @@ class ServiceRequestShow extends Component
 
         $validated = $this->validate();
 
-        $proposal = Proposal::create([
-            'service_request_id' => $this->serviceRequest->id,
-            'user_id' => Auth::id(),
-            'message' => $validated['message'],
-            'proposed_price' => $validated['proposedPrice'],
-            'delivery_time' => $validated['deliveryTime'],
-            'status' => 'pending',
-        ]);
+        try {
+            $proposal = Proposal::create([
+                'service_request_id' => $this->serviceRequest->id,
+                'user_id' => Auth::id(),
+                'message' => $validated['message'],
+                'proposed_price' => $validated['proposedPrice'],
+                'delivery_time' => $validated['deliveryTime'],
+                'status' => 'pending',
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Double clic : la proposition existe déjà (index unique), on ne la duplique pas.
+            $this->loadRequest();
+            return;
+        }
 
         $this->serviceRequest->increment('proposals_count');
         $this->serviceRequest->client->notify(new NewProposalReceived($proposal));

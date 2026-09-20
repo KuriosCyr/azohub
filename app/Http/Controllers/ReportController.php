@@ -19,13 +19,25 @@ class ReportController extends Controller
             'details' => 'nullable|string|max:1000',
         ]);
 
-        Report::create([
-            'service_id' => $service->id,
-            'reporter_id' => Auth::id(),
-            'reason' => $validated['reason'],
-            'details' => $validated['details'] ?? null,
-            'status' => 'pending',
-        ]);
+        if ($service->user_id === Auth::id()) {
+            return redirect()->back()->with('error', 'Vous ne pouvez pas signaler votre propre service.');
+        }
+
+        // Un seul signalement en attente par utilisateur et par service : évite d'inonder la modération.
+        $alreadyPending = Report::where('service_id', $service->id)
+            ->where('reporter_id', Auth::id())
+            ->where('status', 'pending')
+            ->exists();
+
+        if (!$alreadyPending) {
+            Report::create([
+                'service_id' => $service->id,
+                'reporter_id' => Auth::id(),
+                'reason' => $validated['reason'],
+                'details' => $validated['details'] ?? null,
+                'status' => 'pending',
+            ]);
+        }
 
         return redirect()
             ->back()

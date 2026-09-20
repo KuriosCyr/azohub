@@ -49,7 +49,7 @@ class ServiceRequestCreate extends Component
 
         $uploadedAttachments = [];
         foreach ($this->attachments as $file) {
-            $path = $file->store('service-requests', 'public');
+            $path = $file->store('service-requests', 'local');
             $uploadedAttachments[] = [
                 'name' => $file->getClientOriginalName(),
                 'path' => $path,

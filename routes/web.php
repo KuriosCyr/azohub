@@ -28,6 +28,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AdvertisementController;
 use App\Http\Controllers\DisputeController;
+use App\Http\Controllers\ServiceRequestAttachmentController;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
@@ -163,6 +164,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', ServiceRequestsIndex::class)->name('index');
         Route::get('/nouvelle', ServiceRequestCreate::class)->middleware('client')->name('create');
         Route::get('/{serviceRequest}', ServiceRequestShow::class)->name('show');
+        Route::get('/{serviceRequest}/piece-jointe/{index}', ServiceRequestAttachmentController::class)->name('attachment.download');
         Route::get('/{serviceRequest}/propositions/{proposal}/accepter', ProposalAccept::class)
             ->middleware('client')
             ->name('proposals.accept');
@@ -201,7 +203,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // SIGNALEMENTS
     // ============================================
 
-    Route::post('/services/{service}/report', [ReportController::class, 'store'])->name('reports.store');
+    Route::post('/services/{service}/report', [ReportController::class, 'store'])->middleware('throttle:10,1')->name('reports.store');
 
     // ============================================
     // TÉLÉCHARGEMENT PIÈCES JOINTES MESSAGES

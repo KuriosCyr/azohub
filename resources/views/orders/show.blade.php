@@ -493,6 +493,9 @@
                             @endif
                         </div>
 
+                        {{-- Coordonnées visibles uniquement une fois la commande payée (même garde que le chat) :
+                             sinon une commande non payée suffirait à récolter email/téléphone des prestataires. --}}
+                        @if(in_array($order->status, ['paid', 'in_progress', 'delivered', 'completed']))
                         <div class="space-y-2 text-sm">
                             <div class="flex items-center gap-2 text-ink-500">
                                 <x-app-icon name="envelope" class="w-4 h-4 inline-block" />
@@ -503,6 +506,7 @@
                                 <span>{{ $otherUser->phone }}</span>
                             </div>
                         </div>
+                        @endif
 
                         @if($userRole === 'client')
                         <a href="{{ route('prestataire.profile', $otherUser->slug) }}"

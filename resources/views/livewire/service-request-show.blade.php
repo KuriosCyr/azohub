@@ -56,8 +56,8 @@
                         <div class="border-t border-ink-100 pt-6 mt-6">
                             <p class="text-sm font-bold text-ink-700 mb-3">Pièces jointes</p>
                             <div class="flex flex-wrap gap-2">
-                                @foreach($serviceRequest->attachments as $file)
-                                    <a href="{{ Storage::url($file['path']) }}" target="_blank"
+                                @foreach($serviceRequest->attachments as $index => $file)
+                                    <a href="{{ route('service-requests.attachment.download', [$serviceRequest, $index]) }}" target="_blank"
                                        class="text-sm bg-ink-100/30 hover:bg-ink-100/60 px-3 py-2 rounded-lg text-ink-700 transition">
                                         📎 {{ $file['name'] }}
                                     </a>
