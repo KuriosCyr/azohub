@@ -97,15 +97,40 @@
                         </div>
                     </div>
 
-                    <a href="{{ route('services.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('services.*') && !request()->routeIs('prestataire.services.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
-                        Tous les services
-                    </a>
+                    <!-- Dropdown Découvrir (regroupe les liens sans badge, pour ne pas surcharger la barre) -->
+                    <div x-data="{ open: false }" @click.away="open = false" class="relative">
+                        <button @click="open = !open" class="text-sm font-medium text-ink-500 hover:text-ink-900 flex items-center gap-1 transition {{ request()->routeIs('services.index', 'how-it-works') && !request()->routeIs('prestataire.services.*') ? 'text-ink-900' : '' }}">
+                            Découvrir
+                            <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
 
-                    <a href="{{ route('how-it-works') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('how-it-works') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
-                        Comment ça marche
-                    </a>
+                        <div x-show="open"
+                             x-transition
+                             class="absolute top-full left-0 mt-2 w-56 bg-cream-50 rounded-lg shadow-lg py-2 z-50 border border-ink-100"
+                             style="display: none;">
+                            <a href="{{ route('services.index') }}" class="block px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                                Tous les services
+                            </a>
+                            <a href="{{ route('how-it-works') }}" class="block px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                                Comment ça marche
+                            </a>
+                        </div>
+                    </div>
 
                     @auth
+                        @php
+                            // Messages non lus, tous canaux confondus (chat direct + chat de
+                            // commande), pour les deux rôles — sert de badge au lien Messages.
+                            $unreadMessagesCount = \App\Models\ConversationMessage::whereHas('conversation', function ($q) {
+                                    $q->where('client_id', Auth::id())->orWhere('prestataire_id', Auth::id());
+                                })
+                                ->where('sender_id', '!=', Auth::id())
+                                ->where('is_read', false)
+                                ->count()
+                                + \App\Models\Message::where('receiver_id', Auth::id())->where('is_read', false)->count();
+                        @endphp
                         <a href="{{ route('dashboard') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('*.dashboard') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                             Dashboard
                         </a>
@@ -135,8 +160,13 @@
                             </a>
                         @endif
 
-                        <a href="{{ route('conversations.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('conversations.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
+                        <a href="{{ route('conversations.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition inline-flex items-center gap-1.5 {{ request()->routeIs('conversations.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
                             Messages
+                            @if($unreadMessagesCount > 0)
+                                <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-terracotta-600 text-cream-50 text-[10px] font-semibold leading-none">
+                                    {{ $unreadMessagesCount > 99 ? '99+' : $unreadMessagesCount }}
+                                </span>
+                            @endif
                         </a>
                     @endauth
                 </div>
@@ -365,6 +395,11 @@
                     <a href="{{ route('conversations.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition {{ request()->routeIs('conversations.*') ? 'bg-terracotta-50 text-terracotta-700' : '' }}">
                         <x-app-icon name="chat" class="w-4 h-4" />
                         Messages
+                        @if($unreadMessagesCount > 0)
+                            <span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-terracotta-600 text-cream-50 text-[10px] font-semibold leading-none ml-auto">
+                                {{ $unreadMessagesCount > 99 ? '99+' : $unreadMessagesCount }}
+                            </span>
+                        @endif
                     </a>
                     <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
                         <x-app-icon name="cog" class="w-4 h-4" />
