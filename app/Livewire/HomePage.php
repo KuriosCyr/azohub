@@ -15,7 +15,7 @@ class HomePage extends Component
     public function render()
     {
         return view('livewire.home-page', [
-            'categories' => Category::active()->take(6)->get(),
+            'categories' => Category::active()->take(10)->get(),
             'popularServices' => Service::active()
                 ->with(['prestataire', 'category'])
                 ->withCount('orders')  // Compte dynamiquement les commandes

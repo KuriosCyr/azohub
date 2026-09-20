@@ -97,27 +97,13 @@
                         </div>
                     </div>
 
-                    <!-- Dropdown Découvrir (regroupe les liens sans badge, pour ne pas surcharger la barre) -->
-                    <div x-data="{ open: false }" @click.away="open = false" class="relative">
-                        <button @click="open = !open" class="text-sm font-medium text-ink-500 hover:text-ink-900 flex items-center gap-1 transition {{ request()->routeIs('services.index', 'how-it-works') && !request()->routeIs('prestataire.services.*') ? 'text-ink-900' : '' }}">
-                            Découvrir
-                            <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
+                    <a href="{{ route('services.index') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('services.*') && !request()->routeIs('prestataire.services.*') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
+                        Tous les services
+                    </a>
 
-                        <div x-show="open"
-                             x-transition
-                             class="absolute top-full left-0 mt-2 w-56 bg-cream-50 rounded-lg shadow-lg py-2 z-50 border border-ink-100"
-                             style="display: none;">
-                            <a href="{{ route('services.index') }}" class="block px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
-                                Tous les services
-                            </a>
-                            <a href="{{ route('how-it-works') }}" class="block px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
-                                Comment ça marche
-                            </a>
-                        </div>
-                    </div>
+                    <a href="{{ route('how-it-works') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('how-it-works') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
+                        Comment ça marche
+                    </a>
 
                     @auth
                         @php
