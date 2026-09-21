@@ -70,8 +70,8 @@ class PaymentService
         $plan = $subscription->plan;
 
         $transaction = Transaction::create([
-            'description' => "Abonnement {$plan->name} - Azohub",
-            'amount' => (int) round((float) $plan->price),
+            'description' => "Abonnement {$plan->name}" . ($subscription->billing_period === 'yearly' ? ' (annuel)' : '') . ' - Azohub',
+            'amount' => (int) round($plan->priceFor($subscription->billing_period)),
             'currency' => ['iso' => 'XOF'],
             'callback_url' => route('payments.subscription-callback', ['subscription' => $subscription->id]),
             'customer' => [
@@ -92,7 +92,7 @@ class PaymentService
             'transaction_id' => (string) $transaction->id,
             'payment_method' => $paymentMethod,
             'phone_number' => $payer->phone,
-            'amount' => $plan->price,
+            'amount' => $plan->priceFor($subscription->billing_period),
             'status' => 'pending',
             'type' => 'subscription',
             'gateway_reference' => $transaction->reference ?? null,
@@ -117,7 +117,7 @@ class PaymentService
             return;
         }
 
-        $transaction = Transaction::retrieve($event->object_id);
+        $transaction = $this->fetchTransaction((string) $event->object_id);
 
         $this->processTransactionUpdate(
             (string) $transaction->id,
@@ -125,6 +125,33 @@ class PaymentService
             (string) $transaction->status,
             $transaction->__toJSON()
         );
+    }
+
+    /**
+     * Interroge FedaPay sur l'état réel d'un paiement encore en attente et le traite.
+     * Appelé au retour du client depuis la page de paiement : ça fonctionne même si le
+     * webhook n'arrive pas (ex. en local, où FedaPay ne peut pas joindre le site) ou tarde.
+     * Idempotent : processTransactionUpdate() ignore un paiement déjà traité.
+     */
+    public function syncPayment(Payment $payment): void
+    {
+        if ($payment->status !== 'pending') {
+            return;
+        }
+
+        $transaction = $this->fetchTransaction((string) $payment->transaction_id);
+
+        $this->processTransactionUpdate(
+            (string) $transaction->id,
+            $transaction->wasPaid(),
+            (string) $transaction->status,
+            $transaction->__toJSON()
+        );
+    }
+
+    protected function fetchTransaction(string $id)
+    {
+        return Transaction::retrieve($id);
     }
 
     // Verrouillé + gardé par le statut : FedaPay peut livrer le même événement

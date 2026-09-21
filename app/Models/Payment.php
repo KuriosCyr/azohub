@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Notifications\PaymentConfirmed;
+use App\Notifications\ProposalRejected;
 use App\Notifications\SubscriptionActivated;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -66,6 +67,8 @@ class Payment extends Model
             ]);
 
             $this->order->prestataire->notify(new PaymentConfirmed($this->order));
+
+            $this->finalizeNegotiatedOrder($this->order);
         }
 
         // Un seul abonnement actif à la fois : celui-ci remplace tout abonnement en cours.
@@ -83,6 +86,34 @@ class Payment extends Model
 
             $this->subscription->renew($carryOverFrom ? \Carbon\Carbon::parse($carryOverFrom) : null);
             $this->subscription->user->notify(new SubscriptionActivated($this->subscription));
+        }
+    }
+
+    // Commande issue d'une proposition ou d'une offre personnalisée : c'est seulement maintenant
+    // que le paiement est confirmé qu'on accepte la proposition (ce qui ferme la demande et
+    // refuse les autres) ou l'offre.
+    private function finalizeNegotiatedOrder(Order $order): void
+    {
+        $proposal = $order->proposal;
+
+        if ($proposal && $proposal->status === 'pending') {
+            $rivals = Proposal::where('service_request_id', $proposal->service_request_id)
+                ->where('id', '!=', $proposal->id)
+                ->where('status', 'pending')
+                ->with('prestataire')
+                ->get();
+
+            $proposal->accept();
+
+            foreach ($rivals as $rival) {
+                $rival->prestataire->notify(new ProposalRejected($rival->fresh()));
+            }
+        }
+
+        $offer = $order->customOffer;
+
+        if ($offer && $offer->status === 'pending') {
+            $offer->update(['status' => 'accepted']);
         }
     }
 

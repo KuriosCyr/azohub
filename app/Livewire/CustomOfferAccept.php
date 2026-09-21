@@ -28,9 +28,9 @@ class CustomOfferAccept extends Component
             'paymentMethod' => 'required|in:mtn_momo,moov_money,celtiis_cash,card',
         ]);
 
-        // L'offre est revérifiée à l'intérieur même de la transaction (verrouillée),
-        // pas seulement au chargement de la page : sans ça, une offre déjà acceptée
-        // ou déclinée entre-temps pourrait quand même générer une seconde commande.
+        // L'offre est revérifiée à l'intérieur même de la transaction (verrouillée).
+        // Elle n'est marquée « acceptée » qu'une fois le paiement confirmé
+        // (Payment::markAsPaid) : abandonner le paiement ne la bloque plus.
         $order = DB::transaction(function () {
             $offer = CustomOffer::whereKey($this->offer->id)->lockForUpdate()->first();
 
@@ -38,11 +38,16 @@ class CustomOfferAccept extends Component
                 abort(403, 'Cette offre ne peut plus être acceptée.');
             }
 
+            $existing = Order::where('custom_offer_id', $offer->id)->where('status', 'pending_payment')->first();
+            if ($existing) {
+                return $existing;
+            }
+
             $amount = (float) $offer->price;
             $commission = round($amount * $offer->prestataire->commissionRate(), 2);
             $clientFee = round($amount * Order::CLIENT_FEE_RATE, 2);
 
-            $order = Order::create([
+            return Order::create([
                 'client_id' => Auth::id(),
                 'prestataire_id' => $offer->prestataire_id,
                 'service_id' => $offer->service_id,
@@ -56,10 +61,6 @@ class CustomOfferAccept extends Component
                 'status' => 'pending_payment',
                 'payment_status' => 'pending',
             ]);
-
-            $offer->update(['status' => 'accepted']);
-
-            return $order;
         });
 
         try {

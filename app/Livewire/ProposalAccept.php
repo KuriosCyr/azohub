@@ -34,15 +34,12 @@ class ProposalAccept extends Component
             'paymentMethod' => 'required|in:mtn_momo,moov_money,celtiis_cash,card',
         ]);
 
-        $previouslyPendingIds = $this->serviceRequest->proposals()
-            ->where('id', '!=', $this->proposal->id)
-            ->where('status', 'pending')
-            ->pluck('id');
-
         // La proposition et la demande sont revérifiées à l'intérieur même de la
-        // transaction (verrouillées), pas seulement au chargement de la page : sans
-        // ça, une proposition déjà acceptée/rejetée entre-temps (ou une demande
-        // fermée par une autre acceptation) pourrait quand même générer une commande.
+        // transaction (verrouillées), pas seulement au chargement de la page.
+        // IMPORTANT : rien n'est « accepté » ni « fermé » ici. La proposition n'est acceptée
+        // (et la demande fermée, les autres propositions refusées) qu'une fois le paiement
+        // confirmé (Payment::markAsPaid) — sinon abandonner la page de paiement laissait la
+        // demande fermée pour toujours.
         $order = DB::transaction(function () {
             $proposal = Proposal::whereKey($this->proposal->id)->lockForUpdate()->first();
             $serviceRequest = ServiceRequest::whereKey($this->serviceRequest->id)->lockForUpdate()->first();
@@ -51,11 +48,27 @@ class ProposalAccept extends Component
                 abort(403, 'Cette proposition ne peut plus être acceptée.');
             }
 
+            // Déjà une commande en attente de paiement pour cette proposition : on la reprend.
+            $existing = Order::where('proposal_id', $proposal->id)->where('status', 'pending_payment')->first();
+            if ($existing) {
+                return $existing;
+            }
+
+            // Une commande impayée d'une autre proposition de la même demande est abandonnée.
+            Order::where('service_request_id', $serviceRequest->id)
+                ->where('status', 'pending_payment')
+                ->get()
+                ->each(fn (Order $o) => $o->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => 'Une autre proposition a été choisie pour cette demande.',
+                ]));
+
             $amount = (float) $proposal->proposed_price;
             $commission = round($amount * $proposal->prestataire->commissionRate(), 2);
             $clientFee = round($amount * Order::CLIENT_FEE_RATE, 2);
 
-            $order = Order::create([
+            return Order::create([
                 'client_id' => Auth::id(),
                 'prestataire_id' => $proposal->user_id,
                 'service_request_id' => $serviceRequest->id,
@@ -69,15 +82,7 @@ class ProposalAccept extends Component
                 'status' => 'pending_payment',
                 'payment_status' => 'pending',
             ]);
-
-            $proposal->accept();
-
-            return $order;
         });
-
-        foreach (Proposal::whereIn('id', $previouslyPendingIds)->with('prestataire')->get() as $rejected) {
-            $rejected->prestataire->notify(new ProposalRejected($rejected));
-        }
 
         try {
             $url = $payments->initiateForOrder($order, $this->paymentMethod);

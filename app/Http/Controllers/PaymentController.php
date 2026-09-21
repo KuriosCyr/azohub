@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Subscription;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
@@ -48,8 +49,38 @@ class PaymentController extends Controller
      * Retour navigateur après paiement (informatif). La confirmation réelle
      * du paiement se fait de façon asynchrone via le webhook.
      */
-    public function callback(Order $order)
+    public function callback(Order $order, PaymentService $payments)
     {
+        // On ne déclenche la vérification auprès de FedaPay que pour le client de la commande.
+        if (Auth::id() === $order->client_id) {
+            $payment = $order->payments()
+                ->where('type', 'order_payment')
+                ->where('status', 'pending')
+                ->latest()
+                ->first();
+
+            if ($payment) {
+                try {
+                    $payments->syncPayment($payment);
+                } catch (\Throwable $e) {
+                    Log::warning('Vérification du paiement au retour impossible : ' . $e->getMessage());
+                }
+
+                $payment->refresh();
+                $order->refresh();
+            }
+
+            if ($order->status === 'paid' || in_array($order->status, ['in_progress', 'delivered', 'completed'], true)) {
+                return redirect()->route('orders.show', $order)
+                    ->with('success', 'Paiement confirmé ! Le prestataire a été prévenu.');
+            }
+
+            if ($payment && $payment->status === 'failed') {
+                return redirect()->route('orders.show', $order)
+                    ->with('error', 'Le paiement a été refusé ou annulé. Vous pouvez réessayer.');
+            }
+        }
+
         return redirect()
             ->route('orders.show', $order)
             ->with('success', 'Paiement en cours de confirmation. Le statut sera mis à jour sous quelques instants.');
@@ -59,8 +90,36 @@ class PaymentController extends Controller
      * Retour navigateur après paiement d'un abonnement (informatif). La confirmation
      * réelle se fait de façon asynchrone via le webhook.
      */
-    public function subscriptionCallback(Subscription $subscription)
+    public function subscriptionCallback(Subscription $subscription, PaymentService $payments)
     {
+        if (Auth::id() === $subscription->user_id) {
+            $payment = Payment::where('subscription_id', $subscription->id)
+                ->where('status', 'pending')
+                ->latest()
+                ->first();
+
+            if ($payment) {
+                try {
+                    $payments->syncPayment($payment);
+                } catch (\Throwable $e) {
+                    Log::warning("Vérification du paiement d'abonnement impossible : " . $e->getMessage());
+                }
+
+                $subscription->refresh();
+                $payment->refresh();
+            }
+
+            if ($subscription->status === 'active') {
+                return redirect()->route('prestataire.subscription')
+                    ->with('success', 'Paiement confirmé ! Votre abonnement est actif.');
+            }
+
+            if ($payment && $payment->status === 'failed') {
+                return redirect()->route('prestataire.subscription')
+                    ->with('error', 'Le paiement a été refusé ou annulé. Vous pouvez réessayer.');
+            }
+        }
+
         return redirect()
             ->route('prestataire.subscription')
             ->with('success', 'Paiement en cours de confirmation. Votre abonnement sera activé sous quelques instants.');
