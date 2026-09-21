@@ -3,6 +3,9 @@
 namespace App\Livewire;
 
 use App\Models\Subscription;
+use App\Models\Payment;
+use App\Notifications\SubscriptionActivated;
+use Illuminate\Support\Facades\DB;
 use App\Models\SubscriptionPlan;
 use App\Services\PaymentService;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +15,7 @@ class PrestataireSubscription extends Component
 {
     public ?int $selectedPlanId = null;
     public string $paymentMethod = 'mtn_momo';
+    public string $billingPeriod = 'monthly'; // monthly | yearly
 
     public function mount()
     {
@@ -36,6 +40,21 @@ class PrestataireSubscription extends Component
     public function getActiveSubscriptionProperty()
     {
         return Auth::user()->activeSubscription;
+    }
+
+    // Premier mois offert : une seule fois par prestataire, sur un plan payant mensuel, tant
+    // qu'il n'a jamais eu d'essai ni payé d'abonnement.
+    public function getTrialEligibleProperty(): bool
+    {
+        $userId = Auth::id();
+
+        return !Subscription::where('user_id', $userId)->where('is_trial', true)->exists()
+            && !Payment::where('user_id', $userId)->where('type', 'subscription')->where('status', 'success')->exists();
+    }
+
+    public function setBillingPeriod(string $period)
+    {
+        $this->billingPeriod = $period === 'yearly' ? 'yearly' : 'monthly';
     }
 
     // Renouvellement anticipé : autorisé pour le plan payant en cours dans les 7 derniers jours
@@ -83,6 +102,31 @@ class PrestataireSubscription extends Component
             return;
         }
 
+        $period = $plan->hasYearlyOffer() ? $this->billingPeriod : 'monthly';
+
+        // Mois d'essai offert : activation immédiate, sans paiement.
+        if ($period === 'monthly' && $this->trialEligible) {
+            DB::transaction(function () use ($user, $plan) {
+                Subscription::where('user_id', $user->id)->where('status', 'active')->update(['status' => 'cancelled']);
+
+                $trial = Subscription::create([
+                    'user_id' => $user->id,
+                    'subscription_plan_id' => $plan->id,
+                    'status' => 'active',
+                    'billing_period' => 'monthly',
+                    'is_trial' => true,
+                    'starts_at' => now(),
+                    'ends_at' => now()->addMonth(),
+                ]);
+
+                $user->notify(new SubscriptionActivated($trial));
+            });
+
+            $this->selectedPlanId = null;
+            session()->flash('success', "Votre mois offert du plan {$plan->name} est activé. Profitez-en !");
+            return;
+        }
+
         $this->validate([
             'paymentMethod' => 'required|in:mtn_momo,moov_money,celtiis_cash,card',
         ]);
@@ -93,6 +137,7 @@ class PrestataireSubscription extends Component
             'starts_at' => now(),
             'ends_at' => now(),
             'status' => 'pending',
+            'billing_period' => $period,
         ]);
 
         try {

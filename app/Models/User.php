@@ -333,6 +333,22 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         }
     }
 
+    // Fin de l'offre de bienvenue (commission réduite les premiers mois), ou null si elle
+    // est désactivée, terminée, ou si ce n'est pas un prestataire.
+    public function welcomePromoEndsAt(): ?\Carbon\Carbon
+    {
+        $rate = (float) config('services.azohub.welcome_promo.rate');
+        $days = (int) config('services.azohub.welcome_promo.days');
+
+        if (!$this->isPrestataire() || $rate <= 0 || $days <= 0 || !$this->created_at) {
+            return null;
+        }
+
+        $endsAt = $this->created_at->copy()->addDays($days);
+
+        return $endsAt->isFuture() ? $endsAt : null;
+    }
+
     // Libellé affichable du niveau (avec l'accent : ucfirst('confirme') donnait « Confirme »).
     public function getLevelLabelAttribute(): string
     {
@@ -354,7 +370,13 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         $plan = $this->currentPlan();
         $planRate = $plan ? ((float) $plan->commission_rate) / 100 : $levelRate;
 
-        return min($levelRate, $planRate);
+        $rates = [$levelRate, $planRate];
+
+        if ($this->welcomePromoEndsAt()) {
+            $rates[] = ((float) config('services.azohub.welcome_promo.rate')) / 100;
+        }
+
+        return min($rates);
     }
 
     // Nombre de services publiables gratuitement selon le niveau (gagné par la

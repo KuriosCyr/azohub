@@ -13,6 +13,8 @@ class Subscription extends Model
         'user_id',
         'subscription_plan_id',
         'status',
+        'billing_period',
+        'is_trial',
         'starts_at',
         'ends_at',
         'auto_renew',
@@ -23,6 +25,7 @@ class Subscription extends Model
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
         'auto_renew' => 'boolean',
+        'is_trial' => 'boolean',
         'reminded_at' => 'datetime',
     ];
 
@@ -53,7 +56,7 @@ class Subscription extends Model
         $base = ($carryOverFrom && $carryOverFrom->isFuture()) ? $carryOverFrom->copy() : now();
 
         $this->starts_at = now();
-        $this->ends_at = $this->plan->billing_period === 'yearly' ? $base->addYear() : $base->addMonth();
+        $this->ends_at = $this->billing_period === 'yearly' ? $base->addYear() : $base->addMonth();
         $this->status = 'active';
         $this->reminded_at = null;
         $this->save();

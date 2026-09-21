@@ -26,7 +26,7 @@ class FaqSeeder extends Seeder
             [
                 'category' => 'general',
                 'question' => 'Azohub est-il gratuit ?',
-                'answer' => 'L\'inscription est gratuite pour tous. Azohub prélève une commission de 10% sur chaque transaction uniquement lorsqu\'une commande est finalisée avec succès.',
+                'answer' => 'L\'inscription est gratuite pour tous. Le client paie des frais de service de 5 % en plus du prix affiché. Le prestataire paie une commission de 5 % à 15 % (selon son niveau et son abonnement, et 10 % pendant ses 3 premiers mois), uniquement lorsqu\'une commande est finalisée avec succès.',
                 'order' => 3,
             ],
             [
@@ -46,13 +46,13 @@ class FaqSeeder extends Seeder
             [
                 'category' => 'prestataire',
                 'question' => 'Combien puis-je gagner sur Azohub ?',
-                'answer' => 'Vos gains dépendent du prix de vos services et du nombre de commandes. Après la commission de 10% d\'Azohub, vous recevez 90% du montant de chaque vente. Il n\'y a pas de limite de gains !',
+                'answer' => 'Vos gains dépendent du prix de vos services et du nombre de commandes. Azohub prélève sur chaque vente une commission de 5 % à 15 % selon votre niveau et votre abonnement (10 % pendant vos 3 premiers mois) : vous recevez le reste. Il n\'y a pas de limite de gains !',
                 'order' => 2,
             ],
             [
                 'category' => 'prestataire',
                 'question' => 'Comment retirer mes gains ?',
-                'answer' => 'Vous pouvez retirer vos gains dès que votre solde atteint 10 000 FCFA. Les retraits sont effectués par Mobile Money (MTN, Moov) sous 24-48h ouvrées.',
+                'answer' => 'Vous pouvez retirer vos gains dès que votre solde atteint 2 000 FCFA. Les retraits sont effectués par Mobile Money (MTN, Moov, Celtiis Cash) sous 24-48h ouvrées.',
                 'order' => 3,
             ],
             [

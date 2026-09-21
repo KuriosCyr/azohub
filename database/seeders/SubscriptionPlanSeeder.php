@@ -20,7 +20,7 @@ class SubscriptionPlanSeeder extends Seeder
                 'commission_rate' => 15.00,
                 'features' => [
                     '6 à 15 services selon votre niveau',
-                    'Commission de 15%',
+                    'Commission de 15 % (10 % pendant vos 3 premiers mois)',
                     'Support par email',
                     'Profil de base',
                 ],
@@ -32,7 +32,8 @@ class SubscriptionPlanSeeder extends Seeder
                 'name' => 'Pro',
                 'slug' => 'pro',
                 'description' => 'Pour les prestataires réguliers',
-                'price' => 5000,
+                'price' => 3000,
+                'yearly_price' => 30000,
                 'billing_period' => 'monthly',
                 'max_services' => 10,
                 'commission_rate' => 10.00,
@@ -51,7 +52,8 @@ class SubscriptionPlanSeeder extends Seeder
                 'name' => 'Premium',
                 'slug' => 'premium',
                 'description' => 'Pour les professionnels confirmés',
-                'price' => 15000,
+                'price' => 9000,
+                'yearly_price' => 90000,
                 'billing_period' => 'monthly',
                 'max_services' => null, // Illimité
                 'commission_rate' => 5.00,

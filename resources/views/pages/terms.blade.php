@@ -1,7 +1,7 @@
 <x-legal-page
     title="Conditions Générales d'Utilisation"
     subtitle="Les règles qui encadrent l'utilisation d'Azohub pour les clients et les prestataires : inscription, paiements, retraits, litiges."
-    updated="20/09/2026"
+    updated="21/09/2026"
     other-label="Politique de confidentialité"
     :other-route="route('privacy')">
 
@@ -34,7 +34,7 @@
                 <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-terracotta-50 text-terracotta-700">
                     <x-app-icon name="banknotes" class="h-5 w-5" />
                 </div>
-                <p class="font-serif text-xl font-medium text-ink-900">Retrait dès 1 000 FCFA</p>
+                <p class="font-serif text-xl font-medium text-ink-900">Retrait dès 2 000 FCFA</p>
                 <p class="mt-1 text-sm leading-relaxed text-ink-500">par Mobile Money, traité sous 24 à 48 h ouvrées.</p>
             </div>
         </div>
@@ -87,6 +87,7 @@
             <li>Les délais de livraison annoncés doivent être respectés</li>
             <li>Vous devez accepter ou refuser les commandes sous 48h</li>
             <li>La qualité du travail doit correspondre à la description</li>
+            <li>Chaque service (nouveau ou modifié) est examiné par l'équipe Azohub avant d'être visible ; un service refusé peut être corrigé et soumis à nouveau</li>
         </ul>
     </x-legal-section>
 
@@ -95,7 +96,9 @@
         <ul>
             <li>Les prix sont affichés en Francs CFA (FCFA)</li>
             <li>Azohub prélève sur le prestataire une commission comprise entre <strong>5% et 15%</strong>, selon son niveau de performance (nouveau, confirmé, expert) et son plan d'abonnement (Gratuit, Pro, Premium) — plus le niveau ou le plan est élevé, plus la commission est faible</li>
+            <li>Offre de bienvenue : pendant les <strong>3 premiers mois</strong> suivant son inscription, la commission d'un prestataire est ramenée à <strong>10%</strong> (ou moins si son niveau ou son plan lui donne déjà un meilleur taux)</li>
             <li>Un frais de service fixe de <strong>5%</strong> est ajouté au prix affiché et payé par le client, quel que soit le niveau du prestataire</li>
+            <li>Les abonnements Pro (3 000 FCFA/mois) et Premium (9 000 FCFA/mois) sont facturés au mois ou à l'année (2 mois offerts) ; le premier mois d'abonnement est offert, une seule fois par prestataire</li>
             <li>Les frais de transaction peuvent s'appliquer selon le mode de paiement</li>
         </ul>
 
@@ -117,7 +120,7 @@
 
     <x-legal-section number="6" title="Retraits (pour les prestataires)">
         <ul>
-            <li>Retrait minimum : 1 000 FCFA</li>
+            <li>Retrait minimum : 2 000 FCFA</li>
             <li>Délai de traitement : 24-48h ouvrées</li>
             <li>Modes de retrait : Mobile Money (MTN, Moov, Celtiis Cash)</li>
             <li>Les retraits sont soumis à vérification d'identité</li>

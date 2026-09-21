@@ -14,7 +14,7 @@ class PrestataireWallet extends Component
 {
     use WithPagination;
 
-    public const MIN_WITHDRAWAL = 1000;
+    public const MIN_WITHDRAWAL = 2000;
 
     public bool $showRequestForm = false;
     public $amount = '';

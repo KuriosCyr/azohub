@@ -43,6 +43,14 @@ return [
         // masquent le numéro plutôt que d'afficher un faux "+229 XX XX XX XX".
         'support_phone' => env('SUPPORT_PHONE'),
         'support_whatsapp' => env('SUPPORT_WHATSAPP'),
+
+        // Offre de bienvenue : commission réduite (en %) pour un prestataire pendant ses
+        // premiers jours d'inscription, afin d'attirer l'offre au lancement. Mettre
+        // PROMO_COMMISSION_RATE à 0 pour la désactiver.
+        'welcome_promo' => [
+            'rate' => (float) env('PROMO_COMMISSION_RATE', 10),
+            'days' => (int) env('PROMO_COMMISSION_DAYS', 90),
+        ],
     ],
 
 ];
