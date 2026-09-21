@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\Subscriptions\Schemas;
 
+use App\Filament\Resources\Subscriptions\Tables\SubscriptionsTable;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
 class SubscriptionForm
@@ -13,17 +14,32 @@ class SubscriptionForm
     {
         return $schema
             ->components([
-                TextInput::make('user_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('subscription_plan_id')
-                    ->required()
-                    ->numeric(),
-                DateTimePicker::make('starts_at')
+                Select::make('user_id')
+                    ->label('Prestataire')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload()
                     ->required(),
-                DateTimePicker::make('ends_at'),
+                Select::make('subscription_plan_id')
+                    ->label('Plan')
+                    ->relationship('plan', 'name')
+                    ->preload()
+                    ->required(),
+                Select::make('billing_period')
+                    ->label('Facturation')
+                    ->options(SubscriptionsTable::PERIODS)
+                    ->default('monthly')
+                    ->required(),
+                Toggle::make('is_trial')
+                    ->label('Mois offert (essai)'),
+                DateTimePicker::make('starts_at')
+                    ->label('Début')
+                    ->required(),
+                DateTimePicker::make('ends_at')
+                    ->label('Fin'),
                 Select::make('status')
-                    ->options(['active' => 'Active', 'expired' => 'Expired', 'cancelled' => 'Cancelled'])
+                    ->label('Statut')
+                    ->options(SubscriptionsTable::STATUSES)
                     ->default('active')
                     ->required(),
             ]);

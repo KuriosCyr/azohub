@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Payments;
 
-use App\Filament\Resources\Payments\Pages\CreatePayment;
-use App\Filament\Resources\Payments\Pages\EditPayment;
 use App\Filament\Resources\Payments\Pages\ListPayments;
 use App\Filament\Resources\Payments\Schemas\PaymentForm;
 use App\Filament\Resources\Payments\Tables\PaymentsTable;
@@ -24,6 +22,12 @@ class PaymentResource extends Resource
     protected static ?string $modelLabel = 'Paiement';
     protected static ?string $pluralModelLabel = 'Paiements';
     protected static ?int $navigationSort = 1;
+
+    // Les paiements viennent de FedaPay : jamais créés à la main.
+    public static function canCreate(): bool
+    {
+        return false;
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -46,8 +50,6 @@ class PaymentResource extends Resource
     {
         return [
             'index' => ListPayments::route('/'),
-            'create' => CreatePayment::route('/create'),
-            'edit' => EditPayment::route('/{record}/edit'),
         ];
     }
 }

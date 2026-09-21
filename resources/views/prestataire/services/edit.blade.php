@@ -8,6 +8,12 @@
                 </a>
                 <h1 class="text-4xl font-serif font-medium text-ink-900 mb-2"><x-app-icon name="pencil-square" class="w-8 h-8 inline-block" /> Modifier le service</h1>
                 <p class="text-ink-500">{{ $service->title }}</p>
+                @if($service->status === 'rejected')
+                    <p class="mt-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700"><strong>Service refusé.</strong> {{ $service->moderation_note ?: 'Aucun motif précisé.' }}</p>
+                @elseif($service->status === 'pending')
+                    <p class="mt-3 rounded-lg bg-ochre-500/15 px-4 py-3 text-sm text-ink-700">Ce service est en cours de modération.</p>
+                @endif
+                <p class="mt-2 text-xs text-ink-400">Toute modification du contenu (texte, prix, images) est soumise à une nouvelle validation avant de réapparaître pour les clients.</p>
             </div>
 
             {{-- Formulaire --}}
@@ -130,6 +136,7 @@
                                 Statut du service
                             </label>
                             <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="hidden" name="is_active" value="0">
                                 <input type="checkbox" name="is_active" value="1" {{ old('is_active', $service->is_active) ? 'checked' : '' }} class="sr-only peer">
                                 <div class="w-14 h-7 bg-ink-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-terracotta-600/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-ink-200 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-forest-600"></div>
                                 <span class="ml-3 text-sm font-medium text-ink-900">Service {{ old('is_active', $service->is_active) ? 'activé' : 'désactivé' }}</span>

@@ -27,6 +27,8 @@ class ServiceController extends Controller
             $query->where('is_active', true)->where('status', 'active');
         } elseif ($status === 'inactive') {
             $query->where('is_active', false);
+        } elseif ($status === 'pending') {
+            $query->whereIn('status', ['pending', 'rejected']);
         }
 
         $services = $query->latest()->paginate(10);
@@ -91,8 +93,9 @@ class ServiceController extends Controller
             'delivery_time' => $validated['delivery_time'],
             'city' => Auth::user()->city,
             'cover_image' => $coverImagePath,
-            'tags' => $validated['tags'] ? array_map('trim', explode(',', $validated['tags'])) : null,
-            'status' => 'active',
+            'tags' => !empty($validated['tags']) ? array_map('trim', explode(',', $validated['tags'])) : null,
+            // Tout nouveau service passe d'abord par la modération avant d'être public.
+            'status' => 'pending',
             'is_active' => true,
         ]);
 
@@ -108,7 +111,7 @@ class ServiceController extends Controller
 
         return redirect()
             ->route('prestataire.services.index')
-            ->with('success', 'Service créé avec succès !');
+            ->with('success', 'Service créé ! Il sera visible par les clients dès qu\'il aura été validé par notre équipe.');
     }
 
     /**
@@ -175,7 +178,8 @@ class ServiceController extends Controller
         }
 
         // Upload nouvelles images portfolio si fournies
-        if ($request->hasFile('portfolio')) {
+        $newPortfolio = $request->hasFile('portfolio');
+        if ($newPortfolio) {
             foreach ($request->file('portfolio') as $image) {
                 $service->portfolios()->create([
                     'file_path' => $image->store('services/portfolio', 'public'),
@@ -190,11 +194,26 @@ class ServiceController extends Controller
         }
 
         // Mettre à jour
-        $service->update($validated);
+        $service->fill($validated);
+
+        // Toute modification du contenu (texte, prix, catégorie, images) repasse par la modération :
+        // le service est retiré de la vitrine jusqu'à sa nouvelle validation. Activer/désactiver
+        // seul ne change pas le contenu et n'y est donc pas soumis.
+        $contentChanged = $newPortfolio || $request->hasFile('cover_image')
+            || $service->isDirty(['category_id', 'title', 'description', 'what_included', 'price', 'price_type', 'delivery_time', 'tags']);
+
+        if ($contentChanged) {
+            $service->status = 'pending';
+            $service->moderation_note = null;
+        }
+
+        $service->save();
 
         return redirect()
             ->route('prestataire.services.edit', $service)
-            ->with('success', 'Service mis à jour avec succès !');
+            ->with('success', $contentChanged
+                ? 'Modifications enregistrées. Le service est retiré de la vitrine le temps que notre équipe les valide.'
+                : 'Service mis à jour avec succès !');
     }
 
     /**

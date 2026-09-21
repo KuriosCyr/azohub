@@ -27,6 +27,19 @@ class ServiceResource extends Resource
     protected static ?string $pluralModelLabel = 'Services';
     protected static ?int $navigationSort = 2;
 
+    // Pastille : nombre de services en attente de modération.
+    public static function getNavigationBadge(): ?string
+    {
+        $pending = Service::where('status', 'pending')->count();
+
+        return $pending > 0 ? (string) $pending : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ServiceForm::configure($schema);

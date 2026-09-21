@@ -28,6 +28,10 @@
                        class="px-6 py-3 rounded-full font-bold transition {{ $status === 'inactive' ? 'bg-ink-500 text-cream-50' : 'bg-ink-100/30 text-ink-700 hover:bg-ink-100/50' }}">
                         Inactifs ({{ Auth::user()->services()->where('is_active', false)->count() }})
                     </a>
+                    <a href="{{ route('prestataire.services.index', ['status' => 'pending']) }}"
+                       class="px-6 py-3 rounded-full font-bold transition {{ $status === 'pending' ? 'bg-ochre-500 text-ink-900' : 'bg-ink-100/30 text-ink-700 hover:bg-ink-100/50' }}">
+                        En modération ({{ Auth::user()->services()->whereIn('status', ['pending', 'rejected'])->count() }})
+                    </a>
                 </div>
             </div>
 
@@ -44,13 +48,16 @@
                                     <x-service-cover :service="$service" class="w-full h-full object-cover" />
 
                                     {{-- Badge statut --}}
-                                    <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold {{ $service->is_active ? 'bg-forest-600 text-cream-50' : 'bg-ink-500 text-cream-50' }}">
-                                        @if($service->is_active)
-                                            <x-app-icon name="check" class="w-3 h-3 inline-block align-text-bottom" /> Actif
-                                        @else
-                                            Inactif
-                                        @endif
-                                    </span>
+                                    @php
+                                        $badge = match (true) {
+                                            $service->status === 'pending' => ['bg-ochre-500 text-ink-900', 'En modération'],
+                                            $service->status === 'rejected' => ['bg-red-600 text-white', 'Refusé'],
+                                            $service->status !== 'active' => ['bg-ink-500 text-cream-50', $service->status_label],
+                                            $service->is_active => ['bg-forest-600 text-cream-50', 'Actif'],
+                                            default => ['bg-ink-500 text-cream-50', 'Inactif'],
+                                        };
+                                    @endphp
+                                    <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold {{ $badge[0] }}">{{ $badge[1] }}</span>
                                 </div>
 
                                 {{-- Contenu --}}
@@ -68,6 +75,11 @@
                                                 @endif
                                             </div>
                                             <h3 class="text-2xl font-bold text-ink-900 mb-2">{{ $service->title }}</h3>
+                                            @if($service->status === 'pending')
+                                                <p class="mb-3 rounded-lg bg-ochre-500/15 px-3 py-2 text-sm text-ink-700">Ce service est en cours de modération : il n'est pas encore visible par les clients.</p>
+                                            @elseif($service->status === 'rejected')
+                                                <p class="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"><strong>Service refusé.</strong> {{ $service->moderation_note ?: 'Aucun motif précisé.' }} Modifiez-le pour le soumettre à nouveau.</p>
+                                            @endif
                                             <p class="text-ink-500 mb-3 line-clamp-2">{{ $service->description }}</p>
                                         </div>
                                     </div>
@@ -158,6 +170,8 @@
                             Aucun service actif
                         @elseif($status === 'inactive')
                             Aucun service inactif
+                        @elseif($status === 'pending')
+                            Aucun service en modération
                         @else
                             Aucun service créé
                         @endif

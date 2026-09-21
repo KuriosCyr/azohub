@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Notifications\ServiceApproved;
+use App\Notifications\ServiceRejected;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -30,6 +32,8 @@ class Service extends Model
         'total_reviews',
         'orders_count',
         'status',
+        'moderation_note',
+        'reviewed_at',
         'is_active',
         'is_featured',
     ];
@@ -43,6 +47,7 @@ class Service extends Model
         'orders_count' => 'integer',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'reviewed_at' => 'datetime',
         'tags' => 'array',
     ];
 
@@ -104,6 +109,32 @@ class Service extends Model
             && $this->is_active
             && $this->prestataire !== null
             && $this->prestataire->is_active !== false;
+    }
+
+    // Modération : un service (nouveau ou modifié) n'est public qu'une fois validé par l'équipe.
+    public const STATUS_LABELS = [
+        'draft' => 'Brouillon',
+        'pending' => 'En modération',
+        'active' => 'Validé',
+        'paused' => 'En pause',
+        'rejected' => 'Refusé',
+    ];
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? (string) $this->status;
+    }
+
+    public function approve(): void
+    {
+        $this->update(['status' => 'active', 'moderation_note' => null, 'reviewed_at' => now()]);
+        $this->prestataire?->notify(new ServiceApproved($this));
+    }
+
+    public function reject(string $reason): void
+    {
+        $this->update(['status' => 'rejected', 'moderation_note' => $reason, 'reviewed_at' => now()]);
+        $this->prestataire?->notify(new ServiceRejected($this));
     }
 
     // Methods

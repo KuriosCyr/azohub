@@ -44,11 +44,13 @@ class ReviewsTable
                     ->label('Visible')
                     ->boolean(),
                 TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Créé le')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Modifié le')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

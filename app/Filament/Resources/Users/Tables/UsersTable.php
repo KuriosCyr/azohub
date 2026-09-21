@@ -29,59 +29,87 @@ class UsersTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label('Nom')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
-                TextColumn::make('email_verified_at')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('phone')
-                    ->searchable(),
-                TextColumn::make('avatar')
+                    ->label('E-mail')
                     ->searchable(),
                 TextColumn::make('role')
-                    ->badge(),
+                    ->label('Rôle')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'client' => 'Client',
+                        'prestataire' => 'Prestataire',
+                        'admin' => 'Administrateur',
+                        default => $state,
+                    })
+                    ->color(fn (?string $state) => match ($state) {
+                        'admin' => 'danger',
+                        'prestataire' => 'info',
+                        default => 'gray',
+                    }),
+                TextColumn::make('phone')
+                    ->label('Téléphone')
+                    ->searchable(),
                 TextColumn::make('city')
+                    ->label('Ville')
                     ->searchable(),
-                TextColumn::make('availability')
-                    ->searchable(),
-                TextColumn::make('rating')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('total_reviews')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('completed_orders')
-                    ->numeric()
-                    ->sortable(),
                 TextColumn::make('level')
-                    ->badge(),
+                    ->label('Niveau')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'nouveau' => 'Nouveau',
+                        'confirme' => 'Confirmé',
+                        'expert' => 'Expert',
+                        default => $state,
+                    }),
                 IconColumn::make('identity_verified')
+                    ->label('Identité vérifiée')
                     ->boolean(),
-                TextColumn::make('identity_document')
-                    ->searchable(),
-                TextColumn::make('wallet_balance')
-                    ->numeric()
-                    ->sortable(),
                 IconColumn::make('is_active')
+                    ->label('Compte actif')
                     ->boolean(),
-                TextColumn::make('last_seen_at')
-                    ->dateTime()
+                TextColumn::make('wallet_balance')
+                    ->label('Solde du portefeuille')
+                    ->formatStateUsing(fn ($state) => number_format((float) $state, 0, ',', ' ') . ' FCFA')
                     ->sortable(),
+                TextColumn::make('rating')
+                    ->label('Note')
+                    ->numeric(1)
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('total_reviews')
+                    ->label('Avis')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('completed_orders')
+                    ->label('Commandes terminées')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('availability')
+                    ->label('Disponibilité')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('email_verified_at')
+                    ->label('E-mail vérifié le')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('last_seen_at')
+                    ->label('Dernière connexion')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->label('Inscrit le')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
                 TextColumn::make('deleted_at')
-                    ->dateTime()
+                    ->label('Supprimé le')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
                 TrashedFilter::make(),
                 SelectFilter::make('role')
@@ -89,7 +117,7 @@ class UsersTable
                     ->options([
                         'client' => 'Client',
                         'prestataire' => 'Prestataire',
-                        'admin' => 'Admin',
+                        'admin' => 'Administrateur',
                     ]),
             ])
             ->recordActions([

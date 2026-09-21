@@ -14,18 +14,25 @@ class CategoryForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Nom')
                     ->required(),
                 TextInput::make('slug')
+                    ->label('Lien (slug)')
                     ->required(),
                 Textarea::make('description')
+                    ->label('Description')
                     ->columnSpanFull(),
-                TextInput::make('icon'),
+                TextInput::make('icon')
+                    ->label('Icône'),
                 TextInput::make('color')
+                    ->label('Couleur')
                     ->required()
                     ->default('#1E40AF'),
                 Toggle::make('is_active')
-                    ->required(),
+                    ->label('Catégorie active')
+                    ->default(true),
                 TextInput::make('order')
+                    ->label("Ordre d'affichage")
                     ->required()
                     ->numeric()
                     ->default(0),

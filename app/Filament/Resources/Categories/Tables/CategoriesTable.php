@@ -16,30 +16,37 @@ class CategoriesTable
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->label('Nom')
                     ->searchable(),
                 TextColumn::make('slug')
-                    ->searchable(),
+                    ->label('Lien (slug)')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('icon')
-                    ->searchable(),
+                    ->label('Icône')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('color')
-                    ->searchable(),
+                    ->label('Couleur')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_active')
+                    ->label('Active')
                     ->boolean(),
                 TextColumn::make('order')
+                    ->label('Ordre')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Créée le')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Modifiée le')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->filters([
-                //
-            ])
+            ->defaultSort('order')
             ->recordActions([
                 EditAction::make(),
             ])

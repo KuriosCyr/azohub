@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Users\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -16,63 +17,85 @@ class UserForm
         return $schema
             ->components([
                 TextInput::make('name')
+                    ->label('Nom')
                     ->required(),
                 TextInput::make('email')
-                    ->label('Email address')
+                    ->label('E-mail')
                     ->email()
                     ->required(),
-                DateTimePicker::make('email_verified_at'),
+                DateTimePicker::make('email_verified_at')
+                    ->label('E-mail vérifié le'),
                 TextInput::make('password')
+                    ->label('Mot de passe')
                     ->password()
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->dehydrated(fn ($state) => filled($state))
-                    ->dehydrateStateUsing(fn ($state) => filled($state) ? $state : null),
+                    ->dehydrateStateUsing(fn ($state) => filled($state) ? $state : null)
+                    ->helperText('À la modification, laissez vide pour conserver le mot de passe actuel.'),
                 TextInput::make('phone')
+                    ->label('Téléphone')
                     ->tel(),
-                TextInput::make('avatar'),
+                TextInput::make('avatar')
+                    ->label('Photo de profil (chemin)'),
                 Select::make('role')
-                    ->options(['client' => 'Client', 'prestataire' => 'Prestataire', 'admin' => 'Admin'])
+                    ->label('Rôle')
+                    ->options(['client' => 'Client', 'prestataire' => 'Prestataire', 'admin' => 'Administrateur'])
                     ->default('client')
                     ->required(),
                 Textarea::make('bio')
+                    ->label('Présentation')
                     ->columnSpanFull(),
-                TextInput::make('city'),
-                TextInput::make('service_areas'),
-                TextInput::make('languages'),
+                TextInput::make('city')
+                    ->label('Ville'),
+                TagsInput::make('service_areas')
+                    ->label("Zones d'intervention"),
+                TagsInput::make('languages')
+                    ->label('Langues parlées'),
                 TextInput::make('availability')
+                    ->label('Disponibilité')
                     ->required()
                     ->default('disponible'),
                 TextInput::make('rating')
+                    ->label('Note moyenne')
                     ->required()
                     ->numeric()
                     ->default(0.0),
                 TextInput::make('total_reviews')
+                    ->label("Nombre d'avis")
                     ->required()
                     ->numeric()
                     ->default(0),
                 TextInput::make('completed_orders')
+                    ->label('Commandes terminées')
                     ->required()
                     ->numeric()
                     ->default(0),
                 Select::make('level')
-                    ->options(['nouveau' => 'Nouveau', 'confirme' => 'Confirme', 'expert' => 'Expert'])
+                    ->label('Niveau')
+                    ->options(['nouveau' => 'Nouveau', 'confirme' => 'Confirmé', 'expert' => 'Expert'])
                     ->default('nouveau')
                     ->required(),
-                TextInput::make('badges'),
+                TagsInput::make('badges')
+                    ->label('Badges'),
                 Toggle::make('identity_verified')
-                    ->required(),
-                TextInput::make('identity_document'),
+                    ->label('Identité vérifiée'),
+                TextInput::make('identity_document')
+                    ->label("Pièce d'identité (chemin)"),
                 TextInput::make('wallet_balance')
+                    ->label('Solde du portefeuille')
                     ->numeric()
                     ->default(0.0)
+                    ->suffix('FCFA')
                     ->disabled()
                     ->dehydrated(false)
                     ->helperText('Lecture seule : ce solde ne doit être modifié que par le déroulement normal des commandes et des retraits, jamais manuellement.'),
                 Toggle::make('is_active')
+                    ->label('Compte actif')
                     ->disabled()
                     ->dehydrated(false)
                     ->helperText('Lecture seule : utilisez les actions « Désactiver »/« Réactiver » de la liste pour changer ce statut (le compte reçoit un motif et une notification).'),
-                DateTimePicker::make('last_seen_at'),
+                DateTimePicker::make('last_seen_at')
+                    ->label('Dernière connexion'),
             ]);
     }
 }

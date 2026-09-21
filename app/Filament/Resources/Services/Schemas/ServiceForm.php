@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Services\Schemas;
 
+use App\Models\Service;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -15,57 +16,83 @@ class ServiceForm
     {
         return $schema
             ->components([
-                TextInput::make('user_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('category_id')
-                    ->required()
-                    ->numeric(),
+                Select::make('user_id')
+                    ->label('Prestataire')
+                    ->relationship('prestataire', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                Select::make('category_id')
+                    ->label('Catégorie')
+                    ->relationship('category', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
                 TextInput::make('title')
+                    ->label('Titre')
                     ->required(),
                 TextInput::make('slug')
+                    ->label('Lien (slug)')
                     ->required(),
                 Textarea::make('description')
+                    ->label('Description')
                     ->required()
                     ->columnSpanFull(),
                 Textarea::make('what_included')
+                    ->label('Ce qui est inclus')
                     ->columnSpanFull(),
                 TextInput::make('price')
+                    ->label('Prix')
                     ->required()
                     ->numeric()
-                    ->prefix('$'),
+                    ->suffix('FCFA'),
                 Select::make('price_type')
-                    ->options(['fixe' => 'Fixe', 'a_partir_de' => 'A partir de'])
+                    ->label('Type de prix')
+                    ->options(['fixe' => 'Prix fixe', 'a_partir_de' => 'À partir de'])
                     ->default('fixe')
                     ->required(),
                 TextInput::make('delivery_time')
+                    ->label('Délai de livraison')
                     ->required()
-                    ->numeric(),
-                TextInput::make('city'),
+                    ->numeric()
+                    ->suffix('jours'),
+                TextInput::make('city')
+                    ->label('Ville'),
                 Textarea::make('service_area')
+                    ->label("Zone d'intervention")
                     ->columnSpanFull(),
                 FileUpload::make('cover_image')
+                    ->label('Image de couverture')
                     ->image()
                     ->disk('public')
                     ->directory('services/covers'),
                 TextInput::make('rating')
+                    ->label('Note moyenne')
                     ->required()
                     ->numeric()
                     ->default(0.0),
                 TextInput::make('total_orders')
+                    ->label('Commandes')
                     ->required()
                     ->numeric()
                     ->default(0),
                 TextInput::make('total_reviews')
+                    ->label('Avis')
                     ->required()
                     ->numeric()
                     ->default(0),
                 Select::make('status')
-                    ->options(['draft' => 'Draft', 'active' => 'Active', 'paused' => 'Paused', 'rejected' => 'Rejected'])
-                    ->default('active')
-                    ->required(),
+                    ->label('Modération')
+                    ->options(Service::STATUS_LABELS)
+                    ->default('pending')
+                    ->required()
+                    ->helperText('Pour approuver ou refuser avec un motif (et prévenir le prestataire), utilisez plutôt les boutons de la liste.'),
+                Textarea::make('moderation_note')
+                    ->label('Motif du refus')
+                    ->helperText('Visible par le prestataire.')
+                    ->columnSpanFull(),
                 Toggle::make('is_featured')
-                    ->required(),
+                    ->label('Sponsorisé (mis en avant)'),
             ]);
     }
 }

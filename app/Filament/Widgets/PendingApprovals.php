@@ -27,7 +27,7 @@ class PendingApprovals extends BaseWidget
 
     protected function getStats(): array
     {
-        $pendingServices = Service::where('status', 'draft')->count();
+        $pendingServices = Service::where('status', 'pending')->count();
         $activeDisputes = Dispute::whereIn('status', ['open', 'under_review'])->count();
         $pendingReports = Report::whereIn('status', ['pending', 'reviewing'])->count();
         $reportedServices = Report::whereIn('status', ['pending', 'reviewing'])
@@ -41,7 +41,7 @@ class PendingApprovals extends BaseWidget
                 ->descriptionIcon($pendingServices > 0 ? 'heroicon-m-clock' : 'heroicon-m-check-circle')
                 ->color($pendingServices > 0 ? 'warning' : 'success')
                 ->url(route('filament.admin.resources.services.index', [
-                    'tableFilters' => ['is_active' => ['value' => false]],
+                    'tableFilters' => ['status' => ['value' => 'pending']],
                 ])),
 
             Stat::make('Litiges actifs', $activeDisputes)

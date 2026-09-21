@@ -18,47 +18,77 @@ use Filament\Tables\Table;
 
 class OrdersTable
 {
+    public const STATUSES = [
+        'pending_payment' => 'En attente de paiement',
+        'paid' => 'Payée',
+        'in_progress' => 'En cours',
+        'delivered' => 'Livrée',
+        'completed' => 'Terminée',
+        'cancelled' => 'Annulée',
+        'disputed' => 'En litige',
+    ];
+
+    public const PAYMENT_STATUSES = [
+        'pending' => 'En attente',
+        'held' => 'Bloqué (escrow)',
+        'released' => 'Libéré',
+        'refund_pending' => 'Remboursement à traiter',
+        'refunded' => 'Remboursé',
+    ];
+
+    private static function money($state): string
+    {
+        return number_format((float) $state, 0, ',', ' ') . ' FCFA';
+    }
+
     public static function configure(Table $table): Table
     {
         return $table
             ->columns([
                 TextColumn::make('order_number')
+                    ->label('N° de commande')
                     ->searchable(),
-                TextColumn::make('client_id')
-                    ->numeric()
+                TextColumn::make('client.name')
+                    ->label('Client')
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('prestataire_id')
-                    ->numeric()
+                TextColumn::make('prestataire.name')
+                    ->label('Prestataire')
+                    ->searchable()
                     ->sortable(),
-                TextColumn::make('service_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('service_request_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('proposal_id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('service.title')
+                    ->label('Service')
+                    ->limit(30)
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('amount')
-                    ->numeric()
+                    ->label('Montant')
+                    ->formatStateUsing(fn ($state) => self::money($state))
                     ->sortable(),
+                TextColumn::make('client_fee')
+                    ->label('Frais client')
+                    ->formatStateUsing(fn ($state) => self::money($state))
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('commission')
-                    ->numeric()
+                    ->label('Commission')
+                    ->formatStateUsing(fn ($state) => self::money($state))
                     ->sortable(),
                 TextColumn::make('prestataire_amount')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('delivery_time')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('expected_delivery_at')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('delivered_at')
-                    ->dateTime()
-                    ->sortable(),
+                    ->label('Net prestataire')
+                    ->formatStateUsing(fn ($state) => self::money($state))
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')
-                    ->badge(),
+                    ->label('Statut')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state) => self::STATUSES[$state] ?? $state)
+                    ->color(fn (string $state) => match ($state) {
+                        'completed' => 'success',
+                        'pending_payment' => 'gray',
+                        'cancelled' => 'danger',
+                        'disputed' => 'danger',
+                        'delivered' => 'info',
+                        default => 'warning',
+                    }),
                 TextColumn::make('payment_status')
                     ->label('Paiement')
                     ->badge()
@@ -70,41 +100,52 @@ class OrdersTable
                         'refunded' => 'gray',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'En attente',
-                        'held' => 'Bloqué (escrow)',
-                        'released' => 'Libéré',
-                        'refund_pending' => 'Remboursement à traiter',
-                        'refunded' => 'Remboursé',
-                        default => $state,
-                    }),
-                TextColumn::make('validation_deadline')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('validated_at')
-                    ->dateTime()
-                    ->sortable(),
-                IconColumn::make('auto_validated')
-                    ->boolean(),
-                TextColumn::make('created_at')
-                    ->dateTime()
+                    ->formatStateUsing(fn (string $state): string => self::PAYMENT_STATUSES[$state] ?? $state),
+                TextColumn::make('delivery_time')
+                    ->label('Délai (jours)')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('expected_delivery_at')
+                    ->label('Livraison prévue')
+                    ->dateTime('d/m/Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('delivered_at')
+                    ->label('Livrée le')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('validation_deadline')
+                    ->label('Validation avant le')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('validated_at')
+                    ->label('Validée le')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('auto_validated')
+                    ->label('Validation auto.')
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')
+                    ->label('Créée le')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable(),
                 TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Modifiée le')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('created_at', 'desc')
             ->filters([
+                SelectFilter::make('status')
+                    ->label('Statut')
+                    ->options(self::STATUSES),
                 SelectFilter::make('payment_status')
                     ->label('Paiement')
-                    ->options([
-                        'pending' => 'En attente',
-                        'held' => 'Bloqué (escrow)',
-                        'released' => 'Libéré',
-                        'refund_pending' => 'Remboursement à traiter',
-                        'refunded' => 'Remboursé',
-                    ]),
+                    ->options(self::PAYMENT_STATUSES),
                 TrashedFilter::make(),
             ])
             ->recordActions([

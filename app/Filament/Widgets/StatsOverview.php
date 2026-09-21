@@ -53,7 +53,7 @@ class StatsOverview extends BaseWidget
 
         // --- Services ---
         $activeServices  = Service::where('status', 'active')->count();
-        $pendingServices = Service::where('status', 'draft')->count();
+        $pendingServices = Service::where('status', 'pending')->count();
 
         // --- Charts : 1 requête GROUP BY par modèle au lieu de 7 ---
         $start = $now->copy()->subMonths(6)->startOfMonth();

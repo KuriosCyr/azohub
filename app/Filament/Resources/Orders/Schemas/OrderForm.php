@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Orders\Schemas;
 
+use App\Filament\Resources\Orders\Tables\OrdersTable;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -16,65 +17,80 @@ class OrderForm
         return $schema
             ->components([
                 TextInput::make('order_number')
+                    ->label('N° de commande')
                     ->required(),
-                TextInput::make('client_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('prestataire_id')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('service_id')
-                    ->numeric(),
-                TextInput::make('service_request_id')
-                    ->numeric(),
-                TextInput::make('proposal_id')
-                    ->numeric(),
+                Select::make('client_id')
+                    ->label('Client')
+                    ->relationship('client', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                Select::make('prestataire_id')
+                    ->label('Prestataire')
+                    ->relationship('prestataire', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
+                Select::make('service_id')
+                    ->label('Service')
+                    ->relationship('service', 'title')
+                    ->searchable(),
+                Select::make('service_request_id')
+                    ->label('Demande de service')
+                    ->relationship('serviceRequest', 'title')
+                    ->searchable(),
                 Textarea::make('requirements')
+                    ->label('Besoins du client')
                     ->columnSpanFull(),
                 TextInput::make('amount')
-                    ->required()
-                    ->numeric(),
-                TextInput::make('commission')
+                    ->label('Montant')
                     ->required()
                     ->numeric()
-                    ->default(0.0),
+                    ->suffix('FCFA'),
+                TextInput::make('client_fee')
+                    ->label('Frais de service client')
+                    ->numeric()
+                    ->default(0)
+                    ->suffix('FCFA'),
+                TextInput::make('commission')
+                    ->label('Commission prestataire')
+                    ->required()
+                    ->numeric()
+                    ->default(0)
+                    ->suffix('FCFA'),
                 TextInput::make('prestataire_amount')
+                    ->label('Net prestataire')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->suffix('FCFA'),
                 TextInput::make('delivery_time')
+                    ->label('Délai de livraison')
                     ->required()
-                    ->numeric(),
-                DateTimePicker::make('expected_delivery_at'),
-                DateTimePicker::make('delivered_at'),
+                    ->numeric()
+                    ->suffix('jours'),
+                DateTimePicker::make('expected_delivery_at')
+                    ->label('Livraison prévue'),
+                DateTimePicker::make('delivered_at')
+                    ->label('Livrée le'),
                 Select::make('status')
-                    ->options([
-            'pending_payment' => 'Pending payment',
-            'paid' => 'Paid',
-            'in_progress' => 'In progress',
-            'delivered' => 'Delivered',
-            'completed' => 'Completed',
-            'cancelled' => 'Cancelled',
-            'disputed' => 'Disputed',
-        ])
+                    ->label('Statut')
+                    ->options(OrdersTable::STATUSES)
                     ->default('pending_payment')
                     ->required(),
                 Select::make('payment_status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'held' => 'Held',
-                        'released' => 'Released',
-                        'refund_pending' => 'Refund pending',
-                        'refunded' => 'Refunded',
-                    ])
+                    ->label('Paiement')
+                    ->options(OrdersTable::PAYMENT_STATUSES)
                     ->default('pending')
                     ->required(),
-                TextInput::make('deliverables'),
                 Textarea::make('delivery_note')
+                    ->label('Note de livraison')
                     ->columnSpanFull(),
-                DateTimePicker::make('validation_deadline'),
-                DateTimePicker::make('validated_at'),
+                DateTimePicker::make('validation_deadline')
+                    ->label('Validation avant le'),
+                DateTimePicker::make('validated_at')
+                    ->label('Validée le'),
                 Toggle::make('auto_validated')
-                    ->required(),
+                    ->label('Validée automatiquement'),
             ]);
     }
 }
