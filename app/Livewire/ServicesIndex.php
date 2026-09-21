@@ -62,6 +62,16 @@ class ServicesIndex extends Component
         $this->resetPage();
     }
 
+    // Mots de la recherche (6 au maximum, doublons ignorés).
+    private function searchWords(): array
+    {
+        return collect(preg_split('/\s+/u', trim((string) $this->search), -1, PREG_SPLIT_NO_EMPTY))
+            ->unique(fn ($w) => mb_strtolower($w))
+            ->take(6)
+            ->values()
+            ->all();
+    }
+
     public function render()
     {
         // Ces filtres viennent du navigateur : on borne/assainit avant de les injecter dans la requête.
@@ -97,12 +107,16 @@ class ServicesIndex extends Component
                 ELSE 0
             END as plan_priority");
 
-        // Recherche par mot-clé
-        if (!empty($this->search)) {
-            $query->where(function($q) {
-                $q->where('services.title', 'like', '%' . $this->search . '%')
-                  ->orWhere('services.description', 'like', '%' . $this->search . '%')
-                  ->orWhere('services.tags', 'like', '%' . $this->search . '%');
+        // Recherche par mots-clés : chaque mot saisi doit se retrouver (dans le titre, la description,
+        // les tags ou le nom de la catégorie) ; l'ordre des mots n'a pas d'importance.
+        foreach ($this->searchWords() as $word) {
+            $like = '%' . addcslashes($word, '%_\\') . '%';
+
+            $query->where(function ($q) use ($like) {
+                $q->where('services.title', 'like', $like)
+                  ->orWhere('services.description', 'like', $like)
+                  ->orWhere('services.tags', 'like', $like)
+                  ->orWhereHas('category', fn ($c) => $c->where('name', 'like', $like));
             });
         }
 
@@ -113,10 +127,14 @@ class ServicesIndex extends Component
             });
         }
 
-        // Filtre par ville (ville du prestataire)
+        // Filtre par ville : ville du prestataire OU du service, ou l'une de ses zones d'intervention.
         if (!empty($this->city)) {
-            $query->whereHas('prestataire', function($q) {
-                $q->where('city', $this->city);
+            $query->where(function ($q) {
+                $q->where('services.city', $this->city)
+                  ->orWhereHas('prestataire', function ($p) {
+                      $p->where('city', $this->city)
+                        ->orWhereJsonContains('service_areas', $this->city);
+                  });
             });
         }
 

@@ -115,9 +115,10 @@
                         <p class="text-sm font-bold text-ink-700 mb-3">Tags:</p>
                         <div class="flex flex-wrap gap-2">
                             @foreach($service->tags as $tag)
-                            <span class="bg-terracotta-50 text-terracotta-700 px-4 py-2 rounded-full text-sm font-semibold">
+                            <a href="{{ route('services.index', ['search' => $tag]) }}"
+                               class="bg-terracotta-50 text-terracotta-700 hover:bg-terracotta-100 px-4 py-2 rounded-full text-sm font-semibold transition">
                                 #{{ $tag }}
-                            </span>
+                            </a>
                             @endforeach
                         </div>
                     </div>

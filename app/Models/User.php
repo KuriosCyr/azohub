@@ -407,6 +407,20 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return max($levelAllowance, $plan->max_services);
     }
 
+    // Places de services occupées : les services refusés n'en occupent pas (le prestataire peut
+    // en créer un autre) ; en attente de modération, validés ou désactivés, ils comptent.
+    public function serviceSlotsUsed(): int
+    {
+        return $this->services()->where('status', '!=', 'rejected')->count();
+    }
+
+    public function hasFreeServiceSlot(): bool
+    {
+        $max = $this->maxServices();
+
+        return $max === null || $this->serviceSlotsUsed() < $max;
+    }
+
     // Anonymise puis supprime (soft delete) le compte. On ne fait pas de suppression
     // définitive : orders.client_id/prestataire_id sont en cascade, une vraie
     // suppression casserait l'historique de commandes de l'autre partie.

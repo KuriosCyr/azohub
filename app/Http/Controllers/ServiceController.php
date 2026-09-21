@@ -19,7 +19,7 @@ class ServiceController extends Controller
         $user = Auth::user();
 
         // Filtres
-        $status = $request->input('status', 'all'); // all, active, inactive
+        $status = $request->input('status', 'all'); // all, active, inactive, pending
 
         $query = $user->services()->with('category');
 
@@ -33,7 +33,10 @@ class ServiceController extends Controller
 
         $services = $query->latest()->paginate(10);
 
-        return view('prestataire.services.index', compact('services', 'status'));
+        $slotsUsed = $user->serviceSlotsUsed();
+        $slotsMax = $user->maxServices();
+
+        return view('prestataire.services.index', compact('services', 'status', 'slotsUsed', 'slotsMax'));
     }
 
     /**
@@ -168,17 +171,39 @@ class ServiceController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        // Tags (le champ vide efface les tags : isset() les laissait inchangés)
+        $validated['tags'] = $this->parseTags($validated['tags'] ?? null);
+
+        // Le contenu texte est comparé AVANT tout envoi de fichier : un refus (ci-dessous)
+        // ne doit pas laisser d'images orphelines sur le disque.
+        $newCover = $request->hasFile('cover_image');
+        $newPortfolio = $request->hasFile('portfolio');
+        $service->fill(collect($validated)->except('cover_image')->all());
+
+        // Toute modification du contenu (texte, prix, catégorie, images) repasse par la modération :
+        // le service est retiré de la vitrine jusqu'à sa nouvelle validation. Activer/désactiver
+        // seul ne change pas le contenu et n'y est donc pas soumis.
+        $contentChanged = $newCover || $newPortfolio
+            || $service->isDirty(['category_id', 'title', 'description', 'what_included', 'price', 'price_type', 'delivery_time', 'tags']);
+
+        // Un service refusé n'occupe pas de place : le soumettre à nouveau en demande une.
+        if ($contentChanged && $service->status === 'rejected' && !Auth::user()->hasFreeServiceSlot()) {
+            return redirect()
+                ->route('prestataire.services.edit', $service)
+                ->withInput()
+                ->with('error', 'Vous avez atteint la limite de services de votre plan : supprimez un service ou passez à un plan supérieur pour soumettre à nouveau celui-ci.');
+        }
+
         // Upload nouvelle cover image si fournie
-        if ($request->hasFile('cover_image')) {
+        if ($newCover) {
             // Supprimer l'ancienne
-            if ($service->cover_image) {
-                Storage::disk('public')->delete($service->cover_image);
+            if ($service->getOriginal('cover_image')) {
+                Storage::disk('public')->delete($service->getOriginal('cover_image'));
             }
-            $validated['cover_image'] = $request->file('cover_image')->store('services/covers', 'public');
+            $service->cover_image = $request->file('cover_image')->store('services/covers', 'public');
         }
 
         // Upload nouvelles images portfolio si fournies
-        $newPortfolio = $request->hasFile('portfolio');
         if ($newPortfolio) {
             foreach ($request->file('portfolio') as $image) {
                 $service->portfolios()->create([
@@ -188,23 +213,10 @@ class ServiceController extends Controller
             }
         }
 
-        // Tags (le champ vide efface les tags : isset() les laissait inchangés)
-        $validated['tags'] = $this->parseTags($validated['tags'] ?? null);
-
-        // Mettre à jour
-        $service->fill($validated);
-
-        // Toute modification du contenu (texte, prix, catégorie, images) repasse par la modération :
-        // le service est retiré de la vitrine jusqu'à sa nouvelle validation. Activer/désactiver
-        // seul ne change pas le contenu et n'y est donc pas soumis.
-        $contentChanged = $newPortfolio || $request->hasFile('cover_image')
-            || $service->isDirty(['category_id', 'title', 'description', 'what_included', 'price', 'price_type', 'delivery_time', 'tags']);
-
         if ($contentChanged) {
             $service->status = 'pending';
             $service->moderation_note = null;
         }
-
         $service->save();
 
         return redirect()
@@ -322,10 +334,10 @@ class ServiceController extends Controller
     {
         $maxServices = Auth::user()->maxServices();
 
-        if ($maxServices !== null && Auth::user()->services()->count() >= $maxServices) {
+        if (!Auth::user()->hasFreeServiceSlot()) {
             throw new \Illuminate\Http\Exceptions\HttpResponseException(redirect()
                 ->route('prestataire.services.index')
-                ->with('error', "Vous avez atteint la limite de {$maxServices} service(s) de votre plan actuel. Passez à un plan supérieur pour en publier davantage."));
+                ->with('error', "Vous avez atteint la limite de {$maxServices} service(s) de votre plan actuel (les services refusés ne comptent pas). Passez à un plan supérieur ou supprimez un service pour en publier un nouveau."));
         }
     }
 }
