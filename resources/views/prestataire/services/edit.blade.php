@@ -191,7 +191,7 @@
                             Mots-clés
                         </label>
                         @php
-                            $currentTags = $service->tags ? implode(', ', json_decode($service->tags, true)) : '';
+                            $currentTags = is_array($service->tags) ? implode(', ', $service->tags) : '';
                         @endphp
                         <input type="text" name="tags" id="tags" value="{{ old('tags', $currentTags) }}"
                                placeholder="plomberie, urgent, weekend, nuit"

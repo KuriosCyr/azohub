@@ -107,6 +107,12 @@ class PaymentService
      */
     public function handleWebhook(string $payload, string $signature): void
     {
+        // Sans secret configuré, la signature serait calculée avec une clé vide (donc falsifiable) :
+        // on refuse tout webhook plutôt que d'en accepter un non authentifié.
+        if ((string) config('services.fedapay.webhook_secret') === '') {
+            throw new \RuntimeException('FEDAPAY_WEBHOOK_SECRET non configuré.');
+        }
+
         $event = Webhook::constructEvent(
             $payload,
             $signature,

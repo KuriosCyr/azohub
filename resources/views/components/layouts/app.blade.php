@@ -497,7 +497,7 @@
                     <ul class="space-y-2.5 text-cream-100/60 text-sm">
                         @php
                             $popularCategories = \App\Models\Category::where('is_active', true)
-                                ->withCount('services')
+                                ->withCount(['services' => fn ($q) => $q->active()])
                                 ->orderBy('services_count', 'desc')
                                 ->take(5)
                                 ->get();

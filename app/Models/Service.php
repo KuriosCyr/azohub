@@ -111,6 +111,13 @@ class Service extends Model
             && $this->prestataire->is_active !== false;
     }
 
+    // Les tags sont recherchés par LIKE : on stocke le JSON sans échapper les accents (\u00e9),
+    // sinon une recherche « électricité » ne trouverait jamais le tag « électricité ».
+    protected function asJson($value)
+    {
+        return json_encode($value, JSON_UNESCAPED_UNICODE);
+    }
+
     // Modération : un service (nouveau ou modifié) n'est public qu'une fois validé par l'équipe.
     public const STATUS_LABELS = [
         'draft' => 'Brouillon',

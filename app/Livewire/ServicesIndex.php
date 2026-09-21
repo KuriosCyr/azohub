@@ -100,9 +100,9 @@ class ServicesIndex extends Component
         // Recherche par mot-clé
         if (!empty($this->search)) {
             $query->where(function($q) {
-                $q->where('title', 'like', '%' . $this->search . '%')
-                  ->orWhere('description', 'like', '%' . $this->search . '%')
-                  ->orWhere('tags', 'like', '%' . $this->search . '%');
+                $q->where('services.title', 'like', '%' . $this->search . '%')
+                  ->orWhere('services.description', 'like', '%' . $this->search . '%')
+                  ->orWhere('services.tags', 'like', '%' . $this->search . '%');
             });
         }
 

@@ -22,7 +22,7 @@ class PrestataireDashboard extends Component
 
         // Stats générales avec valeurs par défaut
         $stats = [
-            'services_count' => $user->services()->where('is_active', true)->count(),
+            'services_count' => $user->services()->active()->count(),
             'total_orders' => $user->prestataireOrders()->count(),
             'pending_orders' => $user->prestataireOrders()->where('status', 'paid')->count(),
             'in_progress_orders' => $user->prestataireOrders()->where('status', 'in_progress')->count(),

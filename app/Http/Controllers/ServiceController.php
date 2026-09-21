@@ -93,7 +93,7 @@ class ServiceController extends Controller
             'delivery_time' => $validated['delivery_time'],
             'city' => Auth::user()->city,
             'cover_image' => $coverImagePath,
-            'tags' => !empty($validated['tags']) ? array_map('trim', explode(',', $validated['tags'])) : null,
+            'tags' => $this->parseTags($validated['tags'] ?? null),
             // Tout nouveau service passe d'abord par la modération avant d'être public.
             'status' => 'pending',
             'is_active' => true,
@@ -188,10 +188,8 @@ class ServiceController extends Controller
             }
         }
 
-        // Tags
-        if (isset($validated['tags'])) {
-            $validated['tags'] = array_map('trim', explode(',', $validated['tags']));
-        }
+        // Tags (le champ vide efface les tags : isset() les laissait inchangés)
+        $validated['tags'] = $this->parseTags($validated['tags'] ?? null);
 
         // Mettre à jour
         $service->fill($validated);
@@ -306,6 +304,20 @@ class ServiceController extends Controller
      * Bloque la création si le prestataire a atteint le nombre de services
      * autorisé par son plan d'abonnement (null = illimité).
      */
+    // "plomberie, Urgent ,,plomberie" -> ['plomberie', 'Urgent'] : sans doublon ni vide, 10 tags de 30 caractères max.
+    private function parseTags(?string $raw): ?array
+    {
+        $tags = collect(explode(',', (string) $raw))
+            ->map(fn ($tag) => mb_substr(trim($tag), 0, 30))
+            ->filter()
+            ->unique(fn ($tag) => mb_strtolower($tag))
+            ->take(10)
+            ->values()
+            ->all();
+
+        return $tags ?: null;
+    }
+
     private function guardServiceLimit(): void
     {
         $maxServices = Auth::user()->maxServices();
