@@ -38,20 +38,7 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-ink-700 mb-2">Mode de réception</label>
-                    <div class="grid grid-cols-3 gap-3">
-                        @foreach([
-                            'mtn_momo'     => 'MTN MoMo',
-                            'moov_money'   => 'Moov Money',
-                            'celtiis_cash' => 'Celtiis Cash',
-                        ] as $method => $label)
-                            <label class="cursor-pointer">
-                                <input type="radio" wire:model="paymentMethod" value="{{ $method }}" class="sr-only peer">
-                                <div class="text-center p-3 border-2 rounded-xl peer-checked:border-ink-900 peer-checked:bg-terracotta-50 border-ink-200 hover:border-terracotta-600/30 transition">
-                                    <span class="font-semibold text-ink-700 text-sm">{{ $label }}</span>
-                                </div>
-                            </label>
-                        @endforeach
-                    </div>
+                    <x-payment-methods wire:model="paymentMethod" name="withdrawal_method" :methods="['mtn_momo', 'moov_money', 'celtiis_cash']" cols="grid-cols-3" compact />
                     @error('paymentMethod') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 

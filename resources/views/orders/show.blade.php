@@ -347,16 +347,10 @@
                         <form action="{{ route('orders.pay', $order) }}" method="POST" class="space-y-4">
                             @csrf
                             <div>
-                                <label for="payment_method" class="block text-sm font-bold text-ink-700 mb-2">
+                                <label class="block text-sm font-bold text-ink-700 mb-2">
                                     Moyen de paiement
                                 </label>
-                                <select name="payment_method" id="payment_method"
-                                    class="w-full px-4 py-3 border-2 border-ink-200 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
-                                    <option value="mtn_momo">MTN Mobile Money</option>
-                                    <option value="moov_money">Moov Money</option>
-                                    <option value="celtiis_cash">Celtiis Cash</option>
-                                    <option value="card">Carte bancaire</option>
-                                </select>
+                                <x-payment-methods name="payment_method" selected="mtn_momo" />
                             </div>
                             <button type="submit"
                                 class="w-full bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold px-6 py-4 rounded-lg transition">

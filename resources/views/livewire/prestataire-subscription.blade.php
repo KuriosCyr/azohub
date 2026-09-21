@@ -78,21 +78,7 @@
                     @elseif($selectedPlanId === $plan->id)
                         <div class="space-y-3">
                             @if((float) $plan->price > 0)
-                                <div class="grid grid-cols-2 gap-2">
-                                    @foreach([
-                                        'mtn_momo'     => 'MTN MoMo',
-                                        'moov_money'   => 'Moov Money',
-                                        'celtiis_cash' => 'Celtiis Cash',
-                                        'card'         => 'Carte',
-                                    ] as $method => $label)
-                                        <label class="cursor-pointer">
-                                            <input type="radio" wire:model="paymentMethod" value="{{ $method }}" class="sr-only peer">
-                                            <div class="text-center p-2 border-2 rounded-lg text-xs font-semibold peer-checked:border-ink-900 peer-checked:bg-terracotta-50 border-ink-200">
-                                                {{ $label }}
-                                            </div>
-                                        </label>
-                                    @endforeach
-                                </div>
+                                <x-payment-methods wire:model="paymentMethod" name="subscription_payment_method" compact />
                             @endif
                             <button wire:click="choosePlan({{ $plan->id }})" wire:loading.attr="disabled" wire:target="choosePlan({{ $plan->id }})"
                                     class="w-full bg-ink-900 hover:bg-ink-700 text-cream-50 font-bold py-3 rounded-lg transition text-sm disabled:opacity-60">
