@@ -214,7 +214,7 @@
                                     </div>
                                     <div class="text-right">
                                         <p class="text-xs text-ink-400">À partir de</p>
-                                        <p class="font-bold text-ink-900">{{ number_format($service->price, 0) }} <span class="text-sm">FCFA</span></p>
+                                        <p class="font-bold text-ink-900">{{ number_format($service->price, 0, ',', ' ') }} <span class="text-sm">FCFA</span></p>
                                     </div>
                                 </div>
                             </div>

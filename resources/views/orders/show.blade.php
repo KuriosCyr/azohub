@@ -28,6 +28,7 @@
                         'delivered' => ['label' => 'Livrée', 'color' => 'purple'],
                         'completed' => ['label' => 'Terminée', 'color' => 'green'],
                         'cancelled' => ['label' => 'Annulée', 'color' => 'red'],
+                        'disputed' => ['label' => 'Litige en cours', 'color' => 'red'],
                         ];
                         $status = $statusConfig[$order->status] ?? ['label' => $order->status, 'color' => 'gray'];
                         @endphp
@@ -90,7 +91,7 @@
                                 <div class="flex items-center gap-4">
                                     <div>
                                         <p class="text-sm text-ink-400">Prix</p>
-                                        <p class="text-2xl font-bold text-ink-900">{{ number_format($order->amount, 0) }} FCFA</p>
+                                        <p class="text-2xl font-bold text-ink-900">{{ number_format($order->amount, 0, ',', ' ') }} FCFA</p>
                                     </div>
                                     <div>
                                         <p class="text-sm text-ink-400">Délai</p>
@@ -388,10 +389,30 @@
                     </div>
                     @endif
 
+                    @if(in_array($order->status, ['pending_payment', 'paid']))
+                    <details class="bg-cream-50 rounded-xl border border-ink-100 p-6 mt-6">
+                        <summary class="cursor-pointer text-sm font-bold text-red-600 hover:text-red-700">Annuler cette commande</summary>
+                        <form action="{{ route('orders.cancel', $order) }}" method="POST" class="mt-4 space-y-3">
+                            @csrf
+                            <label class="block text-sm font-bold text-ink-700">Motif de l'annulation</label>
+                            <textarea name="cancellation_reason" rows="3" required maxlength="500"
+                                class="w-full px-4 py-3 border-2 border-ink-200 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition"
+                                placeholder="Expliquez brièvement pourquoi vous annulez"></textarea>
+                            @if($order->status === 'paid')
+                                <p class="text-xs text-ink-400">Le remboursement est traité manuellement sous 3 à 7 jours ouvrés.</p>
+                            @endif
+                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-lg transition">
+                                Confirmer l'annulation
+                            </button>
+                        </form>
+                    </details>
+                    @endif
+                    @endif {{-- fin des actions propres au rôle --}}
+
                     @if($order->canOpenDispute())
                     <div class="bg-cream-50 rounded-xl border border-ink-100 p-6 mt-6">
                         <p class="text-sm text-ink-500 mb-3">
-                            Un problème que la révision ne résout pas ? Vous pouvez signaler un litige — notre équipe examinera la situation.
+                            @if($userRole === 'prestataire')Un désaccord avec le client que vous ne parvenez pas à régler ? Vous pouvez signaler un litige — notre équipe examinera la situation.@elseUn problème que la révision ne résout pas ? Vous pouvez signaler un litige — notre équipe examinera la situation.@endif
                         </p>
                         <button onclick="document.getElementById('dispute-modal').classList.remove('hidden')"
                             class="text-sm font-bold text-red-600 hover:text-red-700 transition">
@@ -400,7 +421,7 @@
                     </div>
                     @endif
 
-                    @if($order->status === 'disputed')
+                    @if($order->status === 'disputed' && $order->dispute)
                     <div class="bg-red-50 border border-red-200 rounded-xl p-6 mt-6">
                         <h3 class="text-lg font-bold text-red-900 mb-2">
                             <x-app-icon name="exclamation-triangle" class="w-5 h-5 inline-block align-text-bottom" /> Litige en cours
@@ -449,7 +470,6 @@
                             @endif
                         </a>
                     </div>
-                    @endif
                     @endif
                     @endif
 
@@ -517,24 +537,24 @@
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-ink-500">Prix service</span>
-                                <span class="font-bold">{{ number_format($order->amount, 0) }} FCFA</span>
+                                <span class="font-bold">{{ number_format($order->amount, 0, ',', ' ') }} FCFA</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0) }}%, client)</span>
-                                <span class="font-bold">{{ number_format($order->client_fee, 0) }} FCFA</span>
+                                <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0, ',', ' ') }}%, client)</span>
+                                <span class="font-bold">{{ number_format($order->client_fee, 0, ',', ' ') }} FCFA</span>
                             </div>
                             <div class="border-t pt-3 flex justify-between">
                                 <span class="font-bold text-ink-900">Total payé par le client</span>
-                                <span class="text-2xl font-bold text-ink-900">{{ number_format($order->total_charged, 0) }} FCFA</span>
+                                <span class="text-2xl font-bold text-ink-900">{{ number_format($order->total_charged, 0, ',', ' ') }} FCFA</span>
                             </div>
                             @if($userRole === 'prestataire')
                                 <div class="border-t pt-3 flex justify-between text-sm">
-                                    <span class="text-ink-500">Commission Azohub ({{ number_format(Auth::user()->commissionRate() * 100, 0) }}%, prestataire)</span>
-                                    <span class="font-semibold text-ink-700">-{{ number_format($order->commission, 0) }} FCFA</span>
+                                    <span class="text-ink-500">Commission Azohub ({{ round($order->commission / max((float) $order->amount, 1) * 100) }}%, prestataire)</span>
+                                    <span class="font-semibold text-ink-700">-{{ number_format($order->commission, 0, ',', ' ') }} FCFA</span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="font-bold text-ink-900">Vous recevrez</span>
-                                    <span class="text-xl font-bold text-forest-700">{{ number_format($order->prestataire_amount, 0) }} FCFA</span>
+                                    <span class="text-xl font-bold text-forest-700">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} FCFA</span>
                                 </div>
                             @endif
                         </div>

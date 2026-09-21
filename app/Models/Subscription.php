@@ -46,10 +46,14 @@ class Subscription extends Model
     }
 
     // Activer/renouveler l'abonnement (appelé après confirmation du paiement FedaPay)
-    public function renew()
+    // $carryOverFrom : fin d'un abonnement du même plan encore en cours (renouvellement
+    // anticipé) — la nouvelle période s'ajoute à ce qu'il restait au lieu de le perdre.
+    public function renew(?\Carbon\Carbon $carryOverFrom = null)
     {
+        $base = ($carryOverFrom && $carryOverFrom->isFuture()) ? $carryOverFrom->copy() : now();
+
         $this->starts_at = now();
-        $this->ends_at = $this->plan->billing_period === 'yearly' ? now()->addYear() : now()->addMonth();
+        $this->ends_at = $this->plan->billing_period === 'yearly' ? $base->addYear() : $base->addMonth();
         $this->status = 'active';
         $this->reminded_at = null;
         $this->save();

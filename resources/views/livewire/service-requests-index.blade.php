@@ -97,7 +97,7 @@
                     @if($request->budget)
                         <div class="mt-3 text-right">
                             <span class="text-xs text-ink-400">Budget indicatif</span>
-                            <p class="font-bold text-ink-900">{{ number_format($request->budget, 0) }} FCFA</p>
+                            <p class="font-bold text-ink-900">{{ number_format($request->budget, 0, ',', ' ') }} FCFA</p>
                         </div>
                     @endif
                 </a>

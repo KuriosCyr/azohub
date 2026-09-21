@@ -38,6 +38,17 @@ class PrestataireSubscription extends Component
         return Auth::user()->activeSubscription;
     }
 
+    // Renouvellement anticipé : autorisé pour le plan payant en cours dans les 7 derniers jours
+    // (avant, le plan courant n'offrait aucun bouton et il fallait le laisser expirer).
+    public function getCanRenewProperty(): bool
+    {
+        $subscription = $this->activeSubscription;
+
+        return $subscription
+            && (float) $subscription->plan->price > 0
+            && $subscription->ends_at->lte(now()->addDays(7));
+    }
+
     public function selectPlan(int $planId)
     {
         $this->selectedPlanId = $planId;
@@ -57,7 +68,7 @@ class PrestataireSubscription extends Component
         $user = Auth::user();
         $plan = SubscriptionPlan::active()->findOrFail($planId);
 
-        if ($this->currentPlan && $this->currentPlan->id === $plan->id) {
+        if ($this->currentPlan && $this->currentPlan->id === $plan->id && !$this->canRenew) {
             session()->flash('error', 'Vous êtes déjà sur ce plan.');
             return;
         }

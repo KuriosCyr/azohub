@@ -64,7 +64,7 @@
                                     <p class="text-sm text-ink-600 whitespace-pre-line mb-3">{{ $offer->description }}</p>
                                     <div class="flex items-center justify-between text-sm mb-4">
                                         <span class="text-ink-500">Livraison en {{ $offer->delivery_days }} jour(s)</span>
-                                        <span class="font-bold text-ink-900 text-lg">{{ number_format($offer->price, 0) }} FCFA</span>
+                                        <span class="font-bold text-ink-900 text-lg">{{ number_format($offer->price, 0, ',', ' ') }} FCFA</span>
                                     </div>
 
                                     @if($offer->status === 'pending' && Auth::id() === $conversation->client_id)

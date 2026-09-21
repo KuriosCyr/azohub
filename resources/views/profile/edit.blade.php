@@ -39,7 +39,7 @@
                             <p class="text-sm text-ink-500">{{ $user->email }}</p>
                             @if($user->isPrestataire())
                                 <span class="inline-block mt-2 px-3 py-1 bg-terracotta-50 text-terracotta-700 text-xs font-bold rounded-full">
-                                    <x-app-icon name="briefcase" class="w-4 h-4 inline-block align-text-bottom" /> Prestataire {{ ucfirst($user->level) }}
+                                    <x-app-icon name="briefcase" class="w-4 h-4 inline-block align-text-bottom" /> Prestataire {{ $user->level_label }}
                                 </span>
                             @else
                                 <span class="inline-block mt-2 px-3 py-1 bg-forest-600/10 text-forest-700 text-xs font-bold rounded-full">

@@ -32,12 +32,12 @@
             </div>
             <div class="text-right">
                 <p class="text-ink-300 text-sm mb-1">Commission actuelle</p>
-                <p class="text-2xl font-bold text-ochre-500">{{ number_format(Auth::user()->commissionRate() * 100, 0) }}%</p>
+                <p class="text-2xl font-bold text-ochre-500">{{ number_format(Auth::user()->commissionRate() * 100, 0, ',', ' ') }}%</p>
             </div>
             <div class="text-right">
                 <p class="text-ink-300 text-sm mb-1">Services publiables</p>
                 <p class="text-2xl font-bold text-ochre-500">{{ Auth::user()->maxServices() ?? '∞' }}</p>
-                <p class="text-ink-400 text-xs mt-0.5">Niveau {{ ucfirst(Auth::user()->level) }} + plan {{ $this->currentPlan?->name ?? 'Gratuit' }}</p>
+                <p class="text-ink-400 text-xs mt-0.5">Niveau {{ Auth::user()->level_label }} + plan {{ $this->currentPlan?->name ?? 'Gratuit' }}</p>
             </div>
         </div>
 
@@ -56,7 +56,7 @@
                     <p class="text-sm text-ink-500 mb-4">{{ $plan->description }}</p>
 
                     <p class="mb-4">
-                        <span class="text-3xl font-serif font-medium text-ink-900">{{ number_format($plan->price, 0) }}</span>
+                        <span class="text-3xl font-serif font-medium text-ink-900">{{ number_format($plan->price, 0, ',', ' ') }}</span>
                         <span class="text-ink-400 text-sm">FCFA / {{ $plan->billing_period === 'yearly' ? 'an' : 'mois' }}</span>
                     </p>
 
@@ -71,7 +71,7 @@
                         @endforeach
                     </ul>
 
-                    @if($isCurrent)
+                    @if($isCurrent && !$this->canRenew)
                         <span class="block text-center bg-ink-100/40 text-ink-500 font-bold py-3 rounded-lg text-sm">
                             Plan actuel
                         </span>
@@ -82,13 +82,13 @@
                             @endif
                             <button wire:click="choosePlan({{ $plan->id }})" wire:loading.attr="disabled" wire:target="choosePlan({{ $plan->id }})"
                                     class="w-full bg-ink-900 hover:bg-ink-700 text-cream-50 font-bold py-3 rounded-lg transition text-sm disabled:opacity-60">
-                                Confirmer {{ (float) $plan->price > 0 ? 'et payer' : '' }}
+                                {{ $isCurrent ? 'Renouveler et payer' : 'Confirmer' . ((float) $plan->price > 0 ? ' et payer' : '') }}
                             </button>
                         </div>
                     @else
                         <button wire:click="selectPlan({{ $plan->id }})"
                                 class="w-full border-2 border-ink-900 text-ink-900 hover:bg-terracotta-50 font-bold py-3 rounded-lg transition text-sm">
-                            Choisir ce plan
+                            {{ $isCurrent ? 'Renouveler' : 'Choisir ce plan' }}
                         </button>
                     @endif
                 </div>

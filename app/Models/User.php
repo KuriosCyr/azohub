@@ -333,6 +333,12 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         }
     }
 
+    // Libellé affichable du niveau (avec l'accent : ucfirst('confirme') donnait « Confirme »).
+    public function getLevelLabelAttribute(): string
+    {
+        return ['nouveau' => 'Nouveau', 'confirme' => 'Confirmé', 'expert' => 'Expert'][$this->level] ?? ucfirst((string) $this->level);
+    }
+
     // Taux de commission Azohub : le plus avantageux entre le niveau (gratuit, gagné
     // par la performance) et l'abonnement payant en cours. Aucun des deux systèmes
     // n'écrase l'autre — un expert sur le plan gratuit garde son taux, un nouveau

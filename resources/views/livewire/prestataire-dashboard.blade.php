@@ -26,7 +26,7 @@
                         </div>
                         <span class="text-cream-100/60 text-xs font-semibold uppercase tracking-wide">Portefeuille</span>
                     </div>
-                    <p class="text-3xl font-bold text-cream-50">{{ number_format($stats['wallet_balance'], 0) }}</p>
+                    <p class="text-3xl font-bold text-cream-50">{{ number_format($stats['wallet_balance'], 0, ',', ' ') }}</p>
                     <p class="text-cream-100/60 text-xs mt-0.5">FCFA disponible</p>
                 </a>
 
@@ -94,7 +94,7 @@
                 </div>
                 <div class="text-right">
                     <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-0.5">Commission Azohub</p>
-                    <p class="text-lg font-bold text-terracotta-600">{{ number_format(Auth::user()->commissionRate() * 100, 0) }}%</p>
+                    <p class="text-lg font-bold text-terracotta-600">{{ number_format(Auth::user()->commissionRate() * 100, 0, ',', ' ') }}%</p>
                 </div>
             </div>
 
@@ -158,7 +158,7 @@
                                 </div>
                                 <div class="flex justify-between items-center text-xs">
                                     <span class="text-ink-400">{{ $order->created_at->diffForHumans() }}</span>
-                                    <span class="font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0) }} FCFA</span>
+                                    <span class="font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} FCFA</span>
                                 </div>
                             </a>
                         @empty
@@ -277,7 +277,7 @@
                                     <div class="flex gap-5 text-xs mb-3">
                                         <div>
                                             <p class="text-ink-300">Prix</p>
-                                            <p class="font-bold text-ink-900">{{ number_format($service->price, 0) }} FCFA</p>
+                                            <p class="font-bold text-ink-900">{{ number_format($service->price, 0, ',', ' ') }} FCFA</p>
                                         </div>
                                         <div>
                                             <p class="text-ink-300">Commandes</p>
@@ -366,7 +366,7 @@
                                     <p class="text-xs text-ink-400 mt-0.5">Client : {{ $order->client->name }}</p>
                                 </div>
                                 <div class="text-right flex-shrink-0">
-                                    <p class="text-xl font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0) }} F</p>
+                                    <p class="text-xl font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} F</p>
                                     <p class="text-xs text-ink-400 mt-0.5">{{ $order->created_at->format('d/m/Y') }}</p>
                                 </div>
                             </div>

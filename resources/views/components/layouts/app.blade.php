@@ -192,7 +192,7 @@
                                     @if(Auth::user()->isPrestataire())
                                         <div class="mt-2 flex items-center gap-2">
                                             <span class="px-2 py-1 bg-terracotta-50 text-terracotta-700 text-xs font-semibold rounded-full">
-                                                {{ ucfirst(Auth::user()->level) }}
+                                                {{ Auth::user()->level_label }}
                                             </span>
                                             @if(Auth::user()->identity_verified)
                                                 <span class="px-2 py-1 bg-forest-600/10 text-forest-700 text-xs font-semibold rounded-full">
@@ -221,7 +221,7 @@
                                         <a href="{{ route('prestataire.wallet') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                             <x-app-icon name="banknotes" class="w-4 h-4 text-ink-300" />
                                             Portefeuille
-                                            <span class="text-xs text-ink-400 ml-auto">{{ number_format(Auth::user()->wallet_balance ?? 0, 0) }} F</span>
+                                            <span class="text-xs text-ink-400 ml-auto">{{ number_format(Auth::user()->wallet_balance ?? 0, 0, ',', ' ') }} F</span>
                                         </a>
                                         <a href="{{ route('prestataire.subscription') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
                                             <x-app-icon name="sparkles" class="w-4 h-4 text-ink-300" />

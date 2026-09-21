@@ -63,6 +63,7 @@ class PrestataireDashboard extends Component
 
         // Avis récents
         $recentReviews = $user->receivedReviews()
+            ->visible()
             ->with(['reviewer', 'order.service'])
             ->where('review_type', 'client_to_prestataire')
             ->latest()
@@ -89,7 +90,7 @@ class PrestataireDashboard extends Component
 
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $labels[] = $date->format('D');
+            $labels[] = $date->translatedFormat('D');
             
             $dayEarnings = $user->prestataireOrders()
                 ->where('payment_status', 'released')

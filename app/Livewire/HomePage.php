@@ -24,7 +24,7 @@ class HomePage extends Component
                 ->take(8)
                 ->get(),
             'stats' => [
-                'services' => Service::count(),
+                'services' => Service::active()->count(),
                 'prestataires' => User::where('role', 'prestataire')->count(),
                 'orders' => \App\Models\Order::where('status', 'completed')->count(),
             ]

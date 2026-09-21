@@ -15,7 +15,7 @@
         <div class="bg-ink-900 text-cream-50 rounded-xl p-8 mb-8 flex flex-wrap items-center justify-between gap-6">
             <div>
                 <p class="text-ink-300 text-sm mb-1">Solde disponible</p>
-                <p class="text-4xl font-serif font-medium">{{ number_format(Auth::user()->wallet_balance, 0) }} <span class="text-xl text-ink-300">FCFA</span></p>
+                <p class="text-4xl font-serif font-medium">{{ number_format(Auth::user()->wallet_balance, 0, ',', ' ') }} <span class="text-xl text-ink-300">FCFA</span></p>
             </div>
             <button wire:click="toggleRequestForm"
                     class="bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold px-6 py-3 rounded-lg transition shadow-md">
@@ -33,7 +33,7 @@
                     <input type="number" wire:model="amount" placeholder="Ex : 10000"
                            class="w-full px-4 py-2.5 rounded-lg border border-ink-200 text-sm focus:ring-2 focus:ring-terracotta-600 focus:border-transparent">
                     @error('amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                    <p class="text-xs text-ink-400 mt-1">Montant minimum : {{ number_format(\App\Livewire\PrestataireWallet::MIN_WITHDRAWAL, 0) }} FCFA</p>
+                    <p class="text-xs text-ink-400 mt-1">Montant minimum : {{ number_format(\App\Livewire\PrestataireWallet::MIN_WITHDRAWAL, 0, ',', ' ') }} FCFA</p>
                 </div>
 
                 <div>
@@ -63,7 +63,7 @@
                 @forelse($withdrawals as $withdrawal)
                     <div class="flex items-center justify-between p-5">
                         <div>
-                            <p class="font-bold text-ink-900">{{ number_format($withdrawal->amount, 0) }} FCFA</p>
+                            <p class="font-bold text-ink-900">{{ number_format($withdrawal->amount, 0, ',', ' ') }} FCFA</p>
                             <p class="text-xs text-ink-400 mt-1">
                                 {{ ['mtn_momo' => 'MTN MoMo', 'moov_money' => 'Moov Money', 'celtiis_cash' => 'Celtiis Cash'][$withdrawal->payment_method] ?? $withdrawal->payment_method }}
                                 · {{ $withdrawal->phone_number }} · {{ $withdrawal->created_at->format('d/m/Y') }}
@@ -96,7 +96,7 @@
                             <p class="font-semibold text-ink-900 truncate">{{ $order->display_title }}</p>
                             <p class="text-xs text-ink-400 mt-1">Commande {{ $order->order_number }} · {{ $order->validated_at?->format('d/m/Y') }}</p>
                         </div>
-                        <p class="font-bold text-forest-700 flex-shrink-0">+{{ number_format($order->prestataire_amount, 0) }} FCFA</p>
+                        <p class="font-bold text-forest-700 flex-shrink-0">+{{ number_format($order->prestataire_amount, 0, ',', ' ') }} FCFA</p>
                     </a>
                 @empty
                     <div class="text-center py-12">

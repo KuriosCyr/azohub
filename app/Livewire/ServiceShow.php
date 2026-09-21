@@ -15,8 +15,11 @@ class ServiceShow extends Component
     {
         $this->service = $service;
         
-        // Rediriger si le service est inactif
-        if (!$service->is_active) {
+        // Rediriger si le service n'est plus disponible (sauf pour son propriétaire ou un admin,
+        // qui peuvent toujours le prévisualiser).
+        $canPreview = auth()->check() && (auth()->id() === $service->user_id || auth()->user()->role === 'admin');
+
+        if (!$canPreview && !$service->isOrderable()) {
             return redirect()->route('services.index')
                 ->with('error', 'Ce service n\'est plus disponible.');
         }

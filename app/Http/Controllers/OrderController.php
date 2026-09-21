@@ -143,7 +143,8 @@ class OrderController extends Controller
             'status' => 'delivered',
             'delivered_at' => now(),
             'delivery_note' => $validated['delivery_notes'] ?? null,
-            'deliverables' => !empty($deliverables) ? $deliverables : null,
+            // Re-livraison après une révision sans nouveau fichier : on garde les fichiers déjà livrés.
+            'deliverables' => !empty($deliverables) ? array_merge($order->deliverables ?? [], $deliverables) : ($order->deliverables ?: null),
             'validation_deadline' => now()->addHours(72),
         ]);
 

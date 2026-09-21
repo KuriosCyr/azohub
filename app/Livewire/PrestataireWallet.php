@@ -41,7 +41,7 @@ class PrestataireWallet extends Component
             'phoneNumber' => 'required|string|min:8|max:20',
         ], [
             'amount.required' => 'Veuillez indiquer un montant.',
-            'amount.min' => 'Le montant minimum de retrait est de ' . number_format(self::MIN_WITHDRAWAL, 0) . ' FCFA.',
+            'amount.min' => 'Le montant minimum de retrait est de ' . number_format(self::MIN_WITHDRAWAL, 0, ',', ' ') . ' FCFA.',
             'amount.max' => 'Le montant demandé dépasse votre solde disponible.',
             'phoneNumber.required' => 'Veuillez indiquer un numéro de réception.',
         ]);

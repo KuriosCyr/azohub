@@ -52,15 +52,15 @@
                     <div class="space-y-3 mb-6">
                         <div class="flex justify-between text-sm">
                             <span class="text-ink-500">Prix de l'offre</span>
-                            <span class="font-semibold">{{ number_format($offer->price, 0) }} FCFA</span>
+                            <span class="font-semibold">{{ number_format($offer->price, 0, ',', ' ') }} FCFA</span>
                         </div>
                         <div class="flex justify-between text-sm">
-                            <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0) }}%)</span>
-                            <span class="font-semibold">{{ number_format($clientFee, 0) }} FCFA</span>
+                            <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0, ',', ' ') }}%)</span>
+                            <span class="font-semibold">{{ number_format($clientFee, 0, ',', ' ') }} FCFA</span>
                         </div>
                         <div class="border-t border-ink-100 pt-3 flex justify-between font-bold text-lg">
                             <span>Total</span>
-                            <span class="text-ink-900">{{ number_format($offer->price + $clientFee, 0) }} FCFA</span>
+                            <span class="text-ink-900">{{ number_format($offer->price + $clientFee, 0, ',', ' ') }} FCFA</span>
                         </div>
                     </div>
 

@@ -41,7 +41,7 @@
                         @if($serviceRequest->budget)
                             <div>
                                 <p class="text-ink-400 mb-1">Budget indicatif</p>
-                                <p class="font-semibold text-ink-900">{{ number_format($serviceRequest->budget, 0) }} FCFA</p>
+                                <p class="font-semibold text-ink-900">{{ number_format($serviceRequest->budget, 0, ',', ' ') }} FCFA</p>
                             </div>
                         @endif
                         @if($serviceRequest->deadline)
@@ -75,7 +75,7 @@
                                 <h2 class="text-lg font-bold text-ink-900 mb-4">Votre proposition</h2>
                                 <div class="flex items-center justify-between p-4 bg-ink-100/20 rounded-lg">
                                     <div>
-                                        <p class="font-semibold text-ink-900">{{ number_format($this->myProposal->proposed_price, 0) }} FCFA</p>
+                                        <p class="font-semibold text-ink-900">{{ number_format($this->myProposal->proposed_price, 0, ',', ' ') }} FCFA</p>
                                         <p class="text-sm text-ink-500">Livraison en {{ $this->myProposal->delivery_time }} jour(s)</p>
                                     </div>
                                     <span class="text-xs font-semibold px-3 py-1.5 rounded-full
@@ -162,7 +162,7 @@
                                         <button type="button" @click="expanded = !expanded" class="text-xs font-semibold text-terracotta-600 hover:text-terracotta-700 mb-2" x-text="expanded ? 'Voir moins' : 'Voir plus'"></button>
                                     </div>
                                     <div class="flex items-center justify-between text-sm mb-3">
-                                        <span class="font-bold text-ink-900">{{ number_format($proposal->proposed_price, 0) }} FCFA</span>
+                                        <span class="font-bold text-ink-900">{{ number_format($proposal->proposed_price, 0, ',', ' ') }} FCFA</span>
                                         <span class="text-ink-500">{{ $proposal->delivery_time }} jour(s)</span>
                                     </div>
 

@@ -31,9 +31,10 @@ class ClientDashboard extends Component
             'cancelled_orders' => Order::where('client_id', $userId)
                 ->where('status', 'cancelled')
                 ->count(),
-            'total_spent' => Order::where('client_id', $userId)
-                ->whereIn('status', ['completed', 'in_progress', 'delivered'])
-                ->sum('amount'),  // ← Corrigé : amount au lieu de total_price
+            // Montant réellement débité (prix + frais de service client), commandes payées.
+            'total_spent' => (float) Order::where('client_id', $userId)
+                ->whereIn('status', ['paid', 'in_progress', 'delivered', 'completed'])
+                ->sum(\Illuminate\Support\Facades\DB::raw('amount + COALESCE(client_fee, 0)')),
             'awaiting_validation' => Order::where('client_id', $userId)
                 ->where('status', 'delivered')
                 ->count(),
@@ -85,8 +86,13 @@ class ClientDashboard extends Component
 
         // Recherche
         if (!empty($this->searchQuery)) {
-            $query->whereHas('service', function($q) {
-                $q->where('title', 'like', '%' . $this->searchQuery . '%');
+            // Les commandes issues d'une demande/proposition ou d'une offre personnalisée n'ont
+            // pas de service : on cherche aussi dans le titre de ces origines.
+            $term = '%' . $this->searchQuery . '%';
+            $query->where(function ($q) use ($term) {
+                $q->whereHas('service', fn ($s) => $s->where('title', 'like', $term))
+                  ->orWhereHas('serviceRequest', fn ($s) => $s->where('title', 'like', $term))
+                  ->orWhereHas('customOffer', fn ($s) => $s->where('title', 'like', $term));
             });
         }
 

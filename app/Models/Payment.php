@@ -70,12 +70,18 @@ class Payment extends Model
 
         // Un seul abonnement actif à la fois : celui-ci remplace tout abonnement en cours.
         if ($this->subscription) {
-            Subscription::where('user_id', $this->subscription->user_id)
+            $others = Subscription::where('user_id', $this->subscription->user_id)
                 ->where('id', '!=', $this->subscription->id)
-                ->where('status', 'active')
-                ->update(['status' => 'cancelled']);
+                ->where('status', 'active');
 
-            $this->subscription->renew();
+            // Renouvellement anticipé du même plan : on conserve le temps restant.
+            $carryOverFrom = (clone $others)
+                ->where('subscription_plan_id', $this->subscription->subscription_plan_id)
+                ->max('ends_at');
+
+            $others->update(['status' => 'cancelled']);
+
+            $this->subscription->renew($carryOverFrom ? \Carbon\Carbon::parse($carryOverFrom) : null);
             $this->subscription->user->notify(new SubscriptionActivated($this->subscription));
         }
     }

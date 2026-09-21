@@ -23,8 +23,8 @@ class OrderCreate extends Component
         $this->service = Service::with(['prestataire', 'category'])->findOrFail($serviceId);
         $this->package = request()->query('package', 'basic');
 
-        // Vérifier que le service est actif
-        if (!$this->service->is_active) {
+        // Vérifier que le service est encore commandable
+        if (!$this->service->isOrderable()) {
             return redirect()->route('services.index')
                 ->with('error', 'Ce service n\'est plus disponible.');
         }
@@ -38,6 +38,9 @@ class OrderCreate extends Component
 
     public function placeOrder(PaymentService $payments)
     {
+        // Le composant peut rester ouvert longtemps : on revérifie au moment de commander.
+        abort_unless($this->service->fresh()?->isOrderable(), 403, "Ce service n'est plus disponible.");
+
         $this->validate([
             'requirements' => 'required|string|min:20|max:2000',
             'paymentMethod' => 'required|in:mtn_momo,moov_money,celtiis_cash,card',

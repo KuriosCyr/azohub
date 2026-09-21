@@ -26,7 +26,7 @@ class SubscriptionActivated extends Notification
             ->subject('Votre abonnement ' . $this->subscription->plan->name . ' est actif')
             ->greeting('Bonjour ' . $notifiable->name . ',')
             ->line("Votre abonnement au plan « {$this->subscription->plan->name} » est maintenant actif jusqu'au {$this->subscription->ends_at->format('d/m/Y')}.")
-            ->line('Commission Azohub : ' . number_format((float) $this->subscription->plan->commission_rate, 0) . '%.')
+            ->line('Commission Azohub : ' . number_format((float) $this->subscription->plan->commission_rate, 0, ',', ' ') . '%.')
             ->action('Voir mon abonnement', route('prestataire.subscription'));
     }
 

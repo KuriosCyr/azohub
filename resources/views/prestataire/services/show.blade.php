@@ -44,7 +44,7 @@
             {{-- Stats --}}
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div class="bg-cream-50 rounded-lg p-6 text-center border border-ink-100">
-                    <div class="text-3xl font-bold text-ink-900">{{ number_format($service->price, 0) }}</div>
+                    <div class="text-3xl font-bold text-ink-900">{{ number_format($service->price, 0, ',', ' ') }}</div>
                     <div class="text-xs text-ink-500 mt-1">FCFA</div>
                 </div>
                 <div class="bg-cream-50 rounded-lg p-6 text-center border border-ink-100">

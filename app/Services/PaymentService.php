@@ -30,7 +30,9 @@ class PaymentService
             'description' => "Paiement commande {$order->order_number} - Azohub",
             'amount' => (int) round((float) $order->total_charged),
             'currency' => ['iso' => 'XOF'],
-            'callback_url' => route('payments.callback', ['order' => $order->id]),
+            // Le binding de Order utilise order_number : passer le modèle (et non l'id) sinon le
+            // retour du client depuis FedaPay tombait sur une 404.
+            'callback_url' => route('payments.callback', ['order' => $order]),
             'customer' => [
                 'firstname' => $payer->name,
                 'email' => $payer->email,
