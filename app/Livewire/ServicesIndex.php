@@ -108,7 +108,7 @@ class ServicesIndex extends Component
             END as plan_priority");
 
         // Recherche par mots-clés : chaque mot saisi doit se retrouver (dans le titre, la description,
-        // les tags ou le nom de la catégorie) ; l'ordre des mots n'a pas d'importance.
+        // les tags, le nom de la catégorie ou celui du prestataire) ; l'ordre des mots n'a pas d'importance.
         foreach ($this->searchWords() as $word) {
             $like = '%' . addcslashes($word, '%_\\') . '%';
 
@@ -116,7 +116,8 @@ class ServicesIndex extends Component
                 $q->where('services.title', 'like', $like)
                   ->orWhere('services.description', 'like', $like)
                   ->orWhere('services.tags', 'like', $like)
-                  ->orWhereHas('category', fn ($c) => $c->where('name', 'like', $like));
+                  ->orWhereHas('category', fn ($c) => $c->where('name', 'like', $like))
+                  ->orWhereHas('prestataire', fn ($p) => $p->where('name', 'like', $like));
             });
         }
 
