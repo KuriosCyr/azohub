@@ -20,8 +20,12 @@ class EnsureAccountIsActive
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')
-                ->with('error', 'Votre compte a été désactivé. Contactez le support si vous pensez qu\'il s\'agit d\'une erreur.');
+            // Voir EnsureUserIsPrestataire : redirect() est intercepté par Livewire sur les routes
+            // qui résolvent vers un composant plein-page (la quasi-totalité du site), ce qui casse
+            // un retour direct depuis un middleware (TypeError). Redirection construite à la main.
+            $request->session()->flash('error', 'Votre compte a été désactivé. Contactez le support si vous pensez qu\'il s\'agit d\'une erreur.');
+
+            return new \Illuminate\Http\RedirectResponse(route('login'));
         }
 
         return $next($request);
