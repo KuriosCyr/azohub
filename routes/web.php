@@ -27,6 +27,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\SeoController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AdvertisementController;
@@ -44,6 +45,9 @@ Route::get(
     config('app.debug') ? '/livewire/livewire.js' : '/livewire/livewire.min.js',
     [\Livewire\Mechanisms\FrontendAssets\FrontendAssets::class, 'returnJavaScriptAsFile']
 );
+
+Route::get('/robots.txt', [SeoController::class, 'robots']);
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 
 // ============================================
 // PAGES PUBLIQUES

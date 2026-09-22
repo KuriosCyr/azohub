@@ -1,6 +1,6 @@
 @props(['title', 'subtitle', 'updated', 'otherLabel', 'otherRoute'])
 
-<x-app-layout>
+<x-app-layout :title="$title" :description="$subtitle">
     <div class="bg-cream-100">
         {{-- En-tête --}}
         <div class="bg-gradient-to-br from-ink-900 via-ink-900 to-ink-700 text-cream-50">

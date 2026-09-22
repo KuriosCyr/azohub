@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Contact" description="Une question, un problème, une suggestion ? Contactez l'équipe Azohub — nous répondons sous 24 à 48h ouvrées.">
     <div class="min-h-screen bg-cream">
         {{-- Hero Section --}}
         <div class="bg-ink-900 text-cream-50 py-20">

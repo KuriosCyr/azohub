@@ -1,3 +1,21 @@
+@props([
+    'title' => null,
+    'description' => null,
+    'ogImage' => null,
+    'ogType' => 'website',
+    'canonical' => null,
+    'noindex' => false,
+    'jsonLd' => null,
+])
+@php
+    // Titre : le contenu spécifique en premier (ce que Google et le visiteur voient en premier
+    // dans une liste de résultats), le nom de la marque en dernier — jamais l'inverse pour une
+    // page de contenu, sinon toutes les pages se ressemblent dans les résultats de recherche.
+    $pageTitle = $title ? "{$title} | Azohub" : config('app.name', 'Azohub') . ' - Plateforme de services au Bénin';
+    $pageDescription = $description ?? "Azohub met en relation clients et prestataires qualifiés partout au Bénin : trouvez un service ou proposez le vôtre en toute confiance.";
+    $pageImage = $ogImage ?? asset('design-exports/azohub-lockup-horizontal-tricolor.svg');
+    $pageCanonical = $canonical ?? url()->current();
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -5,7 +23,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Azohub') }} - Plateforme de services au Bénin</title>
+    <title>{{ $pageTitle }}</title>
+    <meta name="description" content="{{ $pageDescription }}">
+    <link rel="canonical" href="{{ $pageCanonical }}">
+    @if($noindex)
+        <meta name="robots" content="noindex, nofollow">
+    @endif
+
+    {{-- Open Graph / réseaux sociaux --}}
+    <meta property="og:type" content="{{ $ogType }}">
+    <meta property="og:site_name" content="Azohub">
+    <meta property="og:title" content="{{ $title ?? config('app.name', 'Azohub') }}">
+    <meta property="og:description" content="{{ $pageDescription }}">
+    <meta property="og:image" content="{{ $pageImage }}">
+    <meta property="og:url" content="{{ $pageCanonical }}">
+    <meta property="og:locale" content="fr_BJ">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $title ?? config('app.name', 'Azohub') }}">
+    <meta name="twitter:description" content="{{ $pageDescription }}">
+    <meta name="twitter:image" content="{{ $pageImage }}">
+
+    @if($jsonLd)
+        <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    @endif
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
 

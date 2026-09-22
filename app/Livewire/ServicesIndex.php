@@ -199,10 +199,26 @@ class ServicesIndex extends Component
         }
         sort($cities);
 
+        $seoTitle = 'Tous les services';
+        if (!empty($this->category)) {
+            $seoTitle = ($categories->firstWhere('slug', $this->category)?->name ?? 'Services') . ' au Bénin';
+        } elseif (!empty($this->search)) {
+            $seoTitle = 'Résultats pour « ' . $this->search . ' »';
+        }
+
         return view('livewire.services-index', [
             'services' => $services,
             'categories' => $categories,
             'cities' => $cities,
-        ])->layout('components.layouts.app');
+        ])->layout('components.layouts.app', [
+            'title' => $seoTitle,
+            'description' => "Parcourez les services de prestataires qualifiés partout au Bénin : filtrez par catégorie, ville et prix, comparez les avis, commandez en toute sécurité.",
+            // Une recherche ou un tri ne devrait jamais s'indexer séparément de la liste de base :
+            // sinon Google voit des centaines de pages quasi identiques (une par combinaison de
+            // filtres), ce qui dilue son intérêt pour la vraie page de liste.
+            'canonical' => (!empty($this->search) || !empty($this->minPrice) || !empty($this->maxPrice) || !empty($this->minRating))
+                ? route('services.index', array_filter(['category' => $this->category, 'city' => $this->city]))
+                : null,
+        ]);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use App\Models\Conversation;
 use App\Models\Service;
+use App\Models\ServiceView;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
 class ServiceShow extends Component
@@ -22,6 +24,23 @@ class ServiceShow extends Component
         if (!$canPreview && !$service->isOrderable()) {
             return redirect()->route('services.index')
                 ->with('error', 'Ce service n\'est plus disponible.');
+        }
+
+        // Une vue par visiteur (ou par IP pour un invité) et par heure — même principe que les
+        // vues de profil : sinon un rechargement de page fausse la statistique du prestataire.
+        if (auth()->id() !== $service->user_id) {
+            $viewerKey = auth()->id() ?? 'guest:' . request()->ip();
+            $throttleKey = "service-view:{$service->id}:{$viewerKey}";
+
+            if (!Cache::has($throttleKey)) {
+                Cache::put($throttleKey, true, now()->addHour());
+
+                ServiceView::create([
+                    'service_id' => $service->id,
+                    'viewer_id' => auth()->id(),
+                    'viewed_at' => now(),
+                ]);
+            }
         }
     }
 
@@ -102,6 +121,56 @@ class ServiceShow extends Component
 
         return view('livewire.service-show', [
             'similarServices' => $similarServices,
-        ])->layout('components.layouts.app');
+        ])->layout('components.layouts.app', $this->seoData());
+    }
+
+    // Titre/description/image et données structurées Schema.org (Service + avis) : aide Google à
+    // comprendre la page (prix, note, avis) et peut faire apparaître des étoiles dans les résultats.
+    private function seoData(): array
+    {
+        $service = $this->service;
+        $description = \Illuminate\Support\Str::limit(strip_tags($service->description), 155);
+
+        $jsonLd = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Service',
+            'name' => $service->title,
+            'description' => $description,
+            'provider' => [
+                '@type' => 'Person',
+                'name' => $service->prestataire->name,
+            ],
+            'areaServed' => $service->serves_nationwide ? 'Bénin' : ($service->areasList() ?: ['Bénin']),
+            'offers' => [
+                '@type' => 'Offer',
+                'price' => (string) $service->price,
+                'priceCurrency' => 'XOF',
+            ],
+        ];
+
+        if ($service->total_reviews > 0) {
+            $jsonLd['aggregateRating'] = [
+                '@type' => 'AggregateRating',
+                'ratingValue' => (string) $service->rating,
+                'reviewCount' => (string) $service->total_reviews,
+            ];
+        }
+
+        return [
+            'title' => $service->title . ' — ' . $service->category->name,
+            'description' => $description,
+            // Les services de démonstration stockent parfois une URL externe (Unsplash) telle
+            // quelle dans cover_image plutôt qu'un chemin local — les vrais envois de prestataires
+            // sont toujours locaux, mais autant gérer les deux plutôt que produire une URL cassée.
+            'ogImage' => $service->cover_image
+                ? (\Illuminate\Support\Str::startsWith($service->cover_image, 'http') ? $service->cover_image : \Illuminate\Support\Facades\Storage::url($service->cover_image))
+                : null,
+            'ogType' => 'product',
+            // Un service qu'on ne voit que parce qu'on en est le propriétaire (en modération,
+            // refusé, désactivé) ne doit jamais s'indexer — même s'il n'est pas bloqué par
+            // robots.txt, un visiteur ne devrait jamais tomber dessus depuis une recherche.
+            'noindex' => !$service->isOrderable(),
+            'jsonLd' => $jsonLd,
+        ];
     }
 }

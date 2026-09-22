@@ -104,6 +104,13 @@ class PrestataireProfile extends Component
             'completion_rate' => $this->prestataire->completionRate(),
         ];
 
-        return view('livewire.prestataire-profile', $data)->layout('components.layouts.app');
+        return view('livewire.prestataire-profile', $data)->layout('components.layouts.app', [
+            'title' => $this->prestataire->name . ($this->prestataire->city ? ' — ' . $this->prestataire->city : ''),
+            'description' => $this->prestataire->bio
+                ? \Illuminate\Support\Str::limit(strip_tags($this->prestataire->bio), 155)
+                : "{$this->prestataire->name}, prestataire sur Azohub" . ($this->prestataire->city ? " à {$this->prestataire->city}" : '') . '. Consultez ses services, avis et disponibilités.',
+            'ogImage' => $this->prestataire->avatar ? \Illuminate\Support\Facades\Storage::url($this->prestataire->avatar) : null,
+            'ogType' => 'profile',
+        ]);
     }
 }

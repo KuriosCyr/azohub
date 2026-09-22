@@ -84,6 +84,9 @@ class FaqPage extends Component
             'faqs' => $this->faqs,
             'faqsByCategory' => $this->faqsByCategory,
             'categories' => Faq::categories(),
-        ])->layout('components.layouts.app');
+        ])->layout('components.layouts.app', [
+            'title' => 'Questions fréquentes',
+            'description' => "Commissions, paiements, retraits, litiges : les réponses aux questions les plus posées par les clients et prestataires d'Azohub.",
+        ]);
     }
 }

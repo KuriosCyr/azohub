@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Comment ça marche" description="Comment commander un service ou proposer le vôtre sur Azohub, étape par étape : inscription, paiement sécurisé, livraison, avis.">
     <div class="min-h-screen bg-cream">
         {{-- Hero Section --}}
         <div class="bg-ink-900 text-cream-50 py-20">

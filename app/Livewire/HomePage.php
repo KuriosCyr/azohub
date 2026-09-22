@@ -28,7 +28,17 @@ class HomePage extends Component
                 'prestataires' => User::where('role', 'prestataire')->count(),
                 'orders' => \App\Models\Order::where('status', 'completed')->count(),
             ]
-        ])->layout('components.layouts.app');
+        ])->layout('components.layouts.app', [
+            'description' => "Trouvez un plombier, un électricien, un designer ou tout autre prestataire qualifié au Bénin. Paiement sécurisé, livraison suivie, avis vérifiés.",
+            'jsonLd' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'Organization',
+                'name' => 'Azohub',
+                'url' => url('/'),
+                'logo' => asset('design-exports/azohub-symbol.svg'),
+                'areaServed' => 'Bénin',
+            ],
+        ]);
     }
 
     public function searchServices()
