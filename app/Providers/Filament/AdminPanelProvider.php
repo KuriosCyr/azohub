@@ -10,6 +10,8 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -46,6 +48,18 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn () => view('components.logo-lockup', ['class' => 'h-8 w-auto']))
             ->brandLogoHeight('2rem')
             ->favicon(asset('favicon.svg'))
+
+            // config/livewire.php désactive l'auto-injection du script Livewire (inject_assets=false),
+            // nécessaire côté site public pour éviter deux instances Alpine concurrentes (le layout
+            // principal démarre Livewire lui-même depuis le bundle Vite — voir app.blade.php). Mais ce
+            // réglage est global : sans ce hook, les pages Filament ne reçoivent plus jamais le script
+            // Livewire (leur layout, à nous inconnu, ne l'injecte pas manuellement), donc aucun wire:*
+            // n'y fonctionne — symptôme observé : les indicateurs de chargement restent bloqués visibles
+            // en permanence sur la page de connexion, avant même toute soumission.
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => Blade::render('@livewireStyles @livewireScripts'),
+            )
 
             // Thème : clair par défaut, dark mode disponible
             ->darkMode(true)
