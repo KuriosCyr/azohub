@@ -50,6 +50,8 @@
                 </div>
             @endif
 
+            <livewire:review-response :review="$review" :key="'review-response-'.$review->id" />
+
             {{-- Action --}}
             <a href="{{ route('reviews.show', $review) }}"
                class="text-terracotta-600 hover:text-terracotta-700 font-semibold text-sm inline-flex items-center gap-1 transition">

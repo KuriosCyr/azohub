@@ -72,6 +72,10 @@
                     </div>
                 @endif
 
+                <div class="mb-8">
+                    <livewire:review-response :review="$review" :key="'review-response-'.$review->id" />
+                </div>
+
                 {{-- Info commande --}}
                 <div class="bg-terracotta-50 rounded-lg p-6">
                     <h3 class="text-lg font-bold text-ink-900 mb-4">Informations sur la commande</h3>

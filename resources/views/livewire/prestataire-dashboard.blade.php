@@ -453,6 +453,8 @@
                                 @if($review->comment)
                                     <p class="text-ink-500 text-sm bg-cream p-3 rounded-xl">{{ $review->comment }}</p>
                                 @endif
+
+                                <livewire:review-response :review="$review" :key="'review-response-'.$review->id" />
                             </div>
                         </div>
                     </div>

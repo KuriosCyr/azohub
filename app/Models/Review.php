@@ -14,9 +14,11 @@ class Review extends Model
         // Un avis masqué/réaffiché par l'admin doit immédiatement changer la note
         // moyenne affichée sur le profil et le service concernés.
         static::updated(function (Review $review) {
-            if ($review->wasChanged('is_visible') && $review->review_type === 'client_to_prestataire') {
+            if ($review->wasChanged('is_visible')) {
                 $review->reviewee?->updateRating();
-                $review->service?->updateRating();
+                if ($review->review_type === 'client_to_prestataire') {
+                    $review->service?->updateRating();
+                }
             }
         });
     }
@@ -35,6 +37,8 @@ class Review extends Model
         'responsiveness_rating',
         'review_type',
         'is_visible',
+        'response',
+        'responded_at',
     ];
 
     protected $casts = [
@@ -45,6 +49,7 @@ class Review extends Model
         'clarity_rating' => 'integer',
         'responsiveness_rating' => 'integer',
         'is_visible' => 'boolean',
+        'responded_at' => 'datetime',
     ];
 
     // Relations
@@ -95,6 +100,14 @@ class Review extends Model
     public function scopeVisible($query)
     {
         return $query->where('is_visible', true);
+    }
+
+    // Réponse du prestataire à un avis client -> prestataire : facultative, une seule fois,
+    // jamais modifiable ensuite. L'autorisation (qui peut répondre, une seule fois) est
+    // vérifiée par l'appelant (Livewire\ReviewResponse) ; ce modèle ne fait qu'écrire.
+    public function respond(string $text): void
+    {
+        $this->update(['response' => $text, 'responded_at' => now()]);
     }
 
 }

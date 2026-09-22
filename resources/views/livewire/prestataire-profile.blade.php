@@ -330,6 +330,8 @@
                                         </div>
                                     @endif
 
+                                    <livewire:review-response :review="$review" :key="'review-response-'.$review->id" />
+
                                     {{-- Action --}}
                                     <a href="{{ route('reviews.show', $review) }}"
                                        class="text-ink-900 hover:text-terracotta-700 font-bold text-sm inline-flex items-center gap-1 transition">
