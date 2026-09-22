@@ -78,6 +78,15 @@
                     </div>
                 </div>
 
+                {{-- Zone d'intervention --}}
+                <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
+                    <h2 class="text-2xl font-serif font-medium text-ink-900 mb-2"><x-app-icon name="map-pin" class="w-6 h-6 inline-block" /> Zone d'intervention <span class="text-red-500">*</span></h2>
+                    <p class="text-sm text-ink-500 mb-6">Où pouvez-vous intervenir ? Les clients de ces communes vous trouveront en filtrant par ville. Modifier la zone ne demande pas de nouvelle validation.</p>
+
+                    <x-service-areas-picker :selected="collect(old('service_areas', array_merge([Auth::user()->city], (array) Auth::user()->service_areas)))->filter()->unique()->values()->all()" :nationwide="(bool) old('serves_nationwide', false)" />
+                    <x-input-error :messages="$errors->get('service_areas')" class="mt-2" />
+                    <x-input-error :messages="$errors->get('service_areas.*')" class="mt-2" />
+                </div>
                 {{-- Tarification --}}
                 <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
                     <h2 class="text-2xl font-serif font-medium text-ink-900 mb-6"><x-app-icon name="banknotes" class="w-6 h-6 inline-block" /> Tarification et délais</h2>

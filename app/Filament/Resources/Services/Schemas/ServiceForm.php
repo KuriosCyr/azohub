@@ -58,8 +58,14 @@ class ServiceForm
                     ->suffix('jours'),
                 TextInput::make('city')
                     ->label('Ville'),
-                Textarea::make('service_area')
-                    ->label("Zone d'intervention")
+                Toggle::make('serves_nationwide')
+                    ->label('Intervient partout au Bénin'),
+                Select::make('service_areas')
+                    ->label("Communes d'intervention")
+                    ->multiple()
+                    ->searchable()
+                    ->options(fn () => array_combine(Service::communes(), Service::communes()))
+                    ->helperText('Ignorées si « partout au Bénin » est activé.')
                     ->columnSpanFull(),
                 FileUpload::make('cover_image')
                     ->label('Image de couverture')

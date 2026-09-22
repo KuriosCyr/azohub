@@ -216,12 +216,10 @@
                                      class="w-8 h-8 rounded-full border border-ink-100">
                                 <div class="flex-1 min-w-0">
                                     <p class="font-medium text-ink-700 text-sm truncate">{{ $service->prestataire->name }}</p>
-                                    @if($service->prestataire->city)
-                                        <div class="flex items-center gap-1 text-xs text-ink-400">
-                                            <x-app-icon name="map-pin" class="w-3 h-3" />
-                                            {{ $service->prestataire->city }}
-                                        </div>
-                                    @endif
+                                    <div class="flex items-center gap-1 text-xs text-ink-400" title="{{ $service->serves_nationwide ? 'Partout au Bénin' : implode(', ', $service->areasList()) }}">
+                                        <x-app-icon name="map-pin" class="w-3 h-3" />
+                                        {{ $service->areasLabel() }}
+                                    </div>
                                 </div>
                             </div>
 

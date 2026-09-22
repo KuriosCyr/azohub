@@ -69,6 +69,7 @@ class ServiceController extends Controller
             'cover_image' => 'required|image|max:5120', // 5MB
             'portfolio.*' => 'nullable|image|max:5120',
             'tags' => 'nullable|string',
+            ...$this->areaRules($request),
         ], [
             'category_id.required' => 'La catégorie est obligatoire.',
             'title.required' => 'Le titre est obligatoire.',
@@ -79,7 +80,7 @@ class ServiceController extends Controller
             'cover_image.required' => 'L\'image de couverture est obligatoire.',
             'cover_image.image' => 'Le fichier doit être une image.',
             'cover_image.max' => 'L\'image ne doit pas dépasser 5 MB.',
-        ]);
+        ] + $this->areaMessages());
 
         // Upload cover image
         $coverImagePath = $request->file('cover_image')->store('services/covers', 'public');
@@ -95,6 +96,7 @@ class ServiceController extends Controller
             'price_type' => $validated['price_type'],
             'delivery_time' => $validated['delivery_time'],
             'city' => Auth::user()->city,
+            ...$this->areaAttributes($request, $validated),
             'cover_image' => $coverImagePath,
             'tags' => $this->parseTags($validated['tags'] ?? null),
             // Tout nouveau service passe d'abord par la modération avant d'être public.
@@ -169,10 +171,12 @@ class ServiceController extends Controller
             'portfolio.*' => 'nullable|image|max:5120',
             'tags' => 'nullable|string',
             'is_active' => 'boolean',
-        ]);
+            ...$this->areaRules($request),
+        ], $this->areaMessages());
 
         // Tags (le champ vide efface les tags : isset() les laissait inchangés)
         $validated['tags'] = $this->parseTags($validated['tags'] ?? null);
+        $validated = $this->areaAttributes($request, $validated) + $validated;
 
         // Le contenu texte est comparé AVANT tout envoi de fichier : un refus (ci-dessous)
         // ne doit pas laisser d'images orphelines sur le disque.
@@ -316,6 +320,35 @@ class ServiceController extends Controller
      * Bloque la création si le prestataire a atteint le nombre de services
      * autorisé par son plan d'abonnement (null = illimité).
      */
+    // Zone d'intervention : au moins une commune du Bénin, ou « tout le Bénin ».
+    private function areaRules(Request $request): array
+    {
+        return [
+            'serves_nationwide' => 'boolean',
+            'service_areas' => [\Illuminate\Validation\Rule::requiredIf(fn () => !$request->boolean('serves_nationwide')), 'nullable', 'array', 'max:80'],
+            'service_areas.*' => ['string', \Illuminate\Validation\Rule::in(Service::communes())],
+        ];
+    }
+
+    private function areaMessages(): array
+    {
+        return [
+            'service_areas.required' => 'Choisissez au moins une commune, ou cochez « Tout le Bénin ».',
+            'service_areas.*.in' => 'Une des communes choisies n\'existe pas.',
+        ];
+    }
+
+    // « Tout le Bénin » prime : la liste de communes est alors vidée.
+    private function areaAttributes(Request $request, array $validated): array
+    {
+        $nationwide = $request->boolean('serves_nationwide');
+
+        return [
+            'serves_nationwide' => $nationwide,
+            'service_areas' => $nationwide ? null : array_values(array_unique($validated['service_areas'] ?? [])),
+        ];
+    }
+
     // "plomberie, Urgent ,,plomberie" -> ['plomberie', 'Urgent'] : sans doublon ni vide, 10 tags de 30 caractères max.
     private function parseTags(?string $raw): ?array
     {

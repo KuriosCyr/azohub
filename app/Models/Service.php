@@ -24,7 +24,8 @@ class Service extends Model
         'price_type',
         'delivery_time',
         'city',
-        'service_area',
+        'service_areas',
+        'serves_nationwide',
         'cover_image',
         'tags',
         'rating',
@@ -47,6 +48,8 @@ class Service extends Model
         'orders_count' => 'integer',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'serves_nationwide' => 'boolean',
+        'service_areas' => 'array',
         'reviewed_at' => 'datetime',
         'tags' => 'array',
     ];
@@ -109,6 +112,50 @@ class Service extends Model
             && $this->is_active
             && $this->prestataire !== null
             && $this->prestataire->is_active !== false;
+    }
+
+    // Liste à plat des 77 communes du Bénin (config/communes.php), triée : sert de référence pour
+    // valider et afficher les zones d'intervention.
+    public static function communes(): array
+    {
+        $all = collect(config('communes', []))->flatten()->unique()->values()->all();
+        sort($all);
+
+        return $all;
+    }
+
+    // Communes desservies (vide si « tout le Bénin »). Un ancien service sans zone se limite à sa ville.
+    public function areasList(): array
+    {
+        if ($this->serves_nationwide) {
+            return [];
+        }
+
+        if (!empty($this->service_areas)) {
+            return array_values($this->service_areas);
+        }
+
+        $city = $this->city ?: $this->prestataire?->city;
+
+        return $city ? [$city] : [];
+    }
+
+    // Libellé court pour les cartes : « Cotonou, Ouidah +2 » ou « Partout au Bénin ».
+    public function areasLabel(): string
+    {
+        if ($this->serves_nationwide) {
+            return 'Partout au Bénin';
+        }
+
+        $areas = $this->areasList();
+
+        if (!$areas) {
+            return 'Bénin';
+        }
+
+        $extra = count($areas) - 2;
+
+        return implode(', ', array_slice($areas, 0, 2)) . ($extra > 0 ? ' +' . $extra : '');
     }
 
     // Les tags sont recherchés par LIKE : on stocke le JSON sans échapper les accents (\u00e9),

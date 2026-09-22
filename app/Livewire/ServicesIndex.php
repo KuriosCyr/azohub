@@ -128,13 +128,19 @@ class ServicesIndex extends Component
             });
         }
 
-        // Filtre par ville : ville du prestataire OU du service, ou l'une de ses zones d'intervention.
+        // Filtre par ville : le service couvre cette commune (zones d'intervention), ou tout le Bénin.
+        // Un ancien service sans zone définie se limite à sa ville (celle du service, sinon du prestataire).
         if (!empty($this->city)) {
             $query->where(function ($q) {
-                $q->where('services.city', $this->city)
-                  ->orWhereHas('prestataire', function ($p) {
-                      $p->where('city', $this->city)
-                        ->orWhereJsonContains('service_areas', $this->city);
+                $q->where('services.serves_nationwide', true)
+                  ->orWhereJsonContains('services.service_areas', $this->city)
+                  ->orWhere(function ($legacy) {
+                      $legacy->whereNull('services.service_areas')
+                          ->where('services.serves_nationwide', false)
+                          ->where(function ($c) {
+                              $c->where('services.city', $this->city)
+                                ->orWhereHas('prestataire', fn ($p) => $p->where('city', $this->city));
+                          });
                   });
             });
         }
@@ -154,6 +160,12 @@ class ServicesIndex extends Component
 
         // Tri : priorité au plan payant d'abord, puis le critère choisi par l'utilisateur
         $query->orderBy('plan_priority', 'desc');
+
+        // Tri par défaut avec une ville : les services locaux passent avant ceux « partout au Bénin »
+        // (à niveau d'abonnement égal). Un tri explicite (prix, note…) reste respecté tel quel.
+        if (!empty($this->city) && $this->sortBy === 'recent') {
+            $query->orderBy('services.serves_nationwide', 'asc');
+        }
 
         switch ($this->sortBy) {
             case 'popular':

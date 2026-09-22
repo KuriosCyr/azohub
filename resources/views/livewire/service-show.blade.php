@@ -51,7 +51,7 @@
                                 </span>
                                 <span class="flex items-center gap-1">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    {{ $service->prestataire->city }}
+                                    {{ $service->areasLabel() }}
                                 </span>
                             </div>
                         </div>
@@ -108,6 +108,22 @@
                     <h2 class="text-2xl font-serif font-medium mb-6">À propos de ce service</h2>
                     <div class="prose prose-lg max-w-none text-ink-700 leading-relaxed">
                         {!! nl2br(e($service->description)) !!}
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-ink-100">
+                        <p class="text-sm font-bold text-ink-700 mb-3">Zone d'intervention :</p>
+                        @if($service->serves_nationwide)
+                            <span class="inline-flex items-center gap-1.5 bg-forest-600/10 text-forest-700 px-4 py-2 rounded-full text-sm font-semibold">
+                                <x-app-icon name="map-pin" class="w-4 h-4" /> Partout au Bénin
+                            </span>
+                        @else
+                            <div class="flex flex-wrap gap-2">
+                                @foreach($service->areasList() as $area)
+                                    <a href="{{ route('services.index', ['city' => $area]) }}"
+                                       class="bg-ink-100/40 text-ink-700 hover:bg-ink-100/70 px-3 py-1.5 rounded-full text-sm font-semibold transition">{{ $area }}</a>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
 
                     @if($service->tags && count($service->tags) > 0)
