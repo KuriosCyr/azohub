@@ -495,10 +495,14 @@
                             <img src="{{ $otherUser->avatar ? Storage::url($otherUser->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($otherUser->name) }}"
                                 alt="{{ $otherUser->name }}"
                                 class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-ink-100">
-                            <p class="font-bold text-ink-900">{{ $otherUser->name }}</p>
+                            @if($userRole === 'prestataire' && $otherUser->isClient())
+                                <a href="{{ route('client.profile', $otherUser->slug) }}" class="font-bold text-ink-900 hover:text-terracotta-600 transition">{{ $otherUser->name }}</a>
+                            @else
+                                <p class="font-bold text-ink-900">{{ $otherUser->name }}</p>
+                            @endif
                             <p class="text-sm text-ink-400">{{ $otherUser->city ?? 'Bénin' }}</p>
 
-                            @if($userRole === 'client' && $otherUser->isPrestataire())
+                            @if($otherUser->total_reviews > 0)
                             <div class="flex items-center justify-center gap-1 mt-2">
 <x-app-icon name="star" class="w-4 h-4 inline-block text-ochre-500" />
                                 <span class="font-bold">{{ number_format($otherUser->rating, 1) }}</span>

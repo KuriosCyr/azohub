@@ -18,6 +18,7 @@ use App\Livewire\ProposalAccept;
 use App\Livewire\ConversationsIndex;
 use App\Livewire\ConversationShow;
 use App\Livewire\CustomOfferAccept;
+use App\Livewire\ClientProfile;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\OrderController;
@@ -123,6 +124,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('services/{service}/toggle', [ServiceController::class, 'toggleActive'])->name('services.toggle');
         Route::post('services/{service}/sponsor', [ServiceController::class, 'toggleSponsored'])->name('services.sponsor');
     });
+
+    // Mini profil client : réservé aux prestataires ayant déjà échangé ou collaboré avec ce
+    // client (vérifié dans ClientProfile::mount), jamais public — contrairement au profil prestataire.
+    Route::get('/clients/{client:slug}', ClientProfile::class)
+        ->middleware('prestataire')
+        ->name('client.profile');
 
     // ============================================
     // GESTION COMMANDES

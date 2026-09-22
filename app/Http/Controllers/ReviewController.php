@@ -114,6 +114,10 @@ class ReviewController extends Controller
 
             // Mise à jour du service (une commande négociée/offre personnalisée n'en a pas)
             $order->service?->updateRating();
+        } else {
+            // Le prestataire note le client : sa note n'est visible que par les prestataires
+            // avec qui il a échangé (voir ClientProfile), mais elle est calculée dès maintenant.
+            $order->client->updateRating();
         }
 
         $review->reviewee->notify(new NewReviewReceived($review));

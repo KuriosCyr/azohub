@@ -255,16 +255,19 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     }
 
     /**
-     * Mettre à jour la note moyenne du prestataire
+     * Mettre à jour la note moyenne (prestataire noté par ses clients, ou client noté par les
+     * prestataires avec qui il a travaillé — même mécanique, juste le sens de l'avis qui change).
      */
     public function updateRating()
     {
-        if (!$this->isPrestataire()) {
+        if (!in_array($this->role, ['prestataire', 'client'], true)) {
             return;
         }
 
+        $reviewType = $this->isPrestataire() ? 'client_to_prestataire' : 'prestataire_to_client';
+
         $reviews = $this->receivedReviews()
-            ->where('review_type', 'client_to_prestataire')
+            ->where('review_type', $reviewType)
             ->visible()
             ->get();
 
