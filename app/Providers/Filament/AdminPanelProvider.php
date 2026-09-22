@@ -65,6 +65,15 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => Blade::render('@livewireStyles @livewireScripts'),
             )
 
+            // Même correctif que resources/js/app.js côté site public (voir ce fichier) : sans lui,
+            // un retour en arrière du navigateur peut réafficher une page Filament restaurée depuis
+            // le bfcache (donc jamais réellement rechargée depuis le serveur), avec un DOM figé dans
+            // l'état d'avant un précédent correctif — symptôme identique à un script qui ne tourne pas.
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => '<script>window.addEventListener("pageshow",e=>{if(e.persisted)location.reload()});</script>',
+            )
+
             // Thème : clair par défaut, dark mode disponible
             ->darkMode(true)
             ->defaultThemeMode(ThemeMode::Light)
