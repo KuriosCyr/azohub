@@ -1,84 +1,137 @@
 <div>
-    {{-- Header avec stats --}}
+    {{-- Header --}}
     <div class="bg-ink-900 text-cream-50">
-        <div class="container mx-auto px-4 py-10">
-            <div class="flex items-start justify-between mb-8">
+        <div class="container mx-auto px-4 pt-10 pb-16">
+            <div class="flex items-start justify-between mb-8 flex-wrap gap-4">
                 <div>
                     <p class="text-cream-100/60 text-sm font-medium mb-1">Tableau de bord</p>
-                    <h1 class="text-3xl font-serif font-medium">Bienvenue, {{ Auth::user()->name }}</h1>
+                    <h1 class="text-3xl font-serif font-medium">Bonjour, {{ Str::before(Auth::user()->name, ' ') }}</h1>
+                    <p class="text-cream-100/65 text-sm mt-2">Voici où en est votre activité aujourd'hui.</p>
                 </div>
-                <a href="{{ route('prestataire.services.create') }}"
-                   class="inline-flex items-center gap-2 bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold px-5 py-2.5 rounded-lg transition text-sm shadow-lg">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                    Nouveau service
-                </a>
-            </div>
-
-            {{-- Stats Cards --}}
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {{-- Portefeuille --}}
-                <a href="{{ route('prestataire.wallet') }}" class="bg-cream-50/10 backdrop-blur-sm rounded-lg p-5 border border-cream-50/10 hover:bg-cream-50/20 transition">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-10 h-10 bg-cream-50/10 rounded-xl flex items-center justify-center">
-                            <svg class="w-5 h-5 text-ochre-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                            </svg>
-                        </div>
-                        <span class="text-cream-100/60 text-xs font-semibold uppercase tracking-wide">Portefeuille</span>
-                    </div>
-                    <p class="text-3xl font-bold text-cream-50">{{ number_format($stats['wallet_balance'], 0, ',', ' ') }}</p>
-                    <p class="text-cream-100/60 text-xs mt-0.5">FCFA disponible</p>
-                </a>
-
-                {{-- Commandes en cours --}}
-                <div class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-10 h-10 bg-ochre-500/15 rounded-xl flex items-center justify-center">
-                            <svg class="w-5 h-5 text-ochre-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <span class="text-ink-300 text-xs font-semibold uppercase tracking-wide">En cours</span>
-                    </div>
-                    <p class="text-3xl font-bold text-ink-900">{{ $stats['pending_orders'] + $stats['in_progress_orders'] }}</p>
-                    <p class="text-ink-400 text-xs mt-0.5">Commandes actives</p>
-                </div>
-
-                {{-- Terminées --}}
-                <div class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-10 h-10 bg-forest-600/10 rounded-xl flex items-center justify-center">
-                            <svg class="w-5 h-5 text-forest-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <span class="text-ink-300 text-xs font-semibold uppercase tracking-wide">Terminées</span>
-                    </div>
-                    <p class="text-3xl font-bold text-ink-900">{{ $stats['completed_orders'] }}</p>
-                    <p class="text-ink-400 text-xs mt-0.5">Missions réussies</p>
-                </div>
-
-                {{-- Note moyenne --}}
-                <div class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="w-10 h-10 bg-ochre-500/15 rounded-xl flex items-center justify-center">
-                            <svg class="w-5 h-5 text-ochre-500" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                            </svg>
-                        </div>
-                        <span class="text-ink-300 text-xs font-semibold uppercase tracking-wide">Note</span>
-                    </div>
-                    <p class="text-3xl font-bold text-ink-900">{{ number_format($stats['rating'], 1) }}</p>
-                    <p class="text-ink-400 text-xs mt-0.5">{{ $stats['total_reviews'] }} avis</p>
-                </div>
+                @if($hasFreeServiceSlot)
+                    <a href="{{ route('prestataire.services.create') }}"
+                       class="inline-flex items-center gap-2 bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold px-5 py-2.5 rounded-lg transition text-sm shadow-lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                        Nouveau service
+                    </a>
+                @else
+                    <span class="inline-flex items-center gap-2 bg-cream-50/10 text-cream-100/50 font-bold px-5 py-2.5 rounded-lg text-sm cursor-not-allowed"
+                          title="Limite de services atteinte ({{ $slotsUsed }}/{{ $slotsMax }})">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                        Nouveau service
+                    </span>
+                @endif
             </div>
         </div>
     </div>
 
-    {{-- Contenu principal --}}
-    <div class="container mx-auto px-4 py-8">
-        {{-- Niveau & Commission --}}
-        <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm p-6 mb-6">
+    <div class="container mx-auto px-4 -mt-10 pb-10 flex flex-col gap-6">
+
+        {{-- A FAIRE MAINTENANT --}}
+        <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-lg px-6">
+            <div class="flex items-baseline justify-between pt-4 pb-3">
+                <h2 class="text-base font-bold text-ink-900">À faire maintenant</h2>
+                <span class="text-xs text-ink-400">
+                    {{ count($todoItems) > 0 ? count($todoItems) . ' élément(s) demandent votre attention' : '' }}
+                </span>
+            </div>
+
+            @forelse($todoItems as $item)
+                @php
+                    [$chipBg, $iconColor, $icon] = match($item['type']) {
+                        'delivery' => ['bg-ochre-500/15', '#CA8A04', 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
+                        'revision' => ['bg-clay-500/15', '#0EA5E9', 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'],
+                        'messages' => ['bg-terracotta-50', '#2563EB', 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.93 7.93 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'],
+                        'rejected' => ['bg-red-100', '#DC2626', 'M6 18L18 6M6 6l12 12'],
+                    };
+                    $href = match($item['type']) {
+                        'delivery', 'revision' => '#commandes',
+                        'messages' => route('conversations.index'),
+                        'rejected' => route('prestataire.services.index', ['status' => 'pending']),
+                    };
+                @endphp
+                <a href="{{ $href }}" class="flex items-center gap-3.5 py-3.5 border-t border-ink-100 hover:bg-ink-100/20 -mx-2 px-2 rounded-lg transition">
+                    <div class="w-10 h-10 rounded-lg {{ $chipBg }} flex items-center justify-center flex-shrink-0">
+                        <svg class="w-[18px] h-[18px]" fill="none" stroke="{{ $iconColor }}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon }}"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-ink-900">{{ $item['title'] }}</p>
+                        @if($item['subtitle'])
+                            <p class="text-xs text-ink-400 mt-0.5 truncate">{{ $item['subtitle'] }}</p>
+                        @endif
+                    </div>
+                    <svg class="w-4 h-4 text-ink-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+            @empty
+                <div class="flex items-center gap-3 py-4 border-t border-ink-100">
+                    <div class="w-10 h-10 rounded-lg bg-forest-600/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-[18px] h-[18px] text-forest-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <p class="text-sm font-semibold text-ink-700">Rien à signaler, tout est à jour !</p>
+                </div>
+            @endforelse
+        </div>
+
+        {{-- STATS --}}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <a href="{{ route('prestataire.wallet') }}" class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 bg-ochre-500/15 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-ochre-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                    </div>
+                    <span class="text-ink-300 text-xs font-semibold uppercase tracking-wide">Portefeuille</span>
+                </div>
+                <p class="text-3xl font-bold text-ink-900">{{ number_format($stats['wallet_balance'], 0, ',', ' ') }}</p>
+                <p class="text-ink-400 text-xs mt-0.5">FCFA disponible</p>
+                @if($stats['pending_earnings'] > 0)
+                    <p class="text-ink-300 text-[11px] mt-1.5">+ {{ number_format($stats['pending_earnings'], 0, ',', ' ') }} FCFA en attente (escrow)</p>
+                @endif
+            </a>
+
+            <div class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 bg-ochre-500/15 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-ochre-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-ink-300 text-xs font-semibold uppercase tracking-wide">En cours</span>
+                </div>
+                <p class="text-3xl font-bold text-ink-900">{{ $stats['pending_orders'] + $stats['in_progress_orders'] }}</p>
+                <p class="text-ink-400 text-xs mt-0.5">Commandes actives</p>
+            </div>
+
+            <div class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 bg-forest-600/10 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-forest-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-ink-300 text-xs font-semibold uppercase tracking-wide">Terminées</span>
+                </div>
+                <p class="text-3xl font-bold text-ink-900">{{ $stats['completed_orders'] }}</p>
+                <p class="text-ink-400 text-xs mt-0.5">Missions réussies</p>
+            </div>
+
+            <div class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 bg-ochre-500/15 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-ochre-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                    </div>
+                    <span class="text-ink-300 text-xs font-semibold uppercase tracking-wide">Note</span>
+                </div>
+                <p class="text-3xl font-bold text-ink-900">{{ number_format($stats['rating'], 1) }}</p>
+                <p class="text-ink-400 text-xs mt-0.5">{{ $stats['total_reviews'] }} avis</p>
+            </div>
+        </div>
+
+        {{-- MON ACTIVITE --}}
+        <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm p-6">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-xl flex items-center justify-center
@@ -89,7 +142,7 @@
                     </div>
                     <div>
                         <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-0.5">Votre niveau</p>
-                        <p class="text-lg font-bold text-ink-900">{{ ['nouveau' => 'Nouveau', 'confirme' => 'Confirmé', 'expert' => 'Expert'][Auth::user()->level] ?? ucfirst(Auth::user()->level) }}</p>
+                        <p class="text-lg font-bold text-ink-900">{{ Auth::user()->level_label }}</p>
                     </div>
                 </div>
                 <div class="text-right">
@@ -115,118 +168,149 @@
                     </div>
                 </div>
             @endif
-        </div>
 
-        {{-- Onglets --}}
-        <div class="bg-cream-50 rounded-lg shadow-sm border border-ink-100 mb-6 overflow-hidden">
-            <div class="flex">
-                @foreach(['overview' => 'Vue d\'ensemble', 'services' => 'Mes services (' . $stats['services_count'] . ')', 'orders' => 'Commandes', 'reviews' => 'Avis (' . $stats['total_reviews'] . ')'] as $tab => $label)
-                    <button wire:click="setTab('{{ $tab }}')"
-                            class="flex-1 px-4 py-3.5 font-bold text-sm transition border-b-2
-                            {{ $activeTab === $tab ? 'border-terracotta-600 text-terracotta-700 bg-terracotta-50/50' : 'border-transparent text-ink-500 hover:text-ink-700 hover:bg-ink-100/30' }}">
-                        {{ $label }}
-                    </button>
-                @endforeach
-            </div>
-        </div>
-
-        {{-- Vue d'ensemble --}}
-        @if($activeTab === 'overview')
-            <div class="grid lg:grid-cols-2 gap-6">
-                {{-- Commandes actives --}}
-                <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-ink-100 flex items-center justify-between">
-                        <h2 class="text-base font-bold text-ink-900">Commandes actives</h2>
-                        <span class="bg-ochre-500/15 text-ink-900 px-3 py-1 rounded-full font-bold text-xs">
-                            {{ $activeOrders->count() }}
-                        </span>
-                    </div>
-
-                    <div class="divide-y divide-ink-100">
-                        @forelse($activeOrders as $order)
-                            <a href="{{ route('orders.show', $order) }}"
-                               class="block px-6 py-4 hover:bg-ink-100/30 transition">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div class="flex-1 min-w-0 mr-3">
-                                        <p class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</p>
-                                        <p class="text-xs text-ink-400">Client : {{ $order->client->name }}</p>
-                                    </div>
-                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold flex-shrink-0
-                                        {{ $order->status === 'paid' ? 'bg-terracotta-50 text-terracotta-700' : 'bg-ochre-500/15 text-ink-900' }}">
-                                        {{ $order->status === 'paid' ? 'Nouvelle' : 'En cours' }}
-                                    </span>
-                                </div>
-                                <div class="flex justify-between items-center text-xs">
-                                    <span class="text-ink-400">{{ $order->created_at->diffForHumans() }}</span>
-                                    <span class="font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} FCFA</span>
-                                </div>
-                            </a>
-                        @empty
-                            <div class="px-6 py-12 text-center">
-                                <div class="w-14 h-14 rounded-full bg-ink-100/30 flex items-center justify-center mx-auto mb-3">
-                                    <svg class="w-7 h-7 text-ink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                                    </svg>
-                                </div>
-                                <p class="text-ink-500 text-sm font-medium mb-3">Aucune commande active</p>
-                                <a href="{{ route('prestataire.services.index') }}" class="text-terracotta-600 hover:text-terracotta-700 font-bold text-sm">
-                                    Gérer mes services →
-                                </a>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-
-                {{-- Avis récents --}}
-                <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-ink-100 flex items-center justify-between">
-                        <h2 class="text-base font-bold text-ink-900">Avis récents</h2>
-                        <div class="flex items-center gap-1">
-                            <svg class="w-4 h-4 text-ochre-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                            <span class="font-bold text-ink-900 text-sm">{{ number_format($stats['rating'], 1) }}</span>
+            <div class="grid sm:grid-cols-3 gap-5 mt-5 pt-5 border-t border-ink-100">
+                {{-- Places de services --}}
+                <div>
+                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5">Places de services</p>
+                    @if($slotsMax === null)
+                        <p class="text-sm font-bold text-ink-900">{{ $slotsUsed }} service(s) · illimité</p>
+                    @else
+                        <p class="text-sm font-bold text-ink-900 mb-1.5">{{ $slotsUsed }} / {{ $slotsMax }} utilisées</p>
+                        <div class="h-1.5 bg-ink-100 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full {{ $slotsUsed >= $slotsMax ? 'bg-red-500' : 'bg-ochre-500' }}"
+                                 style="width: {{ min(100, ($slotsUsed / max($slotsMax, 1)) * 100) }}%"></div>
                         </div>
-                    </div>
+                    @endif
+                </div>
 
-                    <div class="divide-y divide-ink-100">
-                        @forelse($recentReviews as $review)
-                            <div class="px-6 py-4">
-                                <div class="flex items-center gap-3 mb-2">
-                                    <img src="{{ $review->reviewer->avatar ? Storage::url($review->reviewer->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($review->reviewer->name) }}"
-                                         alt="{{ $review->reviewer->name }}"
-                                         class="w-9 h-9 rounded-full flex-shrink-0">
-                                    <div class="flex-1 min-w-0">
-                                        <p class="font-bold text-ink-900 text-sm">{{ $review->reviewer->name }}</p>
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex">
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    <svg class="w-3.5 h-3.5 {{ $i <= $review->rating ? 'text-ochre-500' : 'text-ink-200' }}" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                                @endfor
-                                            </div>
-                                            <span class="text-xs text-ink-400">{{ $review->created_at->diffForHumans() }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                @if($review->comment)
-                                    <p class="text-ink-500 text-xs bg-cream rounded-xl px-3 py-2">{{ $review->comment }}</p>
-                                @endif
-                            </div>
-                        @empty
-                            <div class="px-6 py-12 text-center">
-                                <div class="w-14 h-14 rounded-full bg-ochre-500/15 flex items-center justify-center mx-auto mb-3">
-                                    <svg class="w-7 h-7 text-ochre-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                </div>
-                                <p class="text-ink-500 text-sm font-medium">Aucun avis pour le moment</p>
-                            </div>
-                        @endforelse
+                {{-- Abonnement --}}
+                <div>
+                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5">Abonnement</p>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-terracotta-50 text-terracotta-700">
+                            Plan {{ $currentPlan->name ?? 'Gratuit' }}
+                        </span>
+                        @if($activeSubscription && (float) ($currentPlan->price ?? 0) > 0)
+                            <span class="text-xs text-ink-400">expire dans {{ max(0, now()->diffInDays($activeSubscription->ends_at, false)) }} j</span>
+                        @endif
                     </div>
+                    <a href="{{ route('prestataire.subscription') }}" class="text-xs font-bold text-terracotta-600 hover:text-terracotta-700 mt-1.5 inline-block">
+                        {{ (float) ($currentPlan->price ?? 0) > 0 ? 'Gérer mon abonnement →' : 'Passer à un plan supérieur →' }}
+                    </a>
+                </div>
+
+                {{-- Offre de bienvenue --}}
+                <div>
+                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5">Offre de bienvenue</p>
+                    @if($welcomePromoEndsAt)
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-ochre-500/15 text-ochre-600">Commission 10% active</span>
+                        <p class="text-xs text-ink-400 mt-1.5">Jusqu'au {{ $welcomePromoEndsAt->translatedFormat('d M Y') }}</p>
+                    @else
+                        <p class="text-sm text-ink-400">Terminée ou non applicable</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- LIENS RAPIDES --}}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <a href="{{ route('prestataire.services.index') }}" class="bg-cream-50 rounded-lg p-4 border border-ink-100 shadow-sm hover:shadow-md transition flex items-center gap-3">
+                <div class="w-10 h-10 bg-terracotta-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-[18px] h-[18px] text-terracotta-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-ink-900">Mes services</p>
+                    <p class="text-xs text-ink-400">{{ $stats['services_count'] }} service(s)</p>
+                </div>
+                <svg class="w-3.5 h-3.5 text-ink-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+
+            <a href="#commandes" class="bg-cream-50 rounded-lg p-4 border border-ink-100 shadow-sm hover:shadow-md transition flex items-center gap-3">
+                <div class="w-10 h-10 bg-ochre-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-[18px] h-[18px] text-ochre-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-ink-900">Commandes</p>
+                    <p class="text-xs text-ink-400">{{ $stats['total_orders'] }} au total</p>
+                </div>
+                <svg class="w-3.5 h-3.5 text-ink-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+
+            <a href="#avis" class="bg-cream-50 rounded-lg p-4 border border-ink-100 shadow-sm hover:shadow-md transition flex items-center gap-3">
+                <div class="w-10 h-10 bg-forest-600/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-[18px] h-[18px] text-forest-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-ink-900">Avis</p>
+                    <p class="text-xs text-ink-400">{{ $stats['total_reviews'] }} avis</p>
+                </div>
+                <svg class="w-3.5 h-3.5 text-ink-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+
+            <a href="{{ route('conversations.index') }}" class="bg-cream-50 rounded-lg p-4 border border-ink-100 shadow-sm hover:shadow-md transition flex items-center gap-3 relative">
+                <div class="w-10 h-10 bg-terracotta-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-[18px] h-[18px] text-terracotta-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.93 7.93 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-ink-900">Messages</p>
+                    <p class="text-xs text-ink-400">{{ $stats['unread_messages'] }} non lu(s)</p>
+                </div>
+                @if($stats['unread_messages'] > 0)
+                    <span class="w-2 h-2 rounded-full bg-red-600 absolute top-3.5 right-3.5"></span>
+                @endif
+            </a>
+        </div>
+
+        {{-- COMMANDES ACTIVES + REVENUS --}}
+        <div class="grid lg:grid-cols-2 gap-6">
+            <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-ink-100 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-ink-900">Commandes actives</h2>
+                    <span class="bg-ochre-500/15 text-ink-900 px-3 py-1 rounded-full font-bold text-xs">
+                        {{ $activeOrders->count() }}
+                    </span>
+                </div>
+
+                <div class="divide-y divide-ink-100">
+                    @forelse($activeOrders->take(5) as $order)
+                        <a href="{{ route('orders.show', $order) }}"
+                           class="block px-6 py-4 hover:bg-ink-100/30 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex-1 min-w-0 mr-3">
+                                    <p class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</p>
+                                    <p class="text-xs text-ink-400">Client : {{ $order->client->name }}</p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold flex-shrink-0
+                                    {{ $order->status === 'paid' ? 'bg-terracotta-50 text-terracotta-700' : 'bg-ochre-500/15 text-ink-900' }}">
+                                    {{ $order->status === 'paid' ? 'Nouvelle' : 'En cours' }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-ink-400">{{ $order->created_at->diffForHumans() }}</span>
+                                <span class="font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} FCFA</span>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="px-6 py-12 text-center">
+                            <div class="w-14 h-14 rounded-full bg-ink-100/30 flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-7 h-7 text-ink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                </svg>
+                            </div>
+                            <p class="text-ink-500 text-sm font-medium mb-3">Aucune commande active</p>
+                            <a href="{{ route('prestataire.services.index') }}" class="text-terracotta-600 hover:text-terracotta-700 font-bold text-sm">
+                                Gérer mes services →
+                            </a>
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
-            {{-- Graphique revenus --}}
-            <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm p-6 mt-6">
+            <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm p-6">
                 <div class="flex items-center justify-between mb-6">
                     <div>
-                        <h2 class="text-base font-bold text-ink-900">Revenus des 7 derniers jours</h2>
+                        <h2 class="text-base font-bold text-ink-900">Revenus des 30 derniers jours</h2>
                         <p class="text-xs text-ink-400 mt-0.5">Évolution de vos gains</p>
                     </div>
                     <div class="w-9 h-9 bg-terracotta-50 rounded-xl flex items-center justify-center">
@@ -235,223 +319,153 @@
                         </svg>
                     </div>
                 </div>
-                <div style="height: 250px; position: relative;">
+                <div style="height: 220px; position: relative;">
                     <canvas id="earningsChart"></canvas>
                 </div>
             </div>
-        @endif
+        </div>
 
-        {{-- Mes services --}}
-        @if($activeTab === 'services')
-            <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-ink-100 flex items-center justify-between">
-                    <h2 class="text-base font-bold text-ink-900">Mes services</h2>
-                    <a href="{{ route('prestataire.services.create') }}"
-                       class="inline-flex items-center gap-2 bg-ink-900 hover:bg-ink-700 text-cream-50 font-bold px-4 py-2 rounded-lg transition text-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                        Nouveau
+        {{-- AVIS RECENTS --}}
+        <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-bold text-ink-900">Avis récents</h2>
+                <a href="#avis" class="text-xs font-bold text-terracotta-600 hover:text-terracotta-700">Tout voir ({{ $stats['total_reviews'] }})</a>
+            </div>
+
+            @if($recentReviews->isEmpty())
+                <p class="text-ink-500 text-sm">Aucun avis pour le moment.</p>
+            @else
+                <div class="grid md:grid-cols-3 gap-4">
+                    @foreach($recentReviews as $review)
+                        <div class="bg-cream rounded-xl p-4">
+                            <div class="flex gap-0.5 mb-2">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <svg class="w-3.5 h-3.5 {{ $i <= $review->rating ? 'text-ochre-500' : 'text-ink-200' }}" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                @endfor
+                            </div>
+                            @if($review->comment)
+                                <p class="text-ink-700 text-xs leading-relaxed mb-2.5">« {{ Str::limit($review->comment, 110) }} »</p>
+                            @endif
+                            <p class="text-ink-400 text-[11px] font-bold">{{ $review->reviewer->name }} @if($review->order->service) · {{ $review->order->service->title }} @endif</p>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        {{-- TOUTES MES COMMANDES --}}
+        <div id="commandes" class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden scroll-mt-6">
+            <div class="px-6 py-4 border-b border-ink-100">
+                <h2 class="text-base font-bold text-ink-900">Toutes mes commandes</h2>
+            </div>
+
+            <div class="divide-y divide-ink-100">
+                @forelse($activeOrders->merge($recentCompletedOrders) as $order)
+                    <a href="{{ route('orders.show', $order) }}"
+                       class="block px-6 py-5 hover:bg-ink-100/30 transition">
+                        <div class="flex justify-between items-start gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2.5 mb-1">
+                                    <span class="font-bold text-ink-400 text-xs">#{{ $order->order_number }}</span>
+                                    @php
+                                        $statusMap = [
+                                            'paid'        => ['bg-terracotta-50 text-terracotta-700', 'Nouvelle'],
+                                            'in_progress' => ['bg-ochre-500/15 text-ink-900', 'En cours'],
+                                            'delivered'   => ['bg-clay-500/15 text-ink-900', 'Livrée'],
+                                            'completed'   => ['bg-forest-600/10 text-forest-700', 'Terminée'],
+                                            'cancelled'   => ['bg-red-100 text-red-800', 'Annulée'],
+                                        ];
+                                        [$badgeClass, $badgeLabel] = $statusMap[$order->status] ?? ['bg-ink-100 text-ink-700', ucfirst($order->status)];
+                                    @endphp
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">{{ $badgeLabel }}</span>
+                                </div>
+                                <p class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</p>
+                                <p class="text-xs text-ink-400 mt-0.5">Client : {{ $order->client->name }}</p>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-xl font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} F</p>
+                                <p class="text-xs text-ink-400 mt-0.5">{{ $order->created_at->format('d/m/Y') }}</p>
+                            </div>
+                        </div>
                     </a>
-                </div>
-
-                <div class="divide-y divide-ink-100">
-                    @forelse($recentServices as $service)
-                        <div class="px-6 py-5 hover:bg-ink-100/30 transition">
-                            <div class="flex gap-4">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                                    <x-service-cover :service="$service" class="w-full h-full object-cover" />
-                                </div>
-
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex justify-between items-start gap-3 mb-2">
-                                        <div class="min-w-0">
-                                            <span class="inline-block px-2.5 py-0.5 bg-terracotta-50 text-terracotta-700 text-xs font-bold rounded-full mb-1">
-                                                {{ $service->category->name }}
-                                            </span>
-                                            <h3 class="font-bold text-ink-900 text-sm truncate">{{ $service->title }}</h3>
-                                        </div>
-                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold flex-shrink-0 {{ $service->is_active ? 'bg-forest-600/10 text-forest-700' : 'bg-ink-100 text-ink-500' }}">
-                                            {{ $service->is_active ? 'Actif' : 'Inactif' }}
-                                        </span>
-                                    </div>
-
-                                    <div class="flex gap-5 text-xs mb-3">
-                                        <div>
-                                            <p class="text-ink-300">Prix</p>
-                                            <p class="font-bold text-ink-900">{{ number_format($service->price, 0, ',', ' ') }} FCFA</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-ink-300">Commandes</p>
-                                            <p class="font-bold text-ink-900">{{ $service->total_orders }}</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-ink-300">Note</p>
-                                            <div class="flex items-center gap-1">
-                                                <svg class="w-3.5 h-3.5 text-ochre-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                                <span class="font-bold text-ink-900">{{ number_format($service->rating, 1) }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex gap-2">
-                                        <a href="{{ route('services.show', $service->slug) }}"
-                                           class="inline-flex items-center gap-1.5 bg-ink-100 hover:bg-ink-200 text-ink-700 font-bold px-3.5 py-1.5 rounded-lg transition text-xs">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                            Voir
-                                        </a>
-                                        <a href="{{ route('prestataire.services.edit', $service) }}"
-                                           class="inline-flex items-center gap-1.5 bg-ink-900 hover:bg-ink-700 text-cream-50 font-bold px-3.5 py-1.5 rounded-lg transition text-xs">
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                            Modifier
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
+                @empty
+                    <div class="px-6 py-16 text-center">
+                        <div class="w-16 h-16 rounded-full bg-ink-100/30 flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-ink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                            </svg>
                         </div>
-                    @empty
-                        <div class="px-6 py-16 text-center">
-                            <div class="w-16 h-16 rounded-full bg-ink-100/30 flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-8 h-8 text-ink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
-                                </svg>
-                            </div>
-                            <h3 class="text-lg font-bold text-ink-900 mb-2">Aucun service créé</h3>
-                            <p class="text-ink-500 text-sm mb-6">Créez votre premier service pour attirer des clients !</p>
-                            <a href="{{ route('prestataire.services.create') }}"
-                               class="inline-flex items-center gap-2 bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold px-6 py-3 rounded-lg transition text-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
-                                Créer mon premier service
-                            </a>
-                        </div>
-                    @endforelse
-                </div>
-
-                @if($recentServices->count() > 0)
-                    <div class="px-6 py-4 border-t border-ink-100 text-center">
-                        <a href="{{ route('prestataire.services.index') }}" class="text-terracotta-600 hover:text-terracotta-700 font-bold text-sm">
-                            Voir tous mes services ({{ $stats['services_count'] }}) →
-                        </a>
+                        <p class="text-ink-500 font-medium">Aucune commande pour le moment</p>
                     </div>
-                @endif
+                @endforelse
             </div>
-        @endif
+        </div>
 
-        {{-- Commandes --}}
-        @if($activeTab === 'orders')
-            <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-ink-100">
-                    <h2 class="text-base font-bold text-ink-900">Toutes mes commandes</h2>
+        {{-- TOUS MES AVIS --}}
+        <div id="avis" class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden scroll-mt-6">
+            <div class="px-6 py-4 border-b border-ink-100 flex items-center justify-between">
+                <h2 class="text-base font-bold text-ink-900">Tous mes avis</h2>
+                <div class="flex items-center gap-1.5 bg-ochre-500/15 px-3 py-1.5 rounded-full">
+                    <svg class="w-4 h-4 text-ochre-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    <span class="font-bold text-ink-900 text-sm">{{ number_format($stats['rating'], 1) }}/5</span>
                 </div>
+            </div>
 
-                <div class="divide-y divide-ink-100">
-                    @forelse($activeOrders->merge($recentCompletedOrders) as $order)
-                        <a href="{{ route('orders.show', $order) }}"
-                           class="block px-6 py-5 hover:bg-ink-100/30 transition">
-                            <div class="flex justify-between items-start gap-3">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2.5 mb-1">
-                                        <span class="font-bold text-ink-400 text-xs">#{{ $order->order_number }}</span>
-                                        @php
-                                            $statusMap = [
-                                                'paid'        => ['bg-terracotta-50 text-terracotta-700', 'Nouvelle'],
-                                                'in_progress' => ['bg-ochre-500/15 text-ink-900', 'En cours'],
-                                                'delivered'   => ['bg-clay-500/15 text-ink-900', 'Livrée'],
-                                                'completed'   => ['bg-forest-600/10 text-forest-700', 'Terminée'],
-                                                'cancelled'   => ['bg-red-100 text-red-800', 'Annulée'],
-                                            ];
-                                            [$badgeClass, $badgeLabel] = $statusMap[$order->status] ?? ['bg-ink-100 text-ink-700', ucfirst($order->status)];
-                                        @endphp
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">{{ $badgeLabel }}</span>
+            <div class="divide-y divide-ink-100">
+                @forelse($allReviews as $review)
+                    <div class="px-6 py-5">
+                        <div class="flex gap-4">
+                            <img src="{{ $review->reviewer->avatar ? Storage::url($review->reviewer->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($review->reviewer->name) }}"
+                                 alt="{{ $review->reviewer->name }}"
+                                 class="w-11 h-11 rounded-full flex-shrink-0">
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <p class="font-bold text-ink-900 text-sm">{{ $review->reviewer->name }}</p>
+                                        <p class="text-xs text-ink-400">{{ $review->order->service->title ?? '—' }}</p>
                                     </div>
-                                    <p class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</p>
-                                    <p class="text-xs text-ink-400 mt-0.5">Client : {{ $order->client->name }}</p>
+                                    <span class="text-xs text-ink-400">{{ $review->created_at->format('d/m/Y') }}</span>
                                 </div>
-                                <div class="text-right flex-shrink-0">
-                                    <p class="text-xl font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} F</p>
-                                    <p class="text-xs text-ink-400 mt-0.5">{{ $order->created_at->format('d/m/Y') }}</p>
-                                </div>
-                            </div>
-                        </a>
-                    @empty
-                        <div class="px-6 py-16 text-center">
-                            <div class="w-16 h-16 rounded-full bg-ink-100/30 flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-8 h-8 text-ink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                                </svg>
-                            </div>
-                            <p class="text-ink-500 font-medium">Aucune commande pour le moment</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        @endif
 
-        {{-- Avis --}}
-        @if($activeTab === 'reviews')
-            <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-ink-100 flex items-center justify-between">
-                    <h2 class="text-base font-bold text-ink-900">Tous mes avis</h2>
-                    <div class="flex items-center gap-1.5 bg-ochre-500/15 px-3 py-1.5 rounded-full">
-                        <svg class="w-4 h-4 text-ochre-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                        <span class="font-bold text-ink-900 text-sm">{{ number_format($stats['rating'], 1) }}/5</span>
+                                <div class="flex items-center gap-4 mb-3 flex-wrap">
+                                    <div>
+                                        <p class="text-xs text-ink-400 mb-1">Note globale</p>
+                                        <div class="flex">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <svg class="w-4 h-4 {{ $i <= $review->rating ? 'text-ochre-500' : 'text-ink-200' }}" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                    <div class="text-xs">
+                                        <span class="text-ink-400">Qualité : </span>
+                                        <span class="font-bold text-ink-700">{{ $review->quality_rating }}/5</span>
+                                    </div>
+                                    <div class="text-xs">
+                                        <span class="text-ink-400">Communication : </span>
+                                        <span class="font-bold text-ink-700">{{ $review->communication_rating }}/5</span>
+                                    </div>
+                                    <div class="text-xs">
+                                        <span class="text-ink-400">Délais : </span>
+                                        <span class="font-bold text-ink-700">{{ $review->timeliness_rating }}/5</span>
+                                    </div>
+                                </div>
+
+                                @if($review->comment)
+                                    <p class="text-ink-500 text-sm bg-cream p-3 rounded-xl">{{ $review->comment }}</p>
+                                @endif
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="divide-y divide-ink-100">
-                    @forelse($recentReviews as $review)
-                        <div class="px-6 py-5">
-                            <div class="flex gap-4">
-                                <img src="{{ $review->reviewer->avatar ? Storage::url($review->reviewer->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($review->reviewer->name) }}"
-                                     alt="{{ $review->reviewer->name }}"
-                                     class="w-11 h-11 rounded-full flex-shrink-0">
-                                <div class="flex-1">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <div>
-                                            <p class="font-bold text-ink-900 text-sm">{{ $review->reviewer->name }}</p>
-                                            <p class="text-xs text-ink-400">{{ $review->order->service->title }}</p>
-                                        </div>
-                                        <span class="text-xs text-ink-400">{{ $review->created_at->format('d/m/Y') }}</span>
-                                    </div>
-
-                                    <div class="flex items-center gap-4 mb-3">
-                                        <div>
-                                            <p class="text-xs text-ink-400 mb-1">Note globale</p>
-                                            <div class="flex">
-                                                @for($i = 1; $i <= 5; $i++)
-                                                    <svg class="w-4 h-4 {{ $i <= $review->rating ? 'text-ochre-500' : 'text-ink-200' }}" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                                @endfor
-                                            </div>
-                                        </div>
-                                        <div class="text-xs">
-                                            <span class="text-ink-400">Qualité : </span>
-                                            <span class="font-bold text-ink-700">{{ $review->quality_rating }}/5</span>
-                                        </div>
-                                        <div class="text-xs">
-                                            <span class="text-ink-400">Communication : </span>
-                                            <span class="font-bold text-ink-700">{{ $review->communication_rating }}/5</span>
-                                        </div>
-                                        <div class="text-xs">
-                                            <span class="text-ink-400">Délais : </span>
-                                            <span class="font-bold text-ink-700">{{ $review->timeliness_rating }}/5</span>
-                                        </div>
-                                    </div>
-
-                                    @if($review->comment)
-                                        <p class="text-ink-500 text-sm bg-cream p-3 rounded-xl">{{ $review->comment }}</p>
-                                    @endif
-                                </div>
-                            </div>
+                @empty
+                    <div class="px-6 py-16 text-center">
+                        <div class="w-16 h-16 rounded-full bg-ochre-500/15 flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-ochre-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                         </div>
-                    @empty
-                        <div class="px-6 py-16 text-center">
-                            <div class="w-16 h-16 rounded-full bg-ochre-500/15 flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-8 h-8 text-ochre-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                            </div>
-                            <p class="text-ink-500 font-medium">Aucun avis pour le moment</p>
-                        </div>
-                    @endforelse
-                </div>
+                        <p class="text-ink-500 font-medium">Aucun avis pour le moment</p>
+                    </div>
+                @endforelse
             </div>
-        @endif
+        </div>
     </div>
 
     @push('scripts')
@@ -463,17 +477,17 @@
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: @json($weeklyEarnings['labels']),
+                        labels: @json($monthlyEarnings['labels']),
                         datasets: [{
                             label: 'Revenus (FCFA)',
-                            data: @json($weeklyEarnings['data']),
+                            data: @json($monthlyEarnings['data']),
                             borderColor: 'rgb(30, 58, 138)',
                             backgroundColor: 'rgba(30, 58, 138, 0.06)',
                             tension: 0.4,
                             fill: true,
-                            borderWidth: 2.5,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
                             pointBackgroundColor: 'rgb(30, 58, 138)',
                             pointBorderColor: '#fff',
                             pointBorderWidth: 2
@@ -505,7 +519,7 @@
                             },
                             x: {
                                 grid: { display: false },
-                                ticks: { font: { size: 11 } }
+                                ticks: { font: { size: 11 }, maxTicksLimit: 8 }
                             }
                         }
                     }
