@@ -56,8 +56,12 @@ class AdminPanelProvider extends PanelProvider
             // Livewire (leur layout, à nous inconnu, ne l'injecte pas manuellement), donc aucun wire:*
             // n'y fonctionne — symptôme observé : les indicateurs de chargement restent bloqués visibles
             // en permanence sur la page de connexion, avant même toute soumission.
+            // SCRIPTS_BEFORE (pas BODY_END) est indispensable : le layout Filament appelle
+            // @filamentScripts juste après ce hook, et ce script suppose Livewire/Alpine déjà chargés.
+            // Placé trop tard (BODY_END), le script Livewire arrivait après celui de Filament : même
+            // symptôme, juste Filament qui échouait à trouver Alpine au lieu de Livewire à trouver la page.
             ->renderHook(
-                PanelsRenderHook::BODY_END,
+                PanelsRenderHook::SCRIPTS_BEFORE,
                 fn (): string => Blade::render('@livewireStyles @livewireScripts'),
             )
 
