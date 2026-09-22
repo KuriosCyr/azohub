@@ -29,6 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile() // Page "Modifier le profil" (nom, e-mail, mot de passe) accessible depuis le menu utilisateur.
 
             // Palette de couleurs Azohub
             ->colors([
