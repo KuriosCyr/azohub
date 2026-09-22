@@ -26,8 +26,12 @@ class ProfileUpdateRequest extends FormRequest
         // Champs spécifiques aux prestataires
         if ($this->user()->isPrestataire()) {
             $rules['bio'] = ['nullable', 'string', 'max:500'];
-            $rules['service_areas'] = ['nullable', 'array'];
-            $rules['languages'] = ['nullable', 'array'];
+            // 'array' seul ne validait pas le contenu : un tableau de 10 000 chaînes
+            // arbitraires passait aussi bien qu'une vraie liste de communes.
+            $rules['service_areas'] = ['nullable', 'array', 'max:20'];
+            $rules['service_areas.*'] = ['string', Rule::in(\App\Models\Service::communes())];
+            $rules['languages'] = ['nullable', 'array', 'max:10'];
+            $rules['languages.*'] = ['string', 'max:50'];
             $rules['availability'] = ['nullable', 'in:disponible,occupe,indisponible'];
         }
 

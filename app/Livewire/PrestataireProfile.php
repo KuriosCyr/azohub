@@ -6,6 +6,7 @@ use App\Models\Conversation;
 use App\Models\ProfileView;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -27,14 +28,23 @@ class PrestataireProfile extends Component
             abort(404, 'Ce profil n\'est pas disponible.');
         }
 
-        // Statistiques (avantage des plans payants) : on ne compte pas les visites
-        // du prestataire sur son propre profil.
+        // Statistiques (avantage des plans payants) : on ne compte pas les visites du
+        // prestataire sur son propre profil, et une seule vue par visiteur et par heure —
+        // sinon un simple rechargement de page gonflerait le compteur à l'infini (et le
+        // rendrait trivialement manipulable, à la hausse comme pour nuire à un concurrent).
         if (Auth::id() !== $this->prestataire->id) {
-            ProfileView::create([
-                'prestataire_id' => $this->prestataire->id,
-                'viewer_id' => Auth::id(),
-                'viewed_at' => now(),
-            ]);
+            $viewerKey = Auth::id() ?? 'guest:' . request()->ip();
+            $throttleKey = "profile-view:{$this->prestataire->id}:{$viewerKey}";
+
+            if (!Cache::has($throttleKey)) {
+                Cache::put($throttleKey, true, now()->addHour());
+
+                ProfileView::create([
+                    'prestataire_id' => $this->prestataire->id,
+                    'viewer_id' => Auth::id(),
+                    'viewed_at' => now(),
+                ]);
+            }
         }
     }
 
