@@ -34,6 +34,17 @@ use App\Http\Controllers\DisputeController;
 use App\Http\Controllers\ServiceRequestAttachmentController;
 use Illuminate\Support\Facades\Route;
 
+// Livewire enregistre lui-même la route qui sert son script (/livewire/livewire.js ou .min.js)
+// au moment où @livewireScripts s'exécute (utilisé par le panneau Filament — voir
+// AdminPanelProvider), pas au démarrage de l'application. `php artisan route:cache` capture les
+// routes à un instant donné, avant qu'aucune page ne se soit affichée : cette route dynamique n'y
+// est donc jamais incluse, et une fois les routes mises en cache, le fichier renvoie une 404. On
+// l'enregistre donc ici en dur, exactement comme le fait Livewire, pour qu'elle survive au cache.
+Route::get(
+    config('app.debug') ? '/livewire/livewire.js' : '/livewire/livewire.min.js',
+    [\Livewire\Mechanisms\FrontendAssets\FrontendAssets::class, 'returnJavaScriptAsFile']
+);
+
 // ============================================
 // PAGES PUBLIQUES
 // ============================================
