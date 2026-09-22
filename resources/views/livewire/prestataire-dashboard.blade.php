@@ -45,7 +45,7 @@
                         'rejected' => ['bg-red-100', '#DC2626', 'M6 18L18 6M6 6l12 12'],
                     };
                     $href = match($item['type']) {
-                        'delivery', 'revision' => '#commandes',
+                        'delivery', 'revision' => route('prestataire.orders.index'),
                         'messages' => route('conversations.index'),
                         'rejected' => route('prestataire.services.index', ['status' => 'pending']),
                     };
@@ -226,7 +226,7 @@
                 <svg class="w-3.5 h-3.5 text-ink-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </a>
 
-            <a href="#commandes" class="bg-cream-50 rounded-lg p-4 border border-ink-100 shadow-sm hover:shadow-md transition flex items-center gap-3">
+            <a href="{{ route('prestataire.orders.index') }}" class="bg-cream-50 rounded-lg p-4 border border-ink-100 shadow-sm hover:shadow-md transition flex items-center gap-3">
                 <div class="w-10 h-10 bg-ochre-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg class="w-[18px] h-[18px] text-ochre-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                 </div>
@@ -237,7 +237,7 @@
                 <svg class="w-3.5 h-3.5 text-ink-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </a>
 
-            <a href="#avis" class="bg-cream-50 rounded-lg p-4 border border-ink-100 shadow-sm hover:shadow-md transition flex items-center gap-3">
+            <a href="{{ route('prestataire.reviews.index') }}" class="bg-cream-50 rounded-lg p-4 border border-ink-100 shadow-sm hover:shadow-md transition flex items-center gap-3">
                 <div class="w-10 h-10 bg-forest-600/10 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg class="w-[18px] h-[18px] text-forest-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 </div>
@@ -329,7 +329,7 @@
         <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-base font-bold text-ink-900">Avis récents</h2>
-                <a href="#avis" class="text-xs font-bold text-terracotta-600 hover:text-terracotta-700">Tout voir ({{ $stats['total_reviews'] }})</a>
+                <a href="{{ route('prestataire.reviews.index') }}" class="text-xs font-bold text-terracotta-600 hover:text-terracotta-700">Tout voir ({{ $stats['total_reviews'] }})</a>
             </div>
 
             @if($recentReviews->isEmpty())
@@ -351,122 +351,6 @@
                     @endforeach
                 </div>
             @endif
-        </div>
-
-        {{-- TOUTES MES COMMANDES --}}
-        <div id="commandes" class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden scroll-mt-6">
-            <div class="px-6 py-4 border-b border-ink-100">
-                <h2 class="text-base font-bold text-ink-900">Toutes mes commandes</h2>
-            </div>
-
-            <div class="divide-y divide-ink-100">
-                @forelse($activeOrders->merge($recentCompletedOrders) as $order)
-                    <a href="{{ route('orders.show', $order) }}"
-                       class="block px-6 py-5 hover:bg-ink-100/30 transition">
-                        <div class="flex justify-between items-start gap-3">
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center gap-2.5 mb-1">
-                                    <span class="font-bold text-ink-400 text-xs">#{{ $order->order_number }}</span>
-                                    @php
-                                        $statusMap = [
-                                            'paid'        => ['bg-terracotta-50 text-terracotta-700', 'Nouvelle'],
-                                            'in_progress' => ['bg-ochre-500/15 text-ink-900', 'En cours'],
-                                            'delivered'   => ['bg-clay-500/15 text-ink-900', 'Livrée'],
-                                            'completed'   => ['bg-forest-600/10 text-forest-700', 'Terminée'],
-                                            'cancelled'   => ['bg-red-100 text-red-800', 'Annulée'],
-                                        ];
-                                        [$badgeClass, $badgeLabel] = $statusMap[$order->status] ?? ['bg-ink-100 text-ink-700', ucfirst($order->status)];
-                                    @endphp
-                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">{{ $badgeLabel }}</span>
-                                </div>
-                                <p class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</p>
-                                <p class="text-xs text-ink-400 mt-0.5">Client : {{ $order->client->name }}</p>
-                            </div>
-                            <div class="text-right flex-shrink-0">
-                                <p class="text-xl font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} F</p>
-                                <p class="text-xs text-ink-400 mt-0.5">{{ $order->created_at->format('d/m/Y') }}</p>
-                            </div>
-                        </div>
-                    </a>
-                @empty
-                    <div class="px-6 py-16 text-center">
-                        <div class="w-16 h-16 rounded-full bg-ink-100/30 flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-ink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                            </svg>
-                        </div>
-                        <p class="text-ink-500 font-medium">Aucune commande pour le moment</p>
-                    </div>
-                @endforelse
-            </div>
-        </div>
-
-        {{-- TOUS MES AVIS --}}
-        <div id="avis" class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden scroll-mt-6">
-            <div class="px-6 py-4 border-b border-ink-100 flex items-center justify-between">
-                <h2 class="text-base font-bold text-ink-900">Tous mes avis</h2>
-                <div class="flex items-center gap-1.5 bg-ochre-500/15 px-3 py-1.5 rounded-full">
-                    <svg class="w-4 h-4 text-ochre-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                    <span class="font-bold text-ink-900 text-sm">{{ number_format($stats['rating'], 1) }}/5</span>
-                </div>
-            </div>
-
-            <div class="divide-y divide-ink-100">
-                @forelse($allReviews as $review)
-                    <div class="px-6 py-5">
-                        <div class="flex gap-4">
-                            <img src="{{ $review->reviewer->avatar ? Storage::url($review->reviewer->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($review->reviewer->name) }}"
-                                 alt="{{ $review->reviewer->name }}"
-                                 class="w-11 h-11 rounded-full flex-shrink-0">
-                            <div class="flex-1">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <p class="font-bold text-ink-900 text-sm">{{ $review->reviewer->name }}</p>
-                                        <p class="text-xs text-ink-400">{{ $review->order->service->title ?? '—' }}</p>
-                                    </div>
-                                    <span class="text-xs text-ink-400">{{ $review->created_at->format('d/m/Y') }}</span>
-                                </div>
-
-                                <div class="flex items-center gap-4 mb-3 flex-wrap">
-                                    <div>
-                                        <p class="text-xs text-ink-400 mb-1">Note globale</p>
-                                        <div class="flex">
-                                            @for($i = 1; $i <= 5; $i++)
-                                                <svg class="w-4 h-4 {{ $i <= $review->rating ? 'text-ochre-500' : 'text-ink-200' }}" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                                            @endfor
-                                        </div>
-                                    </div>
-                                    <div class="text-xs">
-                                        <span class="text-ink-400">Qualité : </span>
-                                        <span class="font-bold text-ink-700">{{ $review->quality_rating }}/5</span>
-                                    </div>
-                                    <div class="text-xs">
-                                        <span class="text-ink-400">Communication : </span>
-                                        <span class="font-bold text-ink-700">{{ $review->communication_rating }}/5</span>
-                                    </div>
-                                    <div class="text-xs">
-                                        <span class="text-ink-400">Délais : </span>
-                                        <span class="font-bold text-ink-700">{{ $review->timeliness_rating }}/5</span>
-                                    </div>
-                                </div>
-
-                                @if($review->comment)
-                                    <p class="text-ink-500 text-sm bg-cream p-3 rounded-xl">{{ $review->comment }}</p>
-                                @endif
-
-                                <livewire:review-response :review="$review" :key="'review-response-'.$review->id" />
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="px-6 py-16 text-center">
-                        <div class="w-16 h-16 rounded-full bg-ochre-500/15 flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-ochre-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                        </div>
-                        <p class="text-ink-500 font-medium">Aucun avis pour le moment</p>
-                    </div>
-                @endforelse
-            </div>
         </div>
     </div>
 

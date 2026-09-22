@@ -41,15 +41,7 @@ class PrestataireDashboard extends Component
             ->take(10)
             ->get();
 
-        // Commandes récentes terminées
-        $recentCompletedOrders = $user->prestataireOrders()
-            ->with(['client', 'service', 'serviceRequest.category', 'customOffer'])
-            ->where('status', 'completed')
-            ->latest()
-            ->take(10)
-            ->get();
-
-        // Avis récents (aperçu court) et liste plus longue pour la section "Tous mes avis"
+        // Avis récents (aperçu court ; la liste complète vit sur prestataire.reviews.index)
         $recentReviews = $user->receivedReviews()
             ->visible()
             ->with(['reviewer', 'order.service'])
@@ -58,23 +50,13 @@ class PrestataireDashboard extends Component
             ->take(3)
             ->get();
 
-        $allReviews = $user->receivedReviews()
-            ->visible()
-            ->with(['reviewer', 'order.service'])
-            ->where('review_type', 'client_to_prestataire')
-            ->latest()
-            ->take(20)
-            ->get();
-
         // Revenus des 30 derniers jours
         $monthlyEarnings = $this->getMonthlyEarnings($user);
 
         return view('livewire.prestataire-dashboard', [
             'stats' => $stats,
             'activeOrders' => $activeOrders,
-            'recentCompletedOrders' => $recentCompletedOrders,
             'recentReviews' => $recentReviews,
-            'allReviews' => $allReviews,
             'monthlyEarnings' => $monthlyEarnings,
             'todoItems' => $this->getTodoItems($user),
             'slotsUsed' => $user->serviceSlotsUsed(),

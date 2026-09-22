@@ -19,6 +19,8 @@ use App\Livewire\ConversationsIndex;
 use App\Livewire\ConversationShow;
 use App\Livewire\CustomOfferAccept;
 use App\Livewire\ClientProfile;
+use App\Livewire\PrestataireOrdersIndex;
+use App\Livewire\PrestataireReviewsIndex;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\OrderController;
@@ -123,6 +125,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('services', ServiceController::class);
         Route::post('services/{service}/toggle', [ServiceController::class, 'toggleActive'])->name('services.toggle');
         Route::post('services/{service}/sponsor', [ServiceController::class, 'toggleSponsored'])->name('services.sponsor');
+        Route::get('commandes', PrestataireOrdersIndex::class)->name('orders.index');
+        Route::get('avis', PrestataireReviewsIndex::class)->name('reviews.index');
     });
 
     // Mini profil client : réservé aux prestataires ayant déjà échangé ou collaboré avec ce
