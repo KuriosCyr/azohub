@@ -188,19 +188,24 @@
                         </div>
 
                         {{-- Réseaux sociaux --}}
+                        {{-- Pas encore de pages actives : les liens pointent vers "#" en attendant. --}}
                         <div class="bg-cream-50 rounded-xl p-6 border border-ink-100">
                             <h3 class="text-xl font-serif font-medium text-ink-900 mb-4">Suivez-nous</h3>
                             <div class="grid grid-cols-2 gap-3">
-                                <a href="#" class="flex items-center justify-center gap-2 bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition font-bold">
+                                <a href="#" class="flex items-center justify-center gap-2.5 bg-cream-50 text-ink-900 p-3 rounded-xl border-2 border-ink-100 hover:border-ink-200 hover:shadow-sm transition font-bold">
+                                    <img src="{{ asset('images/social/facebook.svg') }}" alt="" class="w-5 h-5 flex-shrink-0">
                                     Facebook
                                 </a>
-                                <a href="#" class="flex items-center justify-center gap-2 bg-sky-500 text-white p-3 rounded-xl hover:bg-sky-600 transition font-bold">
-                                    Twitter
+                                <a href="#" class="flex items-center justify-center gap-2.5 bg-cream-50 text-ink-900 p-3 rounded-xl border-2 border-ink-100 hover:border-ink-200 hover:shadow-sm transition font-bold">
+                                    <img src="{{ asset('images/social/x.svg') }}" alt="" class="w-4 h-4 flex-shrink-0">
+                                    X
                                 </a>
-                                <a href="#" class="flex items-center justify-center gap-2 bg-pink-600 text-white p-3 rounded-xl hover:bg-pink-700 transition font-bold">
+                                <a href="#" class="flex items-center justify-center gap-2.5 bg-cream-50 text-ink-900 p-3 rounded-xl border-2 border-ink-100 hover:border-ink-200 hover:shadow-sm transition font-bold">
+                                    <img src="{{ asset('images/social/instagram.svg') }}" alt="" class="w-5 h-5 flex-shrink-0">
                                     Instagram
                                 </a>
-                                <a href="#" class="flex items-center justify-center gap-2 bg-blue-700 text-white p-3 rounded-xl hover:bg-blue-800 transition font-bold">
+                                <a href="#" class="flex items-center justify-center gap-2.5 bg-cream-50 text-ink-900 p-3 rounded-xl border-2 border-ink-100 hover:border-ink-200 hover:shadow-sm transition font-bold">
+                                    <img src="{{ asset('images/social/linkedin.svg') }}" alt="" class="w-5 h-5 flex-shrink-0">
                                     LinkedIn
                                 </a>
                             </div>
