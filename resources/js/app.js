@@ -42,6 +42,19 @@ window.notifyAction = function (message, options = {}) {
     });
 };
 
+// Livewire ajoute Cache-Control: no-store sur ses pages pour éviter qu'un retour arrière du
+// navigateur affiche un vieux DOM Livewire désynchronisé du serveur. Problème : depuis 2021,
+// Chrome/Firefox ignorent ce header et restaurent quand même la page depuis leur cache mémoire
+// (bfcache) au lieu de la recharger — d'où le message natif « Cette page a expiré, voulez-vous
+// la renvoyer ? », qui apparaît par intermittence en revenant en arrière (le jeton CSRF ou la
+// session peuvent avoir changé entre-temps). En forçant un vrai rechargement quand le navigateur
+// restaure une page depuis le bfcache, on récupère une page fraîche et ce message n'apparaît plus.
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        window.location.reload();
+    }
+});
+
 Alpine.plugin(intersect);
 
 // Compteur animé : x-data="counter(1234)" x-intersect.once="start()" x-text="display"
