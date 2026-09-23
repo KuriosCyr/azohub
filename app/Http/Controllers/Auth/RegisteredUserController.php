@@ -35,10 +35,13 @@ class RegisteredUserController extends Controller
             'phone' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'role' => ['required', 'in:client,prestataire'],
         ]);
 
-        // Détermine le rôle en fonction de la case cochée
-        $role = $request->has('is_prestataire') && $request->is_prestataire ? 'prestataire' : 'client';
+        // Le formulaire envoie un champ radio "role" (client/prestataire), pas
+        // "is_prestataire" : ce nom ne correspondait à rien dans la requête, donc ce
+        // test était toujours faux et tout le monde était inscrit comme client.
+        $role = $request->role === 'prestataire' ? 'prestataire' : 'client';
 
         $user = User::create([
             'name' => $request->name,
