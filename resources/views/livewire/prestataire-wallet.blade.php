@@ -11,20 +11,34 @@
             </div>
         @endif
 
+        @unless(Auth::user()->identity_verified)
+            <div class="mb-6 bg-ochre-100 border border-ochre-300 text-ochre-800 px-4 py-3 rounded-xl text-sm flex flex-wrap items-center justify-between gap-3">
+                <span>Votre identité doit être vérifiée avant de pouvoir retirer des fonds de votre portefeuille.</span>
+                <a href="{{ route('profile.edit') }}" class="font-bold underline whitespace-nowrap">Vérifier mon identité</a>
+            </div>
+        @endunless
+
         {{-- Solde --}}
         <div class="bg-ink-900 text-cream-50 rounded-xl p-8 mb-8 flex flex-wrap items-center justify-between gap-6">
             <div>
                 <p class="text-ink-300 text-sm mb-1">Solde disponible</p>
                 <p class="text-4xl font-serif font-medium">{{ number_format(Auth::user()->wallet_balance, 0, ',', ' ') }} <span class="text-xl text-ink-300">FCFA</span></p>
             </div>
-            <button wire:click="toggleRequestForm"
-                    class="bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold px-6 py-3 rounded-lg transition shadow-md">
-                {{ $showRequestForm ? 'Annuler' : 'Demander un retrait' }}
-            </button>
+            @if(Auth::user()->identity_verified)
+                <button wire:click="toggleRequestForm"
+                        class="bg-terracotta-600 hover:bg-terracotta-700 text-cream-50 font-bold px-6 py-3 rounded-lg transition shadow-md">
+                    {{ $showRequestForm ? 'Annuler' : 'Demander un retrait' }}
+                </button>
+            @else
+                <button type="button" disabled title="Identité non vérifiée"
+                        class="bg-ink-300 text-cream-50 font-bold px-6 py-3 rounded-lg cursor-not-allowed opacity-60">
+                    Demander un retrait
+                </button>
+            @endif
         </div>
 
         {{-- Formulaire de retrait --}}
-        @if($showRequestForm)
+        @if($showRequestForm && Auth::user()->identity_verified)
             <div class="bg-cream-50 rounded-xl p-6 border border-ink-100 mb-8 space-y-4">
                 <h2 class="font-bold text-ink-900">Nouvelle demande de retrait</h2>
 

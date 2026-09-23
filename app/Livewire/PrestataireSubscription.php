@@ -17,6 +17,13 @@ class PrestataireSubscription extends Component
     public string $paymentMethod = 'mtn_momo';
     public string $billingPeriod = 'monthly'; // monthly | yearly
 
+    // Confirmation avant de changer vers un AUTRE plan payant alors qu'il reste du temps payé
+    // sur l'abonnement en cours (voir Payment::markAsPaid : ce reliquat n'est reporté que pour
+    // un renouvellement du même plan, sinon il est simplement perdu).
+    public bool $confirmingSwitch = false;
+    public ?int $switchWarningPlanId = null;
+    public int $switchWarningDaysLost = 0;
+
     public function mount()
     {
         // Lien de renouvellement rapide envoyé par le rappel d'expiration
@@ -68,9 +75,35 @@ class PrestataireSubscription extends Component
             && $subscription->ends_at->lte(now()->addDays(7));
     }
 
+    public function getSwitchWarningPlanProperty(): ?SubscriptionPlan
+    {
+        return $this->switchWarningPlanId
+            ? SubscriptionPlan::find($this->switchWarningPlanId)
+            : null;
+    }
+
     public function selectPlan(int $planId)
     {
         $this->selectedPlanId = $planId;
+    }
+
+    public function cancelSwitchWarning()
+    {
+        $this->confirmingSwitch = false;
+        $this->switchWarningPlanId = null;
+        $this->switchWarningDaysLost = 0;
+    }
+
+    public function confirmPlanSwitch(PaymentService $payments)
+    {
+        $planId = $this->switchWarningPlanId;
+        $this->confirmingSwitch = false;
+        $this->switchWarningPlanId = null;
+        $this->switchWarningDaysLost = 0;
+
+        if ($planId) {
+            $this->choosePlan($planId, $payments, skipSwitchWarning: true);
+        }
     }
 
     public function toggleAutoRenew()
@@ -82,13 +115,29 @@ class PrestataireSubscription extends Component
         $this->activeSubscription->toggleAutoRenew();
     }
 
-    public function choosePlan(int $planId, PaymentService $payments)
+    public function choosePlan(int $planId, PaymentService $payments, bool $skipSwitchWarning = false)
     {
         $user = Auth::user();
         $plan = SubscriptionPlan::active()->findOrFail($planId);
 
         if ($this->currentPlan && $this->currentPlan->id === $plan->id && !$this->canRenew) {
             session()->flash('error', 'Vous êtes déjà sur ce plan.');
+            return;
+        }
+
+        // Changement vers un AUTRE plan payant alors qu'il reste du temps payé sur l'abonnement
+        // en cours : ce reliquat serait perdu (Payment::markAsPaid ne le reporte que pour un
+        // renouvellement du même plan). On demande confirmation plutôt que de le perdre en silence.
+        if (
+            !$skipSwitchWarning
+            && $this->activeSubscription
+            && $this->activeSubscription->subscription_plan_id !== $planId
+            && (float) $this->activeSubscription->plan->price > 0
+            && $this->activeSubscription->ends_at->isFuture()
+        ) {
+            $this->switchWarningPlanId = $planId;
+            $this->switchWarningDaysLost = (int) ceil(now()->diffInHours($this->activeSubscription->ends_at) / 24);
+            $this->confirmingSwitch = true;
             return;
         }
 

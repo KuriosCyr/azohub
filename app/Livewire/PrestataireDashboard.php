@@ -85,6 +85,14 @@ class PrestataireDashboard extends Component
     {
         $items = [];
 
+        if (!$user->identity_verified && $user->identity_verification_status !== 'pending') {
+            $items[] = [
+                'type' => 'identity',
+                'title' => 'Vérifiez votre identité',
+                'subtitle' => 'Requis pour pouvoir retirer vos gains — ça prend deux minutes',
+            ];
+        }
+
         $dueOrders = $user->prestataireOrders()
             ->whereIn('status', ['paid', 'in_progress'])
             ->whereNotNull('expected_delivery_at')

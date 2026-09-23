@@ -43,11 +43,13 @@
                         'revision' => ['bg-clay-500/15', '#0EA5E9', 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'],
                         'messages' => ['bg-terracotta-50', '#2563EB', 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.93 7.93 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'],
                         'rejected' => ['bg-red-100', '#DC2626', 'M6 18L18 6M6 6l12 12'],
+                        'identity' => ['bg-forest-600/10', '#15803D', 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'],
                     };
                     $href = match($item['type']) {
                         'delivery', 'revision' => route('prestataire.orders.index'),
                         'messages' => route('conversations.index'),
                         'rejected' => route('prestataire.services.index', ['status' => 'pending']),
+                        'identity' => route('profile.edit'),
                     };
                 @endphp
                 <a href="{{ $href }}" class="flex items-center gap-3.5 py-3.5 border-t border-ink-100 hover:bg-ink-100/20 -mx-2 px-2 rounded-lg transition">

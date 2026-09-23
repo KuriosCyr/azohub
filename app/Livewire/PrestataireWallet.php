@@ -33,6 +33,11 @@ class PrestataireWallet extends Component
 
     public function requestWithdrawal()
     {
+        if (!Auth::user()->identity_verified) {
+            $this->addError('amount', 'Votre identité doit être vérifiée avant de pouvoir retirer des fonds.');
+            return;
+        }
+
         $balance = (float) Auth::user()->wallet_balance;
 
         $this->validate([
