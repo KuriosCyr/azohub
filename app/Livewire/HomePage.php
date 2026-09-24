@@ -35,7 +35,9 @@ class HomePage extends Component
                 '@type' => 'Organization',
                 'name' => 'Azohub',
                 'url' => url('/'),
-                'logo' => asset('design-exports/azohub-symbol.svg'),
+                // 'design-exports/azohub-symbol.svg' n'a jamais existé (mauvais nom de fichier en
+                // plus du mauvais dossier) : ce champ pointait vers une 404 depuis le début.
+                'logo' => asset('favicon.svg'),
                 'areaServed' => 'Bénin',
             ],
         ]);

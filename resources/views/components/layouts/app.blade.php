@@ -13,7 +13,10 @@
     // page de contenu, sinon toutes les pages se ressemblent dans les résultats de recherche.
     $pageTitle = $title ? "{$title} | Azohub" : config('app.name', 'Azohub') . ' - Plateforme de services au Bénin';
     $pageDescription = $description ?? "Azohub met en relation clients et prestataires qualifiés partout au Bénin : trouvez un service ou proposez le vôtre en toute confiance.";
-    $pageImage = $ogImage ?? asset('design-exports/azohub-lockup-horizontal-tricolor.svg');
+    // 'design-exports/...' pointait vers resources/design-exports (jamais servi publiquement,
+    // ne fait pas partie de public/) : 404 sur toutes les pages sans image explicite. En plus,
+    // les crawlers WhatsApp/Facebook n'affichent pas de SVG en aperçu — il faut du PNG/JPG.
+    $pageImage = $ogImage ?? asset('images/og-image.png');
     $pageCanonical = $canonical ?? url()->current();
 @endphp
 <!DOCTYPE html>
