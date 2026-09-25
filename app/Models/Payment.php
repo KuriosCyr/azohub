@@ -72,20 +72,39 @@ class Payment extends Model
         }
 
         // Un seul abonnement actif à la fois : celui-ci remplace tout abonnement en cours.
-        if ($this->subscription) {
-            $others = Subscription::where('user_id', $this->subscription->user_id)
-                ->where('id', '!=', $this->subscription->id)
-                ->where('status', 'active');
+        // Un paiement (carte notamment) peut rester bloqué côté FedaPay puis se confirmer
+        // très en retard, après que l'utilisateur a entre-temps déjà payé et activé un autre
+        // plan pendant que celui-ci restait "pending" en attente. Sans ce garde-fou, cette
+        // confirmation tardive écraserait l'abonnement actif actuel avec un choix abandonné
+        // depuis longtemps — donc on vérifie qu'aucun abonnement plus récent n'est déjà actif
+        // avant de traiter celui-ci.
+        if ($this->subscription && $this->subscription->status === 'pending') {
+            $supersededByNewerActive = Subscription::where('user_id', $this->subscription->user_id)
+                ->where('status', 'active')
+                ->where('created_at', '>', $this->subscription->created_at)
+                ->exists();
 
-            // Renouvellement anticipé du même plan : on conserve le temps restant.
-            $carryOverFrom = (clone $others)
-                ->where('subscription_plan_id', $this->subscription->subscription_plan_id)
-                ->max('ends_at');
+            if ($supersededByNewerActive) {
+                \Illuminate\Support\Facades\Log::warning(
+                    "Paiement #{$this->id} confirmé tardivement pour l'abonnement #{$this->subscription->id}, " .
+                    "mais un abonnement plus récent est déjà actif pour cet utilisateur — ignoré pour ne pas " .
+                    "écraser l'abonnement actif actuel avec un choix abandonné entre-temps."
+                );
+            } else {
+                $others = Subscription::where('user_id', $this->subscription->user_id)
+                    ->where('id', '!=', $this->subscription->id)
+                    ->where('status', 'active');
 
-            $others->update(['status' => 'cancelled']);
+                // Renouvellement anticipé du même plan : on conserve le temps restant.
+                $carryOverFrom = (clone $others)
+                    ->where('subscription_plan_id', $this->subscription->subscription_plan_id)
+                    ->max('ends_at');
 
-            $this->subscription->renew($carryOverFrom ? \Carbon\Carbon::parse($carryOverFrom) : null);
-            $this->subscription->user->notify(new SubscriptionActivated($this->subscription));
+                $others->update(['status' => 'cancelled']);
+
+                $this->subscription->renew($carryOverFrom ? \Carbon\Carbon::parse($carryOverFrom) : null);
+                $this->subscription->user->notify(new SubscriptionActivated($this->subscription));
+            }
         }
     }
 

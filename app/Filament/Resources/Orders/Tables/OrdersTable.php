@@ -58,7 +58,14 @@ class OrdersTable
                     ->sortable(),
                 TextColumn::make('service.title')
                     ->label('Service')
-                    ->limit(30)
+                    // Une commande peut venir d'un service du catalogue (service_id renseigné)
+                    // ou d'une demande négociée (devis accepté / offre personnalisée en chat) :
+                    // dans ce second cas service_id est vide par conception, pas une anomalie —
+                    // on retombe sur le titre de la demande plutôt que de laisser la cellule vide.
+                    ->getStateUsing(fn ($record) => $record->service
+                        ? $record->service->title
+                        : $record->display_title . ' (demande négociée)')
+                    ->limit(40)
                     ->placeholder('—')
                     ->toggleable(),
                 TextColumn::make('amount')
