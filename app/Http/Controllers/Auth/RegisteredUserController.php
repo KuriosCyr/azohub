@@ -45,9 +45,14 @@ class RegisteredUserController extends Controller
             'city' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:client,prestataire'],
+            // Case à cocher affichée comme obligatoire dans le formulaire mais jamais vérifiée
+            // côté serveur : un compte pouvait être créé sans jamais avoir accepté les CGU ni
+            // la politique de confidentialité.
+            'terms' => ['accepted'],
         ], [
             'phone.required' => 'Le numéro de téléphone est obligatoire.',
             'phone.regex' => 'Le numéro de téléphone n\'est pas valide.',
+            'terms.accepted' => 'Vous devez accepter les conditions d\'utilisation et la politique de confidentialité.',
         ]);
 
         // Le formulaire envoie un champ radio "role" (client/prestataire), pas
