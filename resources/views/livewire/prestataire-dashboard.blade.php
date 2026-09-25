@@ -44,12 +44,14 @@
                         'messages' => ['bg-terracotta-50', '#2563EB', 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.93 7.93 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'],
                         'rejected' => ['bg-red-100', '#DC2626', 'M6 18L18 6M6 6l12 12'],
                         'identity' => ['bg-forest-600/10', '#15803D', 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'],
+                        'trial' => ['bg-ochre-500/15', '#CA8A04', 'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z'],
                     };
                     $href = match($item['type']) {
                         'delivery', 'revision' => route('prestataire.orders.index'),
                         'messages' => route('conversations.index'),
                         'rejected' => route('prestataire.services.index', ['status' => 'pending']),
                         'identity' => route('profile.edit'),
+                        'trial' => route('prestataire.subscription'),
                     };
                 @endphp
                 <a href="{{ $href }}" class="flex items-center gap-3.5 py-3.5 border-t border-ink-100 hover:bg-ink-100/20 -mx-2 px-2 rounded-lg transition">
@@ -133,48 +135,58 @@
         </div>
 
         {{-- MON ACTIVITE --}}
-        <div class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm p-6">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center
-                        {{ Auth::user()->level === 'expert' ? 'bg-ochre-500/15' : (Auth::user()->level === 'confirme' ? 'bg-terracotta-50' : 'bg-ink-100/40') }}">
-                        <svg class="w-6 h-6 {{ Auth::user()->level === 'expert' ? 'text-ochre-600' : (Auth::user()->level === 'confirme' ? 'text-terracotta-600' : 'text-ink-400') }}" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                        </svg>
+        <div class="bg-cream-50 rounded-xl border border-ink-100 shadow-sm overflow-hidden">
+            @php
+                $levelTheme = match(Auth::user()->level) {
+                    'expert' => ['from' => '#7C3800', 'to' => '#CA8A04', 'icon' => '#FDE68A'],
+                    'confirme' => ['from' => '#0A1F42', 'to' => '#1D4ED8', 'icon' => '#93C5FD'],
+                    default => ['from' => '#0A1F42', 'to' => '#0F2A5C', 'icon' => '#94A3B8'],
+                };
+            @endphp
+            <div class="p-6 text-cream-50" style="background: linear-gradient(135deg, {{ $levelTheme['from'] }} 0%, {{ $levelTheme['to'] }} 100%);">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center bg-white/10 backdrop-blur-sm">
+                            <svg class="w-7 h-7" style="color: {{ $levelTheme['icon'] }}" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-cream-100/60 uppercase tracking-wide mb-0.5">Votre niveau</p>
+                            <p class="text-2xl font-serif font-medium">{{ Auth::user()->level_label }}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-0.5">Votre niveau</p>
-                        <p class="text-lg font-bold text-ink-900">{{ Auth::user()->level_label }}</p>
+                    <div class="text-right">
+                        <p class="text-xs font-semibold text-cream-100/60 uppercase tracking-wide mb-0.5">Commission Azohub</p>
+                        <p class="text-2xl font-bold" style="color: {{ $levelTheme['icon'] }}">{{ number_format(Auth::user()->commissionRate() * 100, 0, ',', ' ') }}%</p>
                     </div>
                 </div>
-                <div class="text-right">
-                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-0.5">Commission Azohub</p>
-                    <p class="text-lg font-bold text-terracotta-600">{{ number_format(Auth::user()->commissionRate() * 100, 0, ',', ' ') }}%</p>
-                </div>
+
+                @if(Auth::user()->level !== 'expert')
+                    @php
+                        $nextLevel = Auth::user()->level === 'nouveau'
+                            ? ['orders' => 15, 'rating' => 4.3, 'label' => 'Confirmé']
+                            : ['orders' => 50, 'rating' => 4.7, 'label' => 'Expert'];
+                        $ordersProgress = $nextLevel['orders'] > 0 ? min(100, ($stats['completed_orders'] / $nextLevel['orders']) * 100) : 100;
+                    @endphp
+                    <div class="mt-5 pt-4 border-t border-white/15">
+                        <div class="flex justify-between text-xs text-cream-100/70 mb-1.5">
+                            <span>Progression vers <strong class="text-cream-50">{{ $nextLevel['label'] }}</strong> (commission réduite)</span>
+                            <span>{{ $stats['completed_orders'] }}/{{ $nextLevel['orders'] }} commandes · note ≥ {{ $nextLevel['rating'] }}</span>
+                        </div>
+                        <div class="h-2 bg-white/15 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full" style="width: {{ $ordersProgress }}%; background: {{ $levelTheme['icon'] }};"></div>
+                        </div>
+                    </div>
+                @endif
             </div>
 
-            @if(Auth::user()->level !== 'expert')
-                @php
-                    $nextLevel = Auth::user()->level === 'nouveau'
-                        ? ['orders' => 15, 'rating' => 4.3, 'label' => 'Confirmé']
-                        : ['orders' => 50, 'rating' => 4.7, 'label' => 'Expert'];
-                    $ordersProgress = $nextLevel['orders'] > 0 ? min(100, ($stats['completed_orders'] / $nextLevel['orders']) * 100) : 100;
-                @endphp
-                <div class="mt-4 pt-4 border-t border-ink-100">
-                    <div class="flex justify-between text-xs text-ink-500 mb-1.5">
-                        <span>Progression vers <strong class="text-ink-700">{{ $nextLevel['label'] }}</strong> (commission réduite)</span>
-                        <span>{{ $stats['completed_orders'] }}/{{ $nextLevel['orders'] }} commandes · note ≥ {{ $nextLevel['rating'] }}</span>
-                    </div>
-                    <div class="h-2 bg-ink-100 rounded-full overflow-hidden">
-                        <div class="h-full bg-terracotta-600 rounded-full" style="width: {{ $ordersProgress }}%"></div>
-                    </div>
-                </div>
-            @endif
-
-            <div class="grid sm:grid-cols-3 gap-5 mt-5 pt-5 border-t border-ink-100">
+            <div class="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-ink-100">
                 {{-- Places de services --}}
-                <div>
-                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5">Places de services</p>
+                <div class="p-5">
+                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                        <x-app-icon name="box" class="w-3.5 h-3.5" /> Places de services
+                    </p>
                     @if($slotsMax === null)
                         <p class="text-sm font-bold text-ink-900">{{ $slotsUsed }} service(s) · illimité</p>
                     @else
@@ -187,14 +199,16 @@
                 </div>
 
                 {{-- Abonnement --}}
-                <div>
-                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5">Abonnement</p>
+                <div class="p-5">
+                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                        <x-app-icon name="sparkles" class="w-3.5 h-3.5" /> Abonnement
+                    </p>
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-terracotta-50 text-terracotta-700">
                             Plan {{ $currentPlan->name ?? 'Gratuit' }}
                         </span>
                         @if($activeSubscription && (float) ($currentPlan->price ?? 0) > 0)
-                            <span class="text-xs text-ink-400">expire dans {{ max(0, now()->diffInDays($activeSubscription->ends_at, false)) }} j</span>
+                            <span class="text-xs text-ink-400">expire dans {{ max(0, (int) floor(now()->diffInDays($activeSubscription->ends_at, false))) }} j</span>
                         @endif
                     </div>
                     <a href="{{ route('prestataire.subscription') }}" class="text-xs font-bold text-terracotta-600 hover:text-terracotta-700 mt-1.5 inline-block">
@@ -203,10 +217,24 @@
                 </div>
 
                 {{-- Offre de bienvenue --}}
-                <div>
-                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5">Offre de bienvenue</p>
+                <div class="p-5">
+                    <p class="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                        <x-app-icon name="rocket" class="w-3.5 h-3.5" /> Offre de bienvenue
+                    </p>
                     @if($welcomePromoEndsAt)
-                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-ochre-500/15 text-ochre-600">Commission 10% active</span>
+                        @php
+                            $promoRate = (float) config('services.azohub.welcome_promo.rate');
+                            // La commission réellement appliquée est le MEILLEUR taux parmi niveau/plan/offre de
+                            // bienvenue (cf. User::commissionRate()) — si le plan actuel fait déjà mieux que
+                            // l'offre de bienvenue, celle-ci ne sert plus à rien pour l'instant : dire "active"
+                            // dans ce cas induit en erreur (elle ne l'est pas, elle est juste "de réserve").
+                            $promoIsApplied = round(Auth::user()->commissionRate() * 100, 2) === round($promoRate, 2);
+                        @endphp
+                        @if($promoIsApplied)
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-ochre-500/15 text-ochre-600">Commission {{ number_format($promoRate, 0) }}% active</span>
+                        @else
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-ink-100 text-ink-500">Remplacée par votre plan ({{ number_format(Auth::user()->commissionRate() * 100, 0) }}%)</span>
+                        @endif
                         <p class="text-xs text-ink-400 mt-1.5">Jusqu'au {{ $welcomePromoEndsAt->translatedFormat('d M Y') }}</p>
                     @else
                         <p class="text-sm text-ink-400">Terminée ou non applicable</p>

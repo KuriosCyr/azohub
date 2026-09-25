@@ -98,6 +98,14 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->role === 'prestataire';
     }
 
+    // Premier mois offert : jamais utilisé (essai) ni payé d'abonnement, une seule fois par
+    // prestataire. Utilisé à la fois par la page d'abonnement et par le rappel du dashboard.
+    public function isTrialEligible(): bool
+    {
+        return !\App\Models\Subscription::where('user_id', $this->id)->where('is_trial', true)->exists()
+            && !\App\Models\Payment::where('user_id', $this->id)->where('type', 'subscription')->where('status', 'success')->exists();
+    }
+
     // "En ligne" : vu il y a moins de 5 minutes (mis à jour par UpdateLastSeen sur
     // chaque requête authentifiée). Pas de temps réel, juste un indicateur approximatif.
     public function isOnline(): bool

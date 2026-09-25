@@ -13,7 +13,10 @@ class RemindExpiringSubscriptions extends Command
 
     public function handle(): int
     {
+        // La case "Me rappeler..." de la page abonnement n'avait jusqu'ici aucun effet : ce
+        // rappel partait pour tout le monde, qu'elle soit cochée ou non.
         $subscriptions = Subscription::where('status', 'active')
+            ->where('auto_renew', true)
             ->whereNull('reminded_at')
             ->whereBetween('ends_at', [now(), now()->addDays(3)])
             ->get();

@@ -15,29 +15,9 @@
                 {{ session('error') }}
             </div>
         @endif
-
-        {{-- Confirmation avant de changer de plan payant en perdant le temps restant --}}
-        @if($confirmingSwitch && $this->switchWarningPlan)
-            <div class="fixed inset-0 bg-ink-900/60 z-50 flex items-center justify-center p-4" wire:key="switch-warning-overlay">
-                <div class="bg-cream-50 rounded-xl p-6 max-w-md w-full shadow-xl">
-                    <h3 class="text-lg font-bold text-ink-900 mb-2">Changer de plan maintenant ?</h3>
-                    <p class="text-sm text-ink-600 mb-4">
-                        Il vous reste encore <b>{{ $switchWarningDaysLost }} jour{{ $switchWarningDaysLost > 1 ? 's' : '' }}</b>
-                        payé{{ $switchWarningDaysLost > 1 ? 's' : '' }} sur votre plan <b>{{ $this->currentPlan?->name }}</b> actuel.
-                        En passant maintenant au plan <b>{{ $this->switchWarningPlan->name }}</b>, ce temps restant sera perdu
-                        et vous devrez payer le nouveau plan en entier dès aujourd'hui.
-                    </p>
-                    <div class="flex gap-3">
-                        <button wire:click="cancelSwitchWarning"
-                                class="flex-1 border-2 border-ink-200 text-ink-700 font-bold py-2.5 rounded-lg text-sm hover:bg-ink-50">
-                            Annuler
-                        </button>
-                        <button wire:click="confirmPlanSwitch" wire:loading.attr="disabled"
-                                class="flex-1 bg-ink-900 hover:bg-ink-700 text-cream-50 font-bold py-2.5 rounded-lg text-sm disabled:opacity-60">
-                            Changer quand même
-                        </button>
-                    </div>
-                </div>
+        @if(session('info'))
+            <div class="mb-6 bg-clay-500/10 border border-clay-500/30 text-ink-700 px-4 py-3 rounded-xl text-sm">
+                {{ session('info') }}
             </div>
         @endif
 
@@ -88,7 +68,14 @@
         {{-- Plans disponibles --}}
         <div class="grid md:grid-cols-3 gap-6">
             @foreach($this->plans as $plan)
-                @php $isCurrent = $this->currentPlan && $this->currentPlan->id === $plan->id; @endphp
+                @php
+                    $isCurrent = $this->currentPlan && $this->currentPlan->id === $plan->id;
+                    $isDowngradeCandidate = $this->activeSubscription
+                        && !$isCurrent
+                        && (float) $this->activeSubscription->plan->price > 0
+                        && $this->activeSubscription->ends_at->isFuture()
+                        && (float) $plan->price < (float) $this->activeSubscription->plan->price;
+                @endphp
                 <div class="relative bg-cream-50 rounded-xl border-2 {{ $plan->is_popular ? 'border-terracotta-600' : 'border-ink-100' }} p-6 flex flex-col">
                     @if($plan->is_popular)
                         <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-terracotta-600 text-cream-50 text-xs font-bold px-3 py-1 rounded-full">
@@ -130,6 +117,10 @@
                     @if($isCurrent && !$this->canRenew)
                         <span class="block text-center bg-ink-100/40 text-ink-500 font-bold py-3 rounded-lg text-sm">
                             Plan actuel
+                        </span>
+                    @elseif($isDowngradeCandidate)
+                        <span class="block text-center bg-ink-100/40 text-ink-500 font-semibold py-3 rounded-lg text-xs px-2">
+                            Disponible après le {{ $this->activeSubscription->ends_at->translatedFormat('d M Y') }}
                         </span>
                     @elseif($selectedPlanId === $plan->id)
                         <div class="space-y-3">

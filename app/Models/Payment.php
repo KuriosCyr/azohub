@@ -106,10 +106,13 @@ class Payment extends Model
                     ->where('id', '!=', $this->subscription->id)
                     ->where('status', 'active');
 
-                // Renouvellement anticipé du même plan : on conserve le temps restant.
-                $carryOverFrom = (clone $others)
-                    ->where('subscription_plan_id', $this->subscription->subscription_plan_id)
-                    ->max('ends_at');
+                // Le temps restant sur l'abonnement remplacé est reporté sur le nouveau, que ce
+                // soit un renouvellement anticipé du même plan ou une montée en gamme (Pro ->
+                // Premium) : PrestataireSubscription::choosePlan() ne laisse jamais arriver
+                // jusqu'ici un changement qui ferait perdre du temps déjà payé (une baisse de
+                // gamme y est bloquée avant le paiement), donc tout ce qui atteint ce code est
+                // soit un renouvellement, soit une amélioration — jamais une perte.
+                $carryOverFrom = (clone $others)->max('ends_at');
 
                 $others->update(['status' => 'cancelled']);
 

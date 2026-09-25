@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Models\Subscription;
-use App\Models\Payment;
 use App\Notifications\SubscriptionActivated;
 use Illuminate\Support\Facades\DB;
 use App\Models\SubscriptionPlan;
@@ -16,13 +15,6 @@ class PrestataireSubscription extends Component
     public ?int $selectedPlanId = null;
     public string $paymentMethod = 'mtn_momo';
     public string $billingPeriod = 'monthly'; // monthly | yearly
-
-    // Confirmation avant de changer vers un AUTRE plan payant alors qu'il reste du temps payé
-    // sur l'abonnement en cours (voir Payment::markAsPaid : ce reliquat n'est reporté que pour
-    // un renouvellement du même plan, sinon il est simplement perdu).
-    public bool $confirmingSwitch = false;
-    public ?int $switchWarningPlanId = null;
-    public int $switchWarningDaysLost = 0;
 
     public function mount()
     {
@@ -49,14 +41,9 @@ class PrestataireSubscription extends Component
         return Auth::user()->activeSubscription;
     }
 
-    // Premier mois offert : une seule fois par prestataire, sur un plan payant mensuel, tant
-    // qu'il n'a jamais eu d'essai ni payé d'abonnement.
     public function getTrialEligibleProperty(): bool
     {
-        $userId = Auth::id();
-
-        return !Subscription::where('user_id', $userId)->where('is_trial', true)->exists()
-            && !Payment::where('user_id', $userId)->where('type', 'subscription')->where('status', 'success')->exists();
+        return Auth::user()->isTrialEligible();
     }
 
     public function setBillingPeriod(string $period)
@@ -75,35 +62,9 @@ class PrestataireSubscription extends Component
             && $subscription->ends_at->lte(now()->addDays(7));
     }
 
-    public function getSwitchWarningPlanProperty(): ?SubscriptionPlan
-    {
-        return $this->switchWarningPlanId
-            ? SubscriptionPlan::find($this->switchWarningPlanId)
-            : null;
-    }
-
     public function selectPlan(int $planId)
     {
         $this->selectedPlanId = $planId;
-    }
-
-    public function cancelSwitchWarning()
-    {
-        $this->confirmingSwitch = false;
-        $this->switchWarningPlanId = null;
-        $this->switchWarningDaysLost = 0;
-    }
-
-    public function confirmPlanSwitch(PaymentService $payments)
-    {
-        $planId = $this->switchWarningPlanId;
-        $this->confirmingSwitch = false;
-        $this->switchWarningPlanId = null;
-        $this->switchWarningDaysLost = 0;
-
-        if ($planId) {
-            $this->choosePlan($planId, $payments, skipSwitchWarning: true);
-        }
     }
 
     public function toggleAutoRenew()
@@ -115,39 +76,46 @@ class PrestataireSubscription extends Component
         $this->activeSubscription->toggleAutoRenew();
     }
 
-    public function choosePlan(int $planId, PaymentService $payments, bool $skipSwitchWarning = false)
+    // Politique (celle des plateformes d'abonnement sérieuses) :
+    // - Monter en gamme (Pro -> Premium) : immédiat, et le temps déjà payé sur l'ancien plan est
+    //   reporté sur le nouveau (aucune perte).
+    // - Descendre en gamme (Premium -> Pro, ou vers Gratuit) : jamais immédiat. Le plan actuel,
+    //   déjà payé, reste actif jusqu'à sa date de fin normale ; le nouveau choix ne prend effet
+    //   qu'à ce moment-là. Personne ne perd ce qu'il a payé.
+    public function choosePlan(int $planId, PaymentService $payments)
     {
         $user = Auth::user();
         $plan = SubscriptionPlan::active()->findOrFail($planId);
+        $active = $this->activeSubscription;
 
         if ($this->currentPlan && $this->currentPlan->id === $plan->id && !$this->canRenew) {
             session()->flash('error', 'Vous êtes déjà sur ce plan.');
             return;
         }
 
-        // Changement vers un AUTRE plan payant alors qu'il reste du temps payé sur l'abonnement
-        // en cours : ce reliquat serait perdu (Payment::markAsPaid ne le reporte que pour un
-        // renouvellement du même plan). On demande confirmation plutôt que de le perdre en silence.
-        if (
-            !$skipSwitchWarning
-            && $this->activeSubscription
-            && $this->activeSubscription->subscription_plan_id !== $planId
-            && (float) $this->activeSubscription->plan->price > 0
-            && $this->activeSubscription->ends_at->isFuture()
-        ) {
-            $this->switchWarningPlanId = $planId;
-            $this->switchWarningDaysLost = (int) ceil(now()->diffInHours($this->activeSubscription->ends_at) / 24);
-            $this->confirmingSwitch = true;
+        $isDowngrade = $active
+            && $active->subscription_plan_id !== $plan->id
+            && (float) $active->plan->price > 0
+            && $active->ends_at->isFuture()
+            && (float) $plan->price < (float) $active->plan->price;
+
+        if ($isDowngrade) {
+            session()->flash('info', "Vous restez sur le plan {$active->plan->name} (déjà payé) jusqu'au {$active->ends_at->translatedFormat('d M Y')}. Revenez ici après cette date pour passer sur {$plan->name}.");
+            $this->selectedPlanId = null;
             return;
         }
 
-        // Plan gratuit : pas de paiement, on annule simplement l'abonnement payant en cours.
+        // Choix du plan Gratuit : si un plan payant est encore actif, on ne bascule pas tout de
+        // suite dessus (ce serait perdre ce qui a déjà été payé) — il continue de s'appliquer
+        // jusqu'à sa fin, le plan Gratuit prend le relais automatiquement ensuite.
         if ((float) $plan->price <= 0) {
-            if ($this->activeSubscription) {
-                $this->activeSubscription->cancel();
+            if ($active) {
+                session()->flash('info', "Vous restez sur le plan {$active->plan->name} (déjà payé) jusqu'au {$active->ends_at->translatedFormat('d M Y')}, puis vous basculerez automatiquement sur le plan Gratuit.");
+                $this->selectedPlanId = null;
+                return;
             }
 
-            session()->flash('success', 'Vous êtes maintenant sur le plan Gratuit.');
+            session()->flash('success', 'Vous êtes sur le plan Gratuit.');
             return;
         }
 
@@ -164,12 +132,19 @@ class PrestataireSubscription extends Component
                     'status' => 'active',
                     'billing_period' => 'monthly',
                     'is_trial' => true,
+                    'auto_renew' => true,
                     'starts_at' => now(),
                     'ends_at' => now()->addMonth(),
                 ]);
 
                 $user->notify(new SubscriptionActivated($trial));
             });
+
+            // Le modèle Auth::user() garde en cache la relation activeSubscription telle qu'elle
+            // était AVANT cette création (elle a été lue plus haut, via $this->currentPlan) :
+            // sans ça, currentPlan()/activeSubscription restent figés sur "Gratuit" jusqu'au
+            // prochain chargement de page complet, alors que l'abonnement est bien créé en base.
+            $user->unsetRelation('activeSubscription');
 
             $this->selectedPlanId = null;
             session()->flash('success', "Votre mois offert du plan {$plan->name} est activé. Profitez-en !");
@@ -187,6 +162,7 @@ class PrestataireSubscription extends Component
             'ends_at' => now(),
             'status' => 'pending',
             'billing_period' => $period,
+            'auto_renew' => true,
         ]);
 
         try {

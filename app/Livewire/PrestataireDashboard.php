@@ -93,6 +93,14 @@ class PrestataireDashboard extends Component
             ];
         }
 
+        if ($user->isTrialEligible()) {
+            $items[] = [
+                'type' => 'trial',
+                'title' => 'Profitez de votre mois offert !',
+                'subtitle' => 'Commission réduite et plus de services publiables, sans rien payer — un plan au choix, un seul clic',
+            ];
+        }
+
         $dueOrders = $user->prestataireOrders()
             ->whereIn('status', ['paid', 'in_progress'])
             ->whereNotNull('expected_delivery_at')
