@@ -7,6 +7,7 @@
 
         <title>{{ config('app.name', 'Azohub') }}</title>
         <meta name="robots" content="noindex, nofollow">
+        <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
