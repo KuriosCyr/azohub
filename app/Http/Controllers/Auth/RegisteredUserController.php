@@ -31,11 +31,23 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'phone' => ['nullable', 'string', 'max:255'],
+            // La règle 'email' seule accepte un domaine sans point ("user@yopmail" est
+            // syntaxiquement valide) — la regex exige un vrai domaine avec extension.
+            // ('email:rfc,dns' vérifierait aussi que le domaine existe réellement, mais
+            // ajouterait une dépendance réseau à chaque inscription — trop fragile.)
+            'email' => ['required', 'string', 'lowercase', 'email', 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]+$/', 'max:255', 'unique:'.User::class],
+            // Champ affiché comme obligatoire dans le formulaire mais jamais vérifié côté
+            // serveur (ni la présence, ni le format) : n'importe quoi passait, y compris un
+            // email tapé par erreur dans ce champ.
+            // Autorise les espaces/tirets (le champ suggère "+229 XX XX XX XX"), rejette
+            // tout ce qui contient des lettres ou un @ — exactement ce qui posait problème.
+            'phone' => ['required', 'string', 'regex:/^\+?[0-9\s.-]{8,20}$/'],
             'city' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:client,prestataire'],
+        ], [
+            'phone.required' => 'Le numéro de téléphone est obligatoire.',
+            'phone.regex' => 'Le numéro de téléphone n\'est pas valide.',
         ]);
 
         // Le formulaire envoie un champ radio "role" (client/prestataire), pas

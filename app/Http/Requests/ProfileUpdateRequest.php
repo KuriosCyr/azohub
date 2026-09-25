@@ -17,8 +17,8 @@ class ProfileUpdateRequest extends FormRequest
     {
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
-            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]+$/', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
+            'phone' => ['required', 'string', 'regex:/^\+?[0-9\s.-]{8,20}$/'],
             'city' => ['required', 'string', 'max:100'],
             'avatar' => ['nullable', 'image', 'max:2048'], // 2MB max
         ];
@@ -51,6 +51,7 @@ class ProfileUpdateRequest extends FormRequest
             'email.email' => 'L\'adresse e-mail doit être valide.',
             'email.unique' => 'Cette adresse e-mail est déjà utilisée.',
             'phone.required' => 'Le numéro de téléphone est obligatoire.',
+            'phone.regex' => 'Le numéro de téléphone n\'est pas valide.',
             'city.required' => 'La ville est obligatoire.',
             'avatar.image' => 'Le fichier doit être une image.',
             'avatar.max' => 'L\'image ne doit pas dépasser 2 MB.',
