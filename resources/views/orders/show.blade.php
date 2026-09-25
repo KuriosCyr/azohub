@@ -20,32 +20,46 @@
 
                     {{-- Status Badge --}}
                     <div>
-                        @php
-                        $statusConfig = [
-                        'pending_payment' => ['label' => 'En attente de paiement', 'color' => 'gray'],
-                        'paid' => ['label' => 'Payée', 'color' => 'blue'],
-                        'in_progress' => ['label' => 'En cours', 'color' => 'yellow'],
-                        'delivered' => ['label' => 'Livrée', 'color' => 'purple'],
-                        'completed' => ['label' => 'Terminée', 'color' => 'green'],
-                        'cancelled' => ['label' => 'Annulée', 'color' => 'red'],
-                        'disputed' => ['label' => 'Litige en cours', 'color' => 'red'],
-                        ];
-                        $status = $statusConfig[$order->status] ?? ['label' => $order->status, 'color' => 'gray'];
-                        @endphp
-
-                        <span class="px-6 py-3 rounded-full text-lg font-bold
-                            @if($status['color'] === 'green') bg-forest-600/10 text-forest-700
-                            @elseif($status['color'] === 'blue') bg-terracotta-50 text-terracotta-700
-                            @elseif($status['color'] === 'yellow') bg-ochre-500/15 text-ink-900
-                            @elseif($status['color'] === 'purple') bg-purple-100 text-purple-800
-                            @elseif($status['color'] === 'red') bg-red-100 text-red-800
-                            @else bg-ink-100/30 text-ink-700
-                            @endif">
-                            {{ $status['label'] }}
+                        <span class="px-6 py-3 rounded-full text-lg font-bold {{ $order->status_badge_class }}">
+                            {{ $order->status_label }}
                         </span>
                     </div>
                 </div>
             </div>
+
+            {{-- Compte à rebours de livraison --}}
+            @if($order->expected_delivery_at && !in_array($order->status, ['delivered', 'completed', 'cancelled', 'refused', 'refunded'], true))
+                <div x-data="{
+                        target: {{ $order->expected_delivery_at->timestamp }} * 1000,
+                        remaining: 0,
+                        tick() {
+                            this.remaining = this.target - Date.now();
+                            setTimeout(() => this.tick(), 1000);
+                        },
+                        get overdue() { return this.remaining <= 0; },
+                        get d() { return Math.floor(Math.abs(this.remaining) / 86400000); },
+                        get h() { return Math.floor((Math.abs(this.remaining) % 86400000) / 3600000); },
+                        get m() { return Math.floor((Math.abs(this.remaining) % 3600000) / 60000); },
+                     }"
+                     x-init="tick()"
+                     class="mb-8 rounded-xl p-6 border-2 flex flex-wrap items-center justify-between gap-4"
+                     :class="overdue ? 'bg-red-50 border-red-200' : 'bg-clay-500/10 border-clay-500/30'">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wide mb-1" :class="overdue ? 'text-red-700' : 'text-ink-500'">
+                            <span x-show="!overdue">Livraison attendue dans</span>
+                            <span x-show="overdue" style="display:none;">Livraison en retard de</span>
+                        </p>
+                        <p class="text-2xl font-serif font-medium" :class="overdue ? 'text-red-700' : 'text-ink-900'">
+                            <span x-text="d"></span>&nbsp;j
+                            <span x-text="h"></span>&nbsp;h
+                            <span x-text="m"></span>&nbsp;min
+                        </p>
+                    </div>
+                    <p class="text-sm text-ink-500">
+                        Livraison prévue le {{ $order->expected_delivery_at->translatedFormat('d M Y à H\hi') }}
+                    </p>
+                </div>
+            @endif
 
             <div class="grid lg:grid-cols-3 gap-8">
                 {{-- Colonne principale --}}

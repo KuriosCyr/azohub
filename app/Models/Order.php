@@ -213,6 +213,24 @@ class Order extends Model
         return $this->status === 'pending_payment';
     }
 
+    // Commande née d'un devis négocié (proposition acceptée) ou d'une offre personnalisée en
+    // chat, par opposition à une commande directe sur un service du catalogue. Détermine quand
+    // le compte à rebours de livraison démarre : au paiement pour une commande directe, mais
+    // seulement quand le prestataire clique "Accepter" pour une commande négociée (le travail
+    // n'a pas encore été cadré avant l'acceptation, contrairement à un service déjà défini).
+    public function isNegotiated(): bool
+    {
+        return $this->proposal_id !== null || $this->custom_offer_id !== null;
+    }
+
+    // Compte à rebours de livraison
+    public function isDeliveryOverdue(): bool
+    {
+        return $this->expected_delivery_at !== null
+            && $this->expected_delivery_at->isPast()
+            && in_array($this->status, ['in_progress'], true);
+    }
+
     // Un litige peut être ouvert par le client ou le prestataire tant que la
     // commande est en cours (prestataire silencieux) ou livrée (client pas
     // satisfait, au-delà d'une simple demande de révision) — et seulement si
@@ -298,12 +316,34 @@ class Order extends Model
         return match($status) {
             'pending_payment' => 'En attente de paiement',
             'paid' => 'Payée',
+            'accepted' => 'Acceptée',
             'in_progress' => 'En cours',
             'delivered' => 'Livrée',
             'completed' => 'Terminée',
             'cancelled' => 'Annulée',
+            'refused' => 'Refusée',
             'disputed' => 'Litige',
+            'refund_pending' => 'Remboursement en cours',
+            'refunded' => 'Remboursée',
             default => ucfirst($status),
+        };
+    }
+
+    // Couleur du badge associé au statut — un seul endroit à tenir à jour, utilisé
+    // partout où un statut de commande s'affiche (dashboard client, liste prestataire...).
+    public function getStatusBadgeClassAttribute(): string
+    {
+        return match($this->status) {
+            'pending_payment' => 'bg-ochre-500/15 text-ink-900',
+            'paid' => 'bg-clay-500/15 text-ink-900',
+            'accepted', 'in_progress' => 'bg-clay-500/15 text-ink-900',
+            'delivered' => 'bg-ochre-500/30 text-ink-900',
+            'completed' => 'bg-forest-600/10 text-forest-700',
+            'cancelled', 'refused' => 'bg-red-100 text-red-800',
+            'disputed' => 'bg-red-100 text-red-800',
+            'refund_pending' => 'bg-ochre-500/15 text-ink-900',
+            'refunded' => 'bg-ink-100 text-ink-700',
+            default => 'bg-ink-100 text-ink-700',
         };
     }
 

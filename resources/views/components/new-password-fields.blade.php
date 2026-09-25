@@ -43,6 +43,9 @@
         if (this.score === 3) return 'text-ochre-600';
         return 'text-forest-700';
     },
+    get hasMinLength() { return this.password.length >= 8; },
+    get hasMixedCase() { return /[a-z]/.test(this.password) && /[A-Z]/.test(this.password); },
+    get hasNumber() { return /[0-9]/.test(this.password); },
     get matches() {
         return this.confirmation.length > 0 && this.password === this.confirmation;
     },
@@ -81,6 +84,22 @@
             </div>
             <p class="text-xs font-semibold mt-1" :class="textColor" x-text="'Force : ' + label"></p>
         </div>
+
+        {{-- Ce que le mot de passe doit contenir --}}
+        <ul class="mt-2 space-y-0.5 text-xs">
+            <li class="flex items-center gap-1.5" :class="hasMinLength ? 'text-forest-700' : 'text-ink-400'">
+                <x-app-icon name="check" class="w-3 h-3 flex-shrink-0" />
+                8 caractères minimum
+            </li>
+            <li class="flex items-center gap-1.5" :class="hasMixedCase ? 'text-forest-700' : 'text-ink-400'">
+                <x-app-icon name="check" class="w-3 h-3 flex-shrink-0" />
+                Une majuscule et une minuscule
+            </li>
+            <li class="flex items-center gap-1.5" :class="hasNumber ? 'text-forest-700' : 'text-ink-400'">
+                <x-app-icon name="check" class="w-3 h-3 flex-shrink-0" />
+                Un chiffre
+            </li>
+        </ul>
 
         @if($passwordErrors)
             <x-input-error :messages="$passwordErrors" class="mt-2" />

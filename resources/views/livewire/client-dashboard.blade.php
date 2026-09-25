@@ -130,7 +130,7 @@
                             </svg>
                             <h2 class="text-lg font-bold text-ink-900">Commandes récentes</h2>
                         </div>
-                        <a href="#all-orders" class="text-terracotta-600 hover:text-terracotta-700 font-semibold text-xs">
+                        <a href="{{ route('client.orders.index') }}" class="text-terracotta-600 hover:text-terracotta-700 font-semibold text-xs">
                             Voir tout →
                         </a>
                     </div>
@@ -149,20 +149,8 @@
                                                 <h3 class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</h3>
                                                 <p class="text-xs text-ink-400">Par {{ $order->prestataire->name }}</p>
                                             </div>
-                                            @php
-                                                $statusMap = [
-                                                    'pending'     => ['bg-ochre-500/15 text-ink-900', 'En attente'],
-                                                    'accepted'    => ['bg-terracotta-50 text-terracotta-700', 'Acceptée'],
-                                                    'in_progress' => ['bg-clay-500/15 text-ink-900', 'En cours'],
-                                                    'delivered'   => ['bg-ochre-500/30 text-ink-900', 'Livrée'],
-                                                    'completed'   => ['bg-forest-600/10 text-forest-700', 'Terminée'],
-                                                    'cancelled'   => ['bg-red-100 text-red-800', 'Annulée'],
-                                                    'refused'     => ['bg-ink-100 text-ink-700', 'Refusée'],
-                                                ];
-                                                [$badgeClass, $badgeLabel] = $statusMap[$order->status] ?? ['bg-ink-100 text-ink-700', ucfirst($order->status)];
-                                            @endphp
-                                            <span class="px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0 {{ $badgeClass }}">
-                                                {{ $badgeLabel }}
+                                            <span class="px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap flex-shrink-0 {{ $order->status_badge_class }}">
+                                                {{ $order->status_label }}
                                             </span>
                                         </div>
 
@@ -175,7 +163,7 @@
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                                 {{ $order->created_at->format('d/m/Y') }}
                                             </span>
-                                            <span class="font-bold text-ink-900">{{ number_format($order->total_price, 0, ',', ' ') }} F</span>
+                                            <span class="font-bold text-ink-900">{{ number_format($order->total_charged, 0, ',', ' ') }} F</span>
                                         </div>
 
                                         <a href="{{ route('orders.show', $order) }}"
@@ -203,94 +191,14 @@
                     </div>
                 </div>
 
-                {{-- Liste complète avec filtres --}}
-                <div id="all-orders" class="bg-cream-50 rounded-lg border border-ink-100 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-ink-100">
-                        <div class="flex items-center gap-2 mb-4">
-                            <svg class="w-5 h-5 text-terracotta-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                            </svg>
-                            <h2 class="text-lg font-bold text-ink-900">Toutes mes commandes</h2>
-                        </div>
-
-                        {{-- Filtres --}}
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <div class="flex flex-wrap gap-2">
-                                @foreach(['all' => 'Toutes', 'active' => 'En cours', 'awaiting' => 'À valider', 'completed' => 'Terminées'] as $val => $label)
-                                    <button wire:click="$set('statusFilter', '{{ $val }}')"
-                                            class="px-3.5 py-1.5 rounded-full font-semibold text-xs transition
-                                            {{ $statusFilter === $val ? 'bg-ink-900 text-cream-50' : 'bg-ink-100/30 text-ink-500 hover:bg-ink-100/60' }}">
-                                        {{ $label }}
-                                    </button>
-                                @endforeach
-                            </div>
-
-                            <div class="relative flex-1">
-                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                <input type="text"
-                                       wire:model.live.debounce.300ms="searchQuery"
-                                       placeholder="Rechercher..."
-                                       class="w-full pl-9 pr-4 py-1.5 text-sm border border-ink-100 rounded-full focus:outline-none focus:ring-2 focus:ring-terracotta-600 focus:border-transparent">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="divide-y divide-ink-100">
-                        @forelse($orders as $order)
-                            <div class="px-6 py-4 hover:bg-ink-100/30 transition">
-                                <div class="flex items-center gap-3">
-                                    <img src="{{ $order->prestataire->avatar ? Storage::url($order->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($order->prestataire->name) }}"
-                                         alt="{{ $order->prestataire->name }}"
-                                         class="w-10 h-10 rounded-xl border border-ink-100 flex-shrink-0">
-
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center justify-between gap-2 mb-0.5">
-                                            <h3 class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</h3>
-                                            <span class="font-bold text-ink-900 text-sm whitespace-nowrap">{{ number_format($order->total_price, 0, ',', ' ') }} F</span>
-                                        </div>
-                                        <div class="flex items-center gap-3 text-xs text-ink-300 flex-wrap">
-                                            <span class="truncate">{{ $order->prestataire->name }}</span>
-                                            <span>·</span>
-                                            <span class="whitespace-nowrap">{{ $order->created_at->format('d/m/Y') }}</span>
-                                            @php
-                                                $statusMap = [
-                                                    'pending'     => ['bg-ochre-500/15 text-ink-900', 'En attente'],
-                                                    'accepted'    => ['bg-terracotta-50 text-terracotta-700', 'Acceptée'],
-                                                    'in_progress' => ['bg-clay-500/15 text-ink-900', 'En cours'],
-                                                    'delivered'   => ['bg-ochre-500/30 text-ink-900', 'Livrée'],
-                                                    'completed'   => ['bg-forest-600/10 text-forest-700', 'Terminée'],
-                                                    'cancelled'   => ['bg-red-100 text-red-700', 'Annulée'],
-                                                ];
-                                                [$badgeClass, $badgeLabel] = $statusMap[$order->status] ?? ['bg-ink-100 text-ink-500', ucfirst($order->status)];
-                                            @endphp
-                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ $badgeClass }}">{{ $badgeLabel }}</span>
-                                        </div>
-                                    </div>
-
-                                    <a href="{{ route('orders.show', $order) }}"
-                                       class="text-terracotta-600 hover:text-terracotta-700 font-semibold text-xs whitespace-nowrap flex-shrink-0">
-                                        Voir →
-                                    </a>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="px-6 py-12 text-center">
-                                <div class="w-12 h-12 rounded-full bg-ink-100/30 flex items-center justify-center mx-auto mb-3">
-                                    <svg class="w-6 h-6 text-ink-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                    </svg>
-                                </div>
-                                <p class="text-ink-500 font-medium text-sm">Aucune commande trouvée</p>
-                            </div>
-                        @endforelse
-                    </div>
-
-                    @if($orders->hasPages())
-                        <div class="px-6 py-4 border-t border-ink-100">
-                            {{ $orders->links() }}
-                        </div>
-                    @endif
-                </div>
+                {{-- Lien vers la liste complète --}}
+                @if($stats['total_orders'] > 5)
+                    <a href="{{ route('client.orders.index') }}"
+                       class="flex items-center justify-center gap-2 bg-cream-50 hover:bg-ink-100/30 rounded-lg border border-ink-100 shadow-sm py-4 text-sm font-bold text-ink-700 transition">
+                        Voir toutes mes commandes ({{ $stats['total_orders'] }})
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </a>
+                @endif
             </div>
 
             {{-- Sidebar --}}

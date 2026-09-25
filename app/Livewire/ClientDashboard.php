@@ -9,10 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class ClientDashboard extends Component
 {
-    // Filtres pour les commandes
-    public $statusFilter = 'all';
-    public $searchQuery = '';
-
     /**
      * Statistiques globales
      */
@@ -66,40 +62,6 @@ class ClientDashboard extends Component
     }
 
     /**
-     * Commandes filtrées
-     */
-    public function getOrdersProperty()
-    {
-        $query = Order::where('client_id', Auth::id())
-            ->with(['service.prestataire', 'service.category', 'serviceRequest.category', 'customOffer']);
-
-        // Filtre par statut
-        if ($this->statusFilter !== 'all') {
-            if ($this->statusFilter === 'active') {
-                $query->whereIn('status', ['pending_payment', 'paid', 'in_progress']);
-            } elseif ($this->statusFilter === 'awaiting') {
-                $query->where('status', 'delivered');
-            } else {
-                $query->where('status', $this->statusFilter);
-            }
-        }
-
-        // Recherche
-        if (!empty($this->searchQuery)) {
-            // Les commandes issues d'une demande/proposition ou d'une offre personnalisée n'ont
-            // pas de service : on cherche aussi dans le titre de ces origines.
-            $term = '%' . $this->searchQuery . '%';
-            $query->where(function ($q) use ($term) {
-                $q->whereHas('service', fn ($s) => $s->where('title', 'like', $term))
-                  ->orWhereHas('serviceRequest', fn ($s) => $s->where('title', 'like', $term))
-                  ->orWhereHas('customOffer', fn ($s) => $s->where('title', 'like', $term));
-            });
-        }
-
-        return $query->latest()->paginate(10);
-    }
-
-    /**
      * Services recommandés (populaires)
      */
     public function getRecommendedServicesProperty()
@@ -118,7 +80,6 @@ class ClientDashboard extends Component
             'stats' => $this->stats,
             'recentOrders' => $this->recentOrders,
             'actionRequiredOrders' => $this->actionRequiredOrders,
-            'orders' => $this->orders,
             'recommendedServices' => $this->recommendedServices,
         ])->layout('components.layouts.app');
     }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\OrderConfirmed;
 use App\Notifications\PaymentConfirmed;
 use App\Notifications\ProposalRejected;
 use App\Notifications\SubscriptionActivated;
@@ -61,12 +62,22 @@ class Payment extends Model
         // La commande passe en "paid" et le paiement reste bloqué en escrow
         // jusqu'à validation de la livraison par le client (cf. Order::releasePayment()).
         if ($this->order && $this->order->status === 'pending_payment') {
+            // Compte à rebours de livraison : démarre tout de suite pour une commande directe
+            // (le service et son délai sont déjà définis) — pour une commande négociée, il
+            // démarre seulement quand le prestataire accepte (cf. OrderController::accept()),
+            // le travail n'ayant pas encore été formellement cadré avant ça.
+            $expectedDeliveryAt = (!$this->order->isNegotiated() && $this->order->delivery_time)
+                ? now()->addDays($this->order->delivery_time)
+                : null;
+
             $this->order->update([
                 'status' => 'paid',
                 'payment_status' => 'held',
+                'expected_delivery_at' => $expectedDeliveryAt,
             ]);
 
             $this->order->prestataire->notify(new PaymentConfirmed($this->order));
+            $this->order->client->notify(new OrderConfirmed($this->order));
 
             $this->finalizeNegotiatedOrder($this->order);
         }

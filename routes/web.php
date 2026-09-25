@@ -10,6 +10,7 @@ use App\Livewire\PrestataireWallet;
 use App\Livewire\PrestataireSubscription;
 use App\Livewire\PrestataireStatistics;
 use App\Livewire\ClientDashboard;
+use App\Livewire\ClientOrdersIndex;
 use App\Livewire\FaqPage;
 use App\Livewire\ServiceRequestCreate;
 use App\Livewire\ServiceRequestsIndex;
@@ -111,6 +112,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/client/dashboard', ClientDashboard::class)
         ->middleware('client')
         ->name('client.dashboard');
+
+    // Commandes client (page dédiée, distincte du dashboard)
+    Route::get('/mes-commandes', ClientOrdersIndex::class)
+        ->middleware('client')
+        ->name('client.orders.index');
     
     // ============================================
     // PROFIL UTILISATEUR

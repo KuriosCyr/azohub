@@ -59,10 +59,15 @@ class OrderController extends Controller
                 ->with('error', 'Cette commande ne peut pas être acceptée.');
         }
 
-        // Mettre à jour le statut
+        // Mettre à jour le statut. Pour une commande négociée, le compte à rebours de
+        // livraison n'a pas encore démarré (cf. Payment::markAsPaid()) : il démarre
+        // maintenant, au moment où le prestataire accepte formellement le travail.
         $order->update([
             'status' => 'in_progress',
             'accepted_at' => now(),
+            'expected_delivery_at' => ($order->isNegotiated() && $order->delivery_time)
+                ? now()->addDays($order->delivery_time)
+                : $order->expected_delivery_at,
         ]);
 
         $order->client->notify(new OrderAccepted($order));
