@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Cahier des charges - Test fonctionnel complet</title>
+<style>
+  @page { size: A4; margin: 22mm 18mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+  h1 {
+    font-size: 22pt;
+    margin-bottom: 2mm;
+    color: #0f2544;
+  }
+  .subtitle { font-size: 12pt; color: #555; margin-bottom: 8mm; }
+  .meta-box {
+    background: #f4f6f9;
+    border: 1px solid #dde3ec;
+    border-radius: 6px;
+    padding: 4mm 6mm;
+    margin-bottom: 8mm;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2mm 6mm;
+    font-size: 10pt;
+  }
+  .meta-box b { color: #0f2544; }
+  h2 {
+    font-size: 14pt;
+    color: #0f2544;
+    border-bottom: 2px solid #0f2544;
+    padding-bottom: 1mm;
+    margin-top: 9mm;
+    margin-bottom: 4mm;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 11.5pt;
+    color: #14315c;
+    margin-top: 5mm;
+    margin-bottom: 2mm;
+    page-break-after: avoid;
+  }
+  p { margin: 2mm 0; }
+  ul, ol { margin: 2mm 0; padding-left: 6mm; }
+  li { margin-bottom: 1.2mm; }
+  .warn {
+    background: #fff7e6;
+    border-left: 4px solid #e0a500;
+    padding: 3mm 4mm;
+    margin: 4mm 0;
+    font-size: 10pt;
+  }
+  .credentials {
+    background: #f4f6f9;
+    border: 1px solid #dde3ec;
+    border-radius: 6px;
+    padding: 3mm 5mm;
+    margin: 3mm 0;
+    font-size: 10pt;
+  }
+  .credentials code {
+    background: #e9edf3;
+    padding: 0.5mm 1.5mm;
+    border-radius: 3px;
+    font-family: 'Consolas', monospace;
+    font-size: 9.5pt;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 3mm 0;
+    font-size: 9.5pt;
+  }
+  th, td {
+    border: 1px solid #cdd6e2;
+    padding: 2mm 2.5mm;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #0f2544; color: white; }
+  tr:nth-child(even) td { background: #f8f9fb; }
+  .sev-bloquant { color: #b30000; font-weight: bold; }
+  .sev-majeur { color: #c26a00; font-weight: bold; }
+  .sev-mineur { color: #2266aa; font-weight: bold; }
+  .sev-cosmetique { color: #555; font-weight: bold; }
+  .section-break { page-break-before: always; }
+  .footer-note {
+    margin-top: 10mm;
+    font-size: 9pt;
+    color: #777;
+    border-top: 1px solid #ddd;
+    padding-top: 3mm;
+  }
+  .checklist-zone {
+    margin-bottom: 5mm;
+  }
+</style>
+</head>
+<body>
+
+<h1>Cahier des charges</h1>
+<div class="subtitle">Test fonctionnel complet d'une plateforme de mise en relation de services en ligne (marketplace)</div>
+
+<div class="meta-box">
+  <div><b>Environnement testé :</b> Production (site réellement en ligne)</div>
+  <div><b>Durée prévue :</b> 5 jours ouvrés</div>
+  <div><b>URL principale :</b> https://azohub.bj</div>
+  <div><b>Mode de paiement :</b> Sandbox (aucune transaction réelle)</div>
+</div>
+
+<h2>1. Contexte et objectif</h2>
+<p>
+La plateforme est une marketplace mettant en relation des <b>clients</b> recherchant un service et des
+<b>prestataires</b> proposant leurs services (à la manière de Fiverr). Elle comprend trois espaces distincts :
+un espace public (visiteurs non connectés), un espace utilisateur (client et prestataire), et un panneau
+d'administration.
+</p>
+<p>
+L'objectif de cette mission est un <b>test fonctionnel complet</b> de l'application : identifier tout
+dysfonctionnement, blocage, incohérence d'affichage, erreur de parcours ou comportement inattendu, sur
+ordinateur et sur mobile, avant une mise en avant publique plus large du site.
+</p>
+
+<h2>2. Règles générales à respecter pendant le test</h2>
+<ul>
+  <li><b>Le site est en production réelle</b> (pas d'environnement de test séparé). Toute donnée créée
+  (compte, service, commande, message, avis...) doit être clairement identifiable comme donnée de test.</li>
+  <li><b>Préfixez systématiquement</b> tous les noms, titres et intitulés que vous créez par <code>TEST_</code>
+  (ex : nom d'utilisateur <code>TEST_Jean Dupont</code>, titre de service <code>TEST_ Développement web</code>).
+  Cela permettra de nettoyer facilement les données de test à la fin de la mission.</li>
+  <li><b>N'utilisez aucune information personnelle réelle</b> (la vôtre ou celle d'un tiers) : noms, numéros
+  de téléphone, emails, photos ou pièces d'identité doivent être fictifs ou clairement des données de test.</li>
+  <li><b>Paiements :</b> le système est en mode sandbox (bac à sable). Aucun argent réel n'est débité.
+  Utilisez uniquement les identifiants de test fournis en section 4.</li>
+  <li>Les accès fournis (notamment le compte administrateur) sont <b>strictement personnels et temporaires</b>,
+  à usage exclusif de cette mission. Ils seront désactivés à la fin du test.</li>
+  <li>Ne partagez ni ne publiez aucun accès, capture d'écran contenant des identifiants, ou URL d'administration.</li>
+</ul>
+
+<h2>3. Accès fournis</h2>
+
+<h3>3.1 Comptes utilisateurs (client / prestataire)</h3>
+<p>
+Aucun compte n'est fourni pour ces deux rôles : <b>le parcours d'inscription fait partie du périmètre à
+tester</b>. Créez vous-même, via le site :
+</p>
+<ul>
+  <li>Au moins <b>un compte client</b> (ex : <code>TEST_client1@[votredomaine].test</code> — utilisez une
+  adresse email réelle que vous consultez, pour recevoir les emails de vérification/notification)</li>
+  <li>Au moins <b>un compte prestataire</b></li>
+  <li>Idéalement un <b>deuxième compte client</b>, pour tester les échanges (messagerie, avis) entre deux
+  utilisateurs différents</li>
+</ul>
+
+<h3>3.2 Compte administrateur (temporaire)</h3>
+<div class="credentials">
+  <b>URL :</b> <code>https://azohub.bj/admin/login</code><br>
+  <b>Email :</b> <code>qa-tester@azohub.bj</code><br>
+  <b>Mot de passe :</b> <code>Wp6jVQ9twkH07uU71O9P</code>
+</div>
+<div class="warn">
+  Ce compte sera <b>supprimé à la fin de la mission</b>. Changez le mot de passe dès la première connexion
+  si vous le souhaitez (une fonctionnalité de changement de mot de passe doit exister dans le profil admin —
+  c'est d'ailleurs un point à vérifier).
+</div>
+
+<h3>3.3 Identifiants de paiement sandbox (FedaPay)</h3>
+<table>
+  <tr><th>Méthode</th><th>Pour un paiement <b>réussi</b></th><th>Pour un paiement <b>refusé</b></th></tr>
+  <tr><td>Carte Visa</td><td><code>4111 1111 1111 1111</code></td><td><code>4242 4242 4242 4241</code></td></tr>
+  <tr><td>Carte MasterCard</td><td><code>5555 5555 5555 4444</code></td><td>—</td></tr>
+  <tr><td>Mobile Money MTN</td><td><code>66000001</code></td><td><code>66000000</code></td></tr>
+  <tr><td>Mobile Money Moov</td><td><code>64000001</code></td><td><code>64000000</code></td></tr>
+</table>
+<p style="font-size:9.5pt; color:#555;">
+Pour les cartes : date d'expiration future quelconque, CVV à 3 chiffres quelconque, nom du titulaire
+quelconque. Si un code de confirmation (OTP) est demandé, essayez <code>1234</code> ou suivez les
+indications affichées par le simulateur à l'écran.
+</p>
+
+<div class="section-break"></div>
+
+<h2>4. Périmètre détaillé du test</h2>
+
+<div class="checklist-zone">
+<h3>A. Inscription et authentification</h3>
+<ul>
+  <li>Inscription client et inscription prestataire (tous les champs, validations, messages d'erreur)</li>
+  <li>Connexion / déconnexion</li>
+  <li>Mot de passe oublié → réception réelle de l'email → réinitialisation</li>
+  <li>Vérification d'email (si applicable)</li>
+  <li>Changement de mot de passe depuis le profil</li>
+  <li>Tentative de connexion avec des identifiants invalides (message d'erreur clair ?)</li>
+</ul>
+</div>
+
+<div class="checklist-zone">
+<h3>B. Espace public (visiteur non connecté)</h3>
+<ul>
+  <li>Page d'accueil, navigation, menu, footer</li>
+  <li>Liste des services : recherche, filtres par catégorie, tri</li>
+  <li>Page détail d'un service</li>
+  <li>Page profil public d'un prestataire</li>
+  <li>Pages : Comment ça marche, FAQ, Conditions d'utilisation, Politique de confidentialité</li>
+  <li><b>Formulaire de contact</b> (vérifier qu'un message envoyé arrive bien)</li>
+  <li>Réseaux sociaux en pied de page (les liens doivent mener au bon endroit)</li>
+  <li><b>Responsive mobile</b> : refaire un passage rapide sur tout l'espace public depuis un téléphone</li>
+  <li>Partage d'une page (ex : coller le lien d'un service sur WhatsApp/Facebook) : l'aperçu (image, titre,
+  description) doit s'afficher correctement</li>
+</ul>
+</div>
+
+<div class="checklist-zone">
+<h3>C. Parcours client</h3>
+<ul>
+  <li>Commander directement un service affiché</li>
+  <li>Faire une demande personnalisée / demande de devis, recevoir et négocier des propositions</li>
+  <li>Paiement d'une commande : tester les 4 méthodes en succès <b>et</b> en échec (voir tableau section 3.3)</li>
+  <li>Suivi d'une commande (statuts, notifications)</li>
+  <li>Messagerie avec un prestataire (envoi de texte, pièce jointe)</li>
+  <li>Réception d'une offre personnalisée d'un prestataire et acceptation</li>
+  <li>Validation d'une livraison / demande de révision</li>
+  <li>Ouverture d'un litige sur une commande</li>
+  <li>Laisser un avis après une commande terminée</li>
+  <li>Modifier son profil client</li>
+  <li>Tableau de bord client (vue d'ensemble)</li>
+</ul>
+</div>
+
+<div class="checklist-zone">
+<h3>D. Parcours prestataire</h3>
+<ul>
+  <li>Créer un service (titre, description, prix, zone de couverture, photos)</li>
+  <li>Modifier / désactiver / mettre en avant (sponsoriser) un service</li>
+  <li>Recevoir une commande : accepter ou refuser</li>
+  <li>Marquer une commande comme livrée</li>
+  <li>Répondre à une demande de devis, envoyer une proposition</li>
+  <li>Envoyer une offre personnalisée à un client</li>
+  <li>Messagerie avec un client</li>
+  <li>Portefeuille : consulter le solde, faire une demande de retrait</li>
+  <li>Abonnement : consulter les formules, souscrire un plan payant (sandbox)</li>
+  <li>Statistiques : vérifier que les vues, taux de conversion, messages et temps de réponse s'affichent
+  correctement (comparer avant/après une action, ex. après une visite du profil)</li>
+  <li>Consulter les avis reçus</li>
+  <li>Vérification d'identité : envoyer une pièce d'identité (fictive)</li>
+  <li>Modifier son profil public (photo, bio, zones d'intervention, langues)</li>
+</ul>
+</div>
+
+<div class="checklist-zone">
+<h3>E. Panneau d'administration</h3>
+<ul>
+  <li>Connexion / changement de mot de passe</li>
+  <li>Gestion des utilisateurs (recherche, désactivation)</li>
+  <li>Gestion des catégories</li>
+  <li>Gestion des services</li>
+  <li>Gestion des commandes et des paiements</li>
+  <li>Gestion des demandes de devis et propositions</li>
+  <li>Gestion des litiges (disputes)</li>
+  <li>Gestion des signalements (reports)</li>
+  <li>Gestion des avis</li>
+  <li>Vérifications d'identité (approuver/rejeter)</li>
+  <li>Demandes de retrait (withdrawal requests)</li>
+  <li>Abonnements et formules</li>
+  <li>Publicités (advertisements)</li>
+  <li>FAQ</li>
+</ul>
+</div>
+
+<div class="checklist-zone">
+<h3>F. Points de sécurité de base (niveau utilisateur, pas un audit technique)</h3>
+<ul>
+  <li>Un client ne doit pas pouvoir accéder aux pages réservées à un prestataire (et inversement) en tapant
+  l'URL directement, ni au panneau admin</li>
+  <li>Un utilisateur ne doit pas pouvoir voir les commandes, messages ou informations privées d'un autre
+  utilisateur en modifiant une URL (ex : changer un numéro de commande dans le lien)</li>
+  <li>Accès à une page protégée sans être connecté → doit rediriger vers la connexion, pas afficher une erreur</li>
+</ul>
+</div>
+
+<h2>5. Suivi de la mission</h2>
+<p>
+Mission prévue sur <b>5 jours ouvrés</b>. Un <b>point chaque soir</b> (15-20 minutes, appel ou message) est
+demandé pour :
+</p>
+<ul>
+  <li>Partager les bugs trouvés dans la journée (voir format en section 6)</li>
+  <li>Permettre de corriger en parallèle les bugs bloquants, sans attendre la fin des 5 jours</li>
+  <li>Réorienter si besoin le lendemain vers une zone prioritaire</li>
+</ul>
+<p>
+Un <b>rapport final récapitulatif</b> est attendu à la fin du 5<sup>e</sup> jour, reprenant l'ensemble des
+bugs (y compris ceux déjà corrigés en cours de route) et un avis général sur la stabilité et l'ergonomie
+de la plateforme.
+</p>
+
+<h2>6. Format de rapport de bug</h2>
+<p>Chaque bug doit être documenté avec au minimum :</p>
+<table>
+  <tr><th>Champ</th><th>Description</th></tr>
+  <tr><td>Zone</td><td>Ex : "Parcours client &gt; Paiement"</td></tr>
+  <tr><td>Titre</td><td>Résumé en une phrase</td></tr>
+  <tr><td>Étapes pour reproduire</td><td>Numérotées, précises (1. ... 2. ... 3. ...)</td></tr>
+  <tr><td>Résultat attendu</td><td>Ce qui aurait dû se passer</td></tr>
+  <tr><td>Résultat obtenu</td><td>Ce qui s'est réellement passé</td></tr>
+  <tr><td>Capture d'écran / vidéo</td><td>Obligatoire dès que l'anomalie est visuelle</td></tr>
+  <tr><td>Navigateur / appareil</td><td>Ex : Chrome desktop, Safari iPhone 13...</td></tr>
+  <tr><td>Sévérité</td><td>Voir classification ci-dessous</td></tr>
+</table>
+
+<h3>Classification de sévérité</h3>
+<table>
+  <tr><th>Niveau</th><th>Définition</th></tr>
+  <tr><td class="sev-bloquant">Bloquant</td><td>Empêche de terminer un parcours essentiel (ex : impossible de payer, de s'inscrire, de se connecter)</td></tr>
+  <tr><td class="sev-majeur">Majeur</td><td>Fonctionnalité importante cassée ou comportement clairement incorrect, mais un contournement existe</td></tr>
+  <tr><td class="sev-mineur">Mineur</td><td>Anomalie gênante mais sans impact réel sur le parcours (ex : mauvais message, champ mal validé)</td></tr>
+  <tr><td class="sev-cosmétique">Cosmétique</td><td>Problème purement visuel (alignement, couleur, texte tronqué)</td></tr>
+</table>
+
+<h2>7. Livrables attendus</h2>
+<ol>
+  <li>Un tableau de suivi des bugs (tableur partagé de préférence), mis à jour quotidiennement</li>
+  <li>Les comptes rendus des points quotidiens (peuvent être informels)</li>
+  <li>Un rapport final synthétique en fin de mission</li>
+</ol>
+
+<div class="footer-note">
+Document préparé pour le compte du client — usage strictement confidentiel, réservé au testeur mandaté
+pour cette mission.
+</div>
+
+</body>
+</html>
