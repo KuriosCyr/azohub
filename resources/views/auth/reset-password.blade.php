@@ -23,19 +23,9 @@
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
 
-                    <div>
-                        <x-input-label for="password" :value="__('Mot de passe')" />
-                        <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                    </div>
-
-                    <div>
-                        <x-input-label for="password_confirmation" :value="__('Confirmer le mot de passe')" />
-                        <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                                      type="password"
-                                      name="password_confirmation" required autocomplete="new-password" />
-                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-                    </div>
+                    <x-new-password-fields
+                        :password-errors="$errors->get('password')"
+                        :confirm-errors="$errors->get('password_confirmation')" />
 
                     <x-primary-button class="w-full justify-center py-3">
                         {{ __('Réinitialiser le mot de passe') }}

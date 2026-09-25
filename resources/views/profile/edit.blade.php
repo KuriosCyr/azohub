@@ -311,31 +311,9 @@
                                 <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
                             </div>
 
-                            <div class="grid md:grid-cols-2 gap-6">
-                                <div>
-                                    <label for="password" class="block text-sm font-bold text-ink-700 mb-2">
-                                        Nouveau mot de passe <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="password"
-                                           name="password"
-                                           id="password"
-                                           required
-                                           class="w-full px-4 py-3 border-2 border-ink-100 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
-                                    <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <label for="password_confirmation" class="block text-sm font-bold text-ink-700 mb-2">
-                                        Confirmer le mot de passe <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="password"
-                                           name="password_confirmation"
-                                           id="password_confirmation"
-                                           required
-                                           class="w-full px-4 py-3 border-2 border-ink-100 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
-                                    <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
-                                </div>
-                            </div>
+                            <x-new-password-fields
+                                :password-errors="$errors->updatePassword->get('password')"
+                                :confirm-errors="$errors->updatePassword->get('password_confirmation')" />
 
                             <div class="flex justify-end pt-4">
                                 <button type="submit"

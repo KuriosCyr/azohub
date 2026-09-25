@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -63,9 +64,13 @@ class ProfileController extends Controller
      */
     public function updatePassword(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
+        // 'min:8' seul ici (déjà corrigé ci-dessus) + validate() au lieu de validateWithBag() :
+        // la vue affiche les erreurs via $errors->updatePassword, un sac qui n'était jamais
+        // rempli — les erreurs de ce formulaire n'apparaissaient donc jamais à l'écran, même
+        // si la validation les rejetait bien côté serveur.
+        $validated = $request->validateWithBag('updatePassword', [
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'min:8', 'confirmed'],
+            'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
         $request->user()->update([

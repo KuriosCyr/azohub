@@ -124,33 +124,9 @@
                         </div>
                     </div>
 
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <!-- Password -->
-                        <div>
-                            <label for="password" class="block text-sm font-bold text-ink-700 mb-2">
-                                Mot de passe <span class="text-red-500">*</span>
-                            </label>
-                            <x-password-input id="password"
-                                   name="password"
-                                   required
-                                   autocomplete="new-password"
-                                   placeholder="Min. 8 caractères" />
-                            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                        </div>
-
-                        <!-- Confirm Password -->
-                        <div>
-                            <label for="password_confirmation" class="block text-sm font-bold text-ink-700 mb-2">
-                                Confirmer le mot de passe <span class="text-red-500">*</span>
-                            </label>
-                            <x-password-input id="password_confirmation"
-                                   name="password_confirmation"
-                                   required
-                                   autocomplete="new-password"
-                                   placeholder="Retapez le mot de passe" />
-                            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-                        </div>
-                    </div>
+                    <x-new-password-fields
+                        :password-errors="$errors->get('password')"
+                        :confirm-errors="$errors->get('password_confirmation')" />
 
                     <!-- Terms -->
                     <div class="flex items-start">

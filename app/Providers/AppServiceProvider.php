@@ -7,6 +7,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +27,11 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
         // Layout unique de l'app, utilisé partout via <x-app-layout>.
         Blade::component('components.layouts.app', 'app-layout');
+
+        // Utilisé par Password::defaults() partout où un mot de passe est créé ou changé
+        // (inscription, réinitialisation, changement depuis le profil) : sans ça, la seule
+        // exigence réelle était 8 caractères minimum, sans aucune complexité.
+        Password::defaults(fn () => Password::min(8)->mixedCase()->numbers());
 
         VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
             return (new MailMessage)
