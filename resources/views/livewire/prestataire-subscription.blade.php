@@ -5,21 +5,9 @@
             <p class="text-ink-500">Réduisez votre commission et publiez plus de services avec un plan payant.</p>
         </div>
 
-        @if(session('success'))
-            <div class="mb-6 bg-forest-600/10 border border-forest-600/20 text-forest-700 px-4 py-3 rounded-xl text-sm">
-                {{ session('success') }}
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-                {{ session('error') }}
-            </div>
-        @endif
-        @if(session('info'))
-            <div class="mb-6 bg-clay-500/10 border border-clay-500/30 text-ink-700 px-4 py-3 rounded-xl text-sm">
-                {{ session('info') }}
-            </div>
-        @endif
+        {{-- Les messages de succès/erreur/info s'affichent déjà via le bandeau global du layout
+             (components/layouts/app.blade.php) — un second bandeau ici les faisait apparaître
+             deux fois sur la page (relevé en test QA : "message... s'affiche en double"). --}}
 
         {{-- Plan actuel --}}
         <div class="bg-ink-900 text-cream-50 rounded-xl p-6 mb-10 flex flex-wrap items-center justify-between gap-4">

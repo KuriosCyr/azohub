@@ -83,7 +83,16 @@
                     <h2 class="text-2xl font-serif font-medium text-ink-900 mb-2"><x-app-icon name="map-pin" class="w-6 h-6 inline-block" /> Zone d'intervention <span class="text-red-500">*</span></h2>
                     <p class="text-sm text-ink-500 mb-6">Où pouvez-vous intervenir ? Les clients de ces communes vous trouveront en filtrant par ville. Modifier la zone ne demande pas de nouvelle validation.</p>
 
-                    <x-service-areas-picker :selected="collect(old('service_areas', array_merge([Auth::user()->city], (array) Auth::user()->service_areas)))->filter()->unique()->values()->all()" :nationwide="(bool) old('serves_nationwide', false)" />
+                    @php
+                        // Une case à cocher vide ne soumet rien du tout : après une tentative refusée
+                        // par la validation, old('service_areas') est alors ABSENT (pas "vide"), donc
+                        // indiscernable de "jamais rempli" pour old(). Sans ce garde-fou, retomber sur le
+                        // valeur par défaut (ville du profil) ici faisait réapparaître une zone que
+                        // l'utilisateur venait pourtant de décocher via "Tout effacer" — exactement la
+                        // zone que le message d'erreur disait vide.
+                        $defaultAreas = $errors->any() ? [] : array_merge([Auth::user()->city], (array) Auth::user()->service_areas);
+                    @endphp
+                    <x-service-areas-picker :selected="collect(old('service_areas', $defaultAreas))->filter()->unique()->values()->all()" :nationwide="(bool) old('serves_nationwide', false)" />
                     <x-input-error :messages="$errors->get('service_areas')" class="mt-2" />
                     <x-input-error :messages="$errors->get('service_areas.*')" class="mt-2" />
                 </div>
@@ -103,6 +112,7 @@
                                        class="w-full px-4 py-3 pr-20 border-2 border-ink-200 rounded-xl focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
                                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-ink-400 font-bold">FCFA</span>
                             </div>
+                            <p class="text-xs text-ink-400 mt-1">Multiples de 1000 FCFA (ex : 15000, 25000...)</p>
                             <x-input-error :messages="$errors->get('price')" class="mt-2" />
                         </div>
 

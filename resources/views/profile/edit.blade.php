@@ -7,18 +7,8 @@
                 <p class="text-ink-500">Gérez vos informations personnelles et préférences</p>
             </div>
 
-            {{-- Flash Messages --}}
-            @if(session('success'))
-                <div class="bg-forest-600/10 border-l-4 border-forest-600 p-4 mb-6 rounded-lg">
-                    <p class="text-forest-700 font-semibold"><x-app-icon name="check-circle" class="w-5 h-5 inline-block align-text-bottom" /> {{ session('success') }}</p>
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-lg">
-                    <p class="text-red-700 font-semibold"><x-app-icon name="x-circle" class="w-5 h-5 inline-block align-text-bottom" /> {{ session('error') }}</p>
-                </div>
-            @endif
+            {{-- Le bandeau succès/erreur global du layout s'en charge déjà (voir plus bas dans
+                 le rendu) — celui-ci faisait doublon. --}}
 
             <div class="grid lg:grid-cols-3 gap-8">
                 {{-- Sidebar Navigation --}}

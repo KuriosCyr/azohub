@@ -6,6 +6,9 @@
     'canonical' => null,
     'noindex' => false,
     'jsonLd' => null,
+    // Une poignée de pages affichent déjà leur propre confirmation (ex : SweetAlert) et n'ont
+    // pas besoin de ce bandeau générique en plus — sans quoi le même message apparaît deux fois.
+    'hideFlashBanner' => false,
 ])
 @php
     // Titre : le contenu spécifique en premier (ce que Google et le visiteur voient en premier
@@ -466,7 +469,7 @@
     </div>
 
     <!-- Flash Messages -->
-    @if(session('success') || session('error') || session('info'))
+    @if(!$hideFlashBanner && (session('success') || session('error') || session('info')))
     <div class="container mx-auto px-4 pt-4">
         @if(session('success'))
             <div class="flex items-center gap-3 bg-forest-600/10 border border-forest-600/30 p-4 mb-3 rounded-lg">

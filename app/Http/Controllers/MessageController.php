@@ -30,6 +30,12 @@ class MessageController extends Controller
             abort(404);
         }
 
+        // Voir ConversationController::downloadAttachment() pour la même correction : une image
+        // doit s'afficher (aperçu), pas se télécharger.
+        if (in_array(strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            return Storage::disk('local')->response($file['path']);
+        }
+
         return Storage::disk('local')->download($file['path'], $file['name']);
     }
 }

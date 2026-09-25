@@ -23,9 +23,11 @@ class NotificationBell extends Component
 
     public function render()
     {
-        // Uniquement le non-lu : une fois marquée lue, la notification disparaît de la cloche.
+        // Les 10 plus récentes, lues ou non : avant, marquer une notification comme lue la
+        // retirait purement et simplement de la liste (elle n'existait nulle part ailleurs pour
+        // la revoir) — la ligne restait bien en base, mais plus aucun endroit ne la montrait.
         $unreadCount = Auth::user()->unreadNotifications()->count();
-        $notifications = Auth::user()->unreadNotifications()->latest()->take(10)->get();
+        $notifications = Auth::user()->notifications()->latest()->take(10)->get();
 
         return view('livewire.notification-bell', compact('notifications', 'unreadCount'));
     }

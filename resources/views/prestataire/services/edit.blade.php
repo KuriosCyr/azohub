@@ -80,7 +80,13 @@
                     <h2 class="text-2xl font-serif font-medium text-ink-900 mb-2"><x-app-icon name="map-pin" class="w-6 h-6 inline-block" /> Zone d'intervention <span class="text-red-500">*</span></h2>
                     <p class="text-sm text-ink-500 mb-6">Où pouvez-vous intervenir ? Les clients de ces communes vous trouveront en filtrant par ville. Modifier la zone ne demande pas de nouvelle validation.</p>
 
-                    <x-service-areas-picker :selected="old('service_areas', $service->areasList())" :nationwide="(bool) old('serves_nationwide', $service->serves_nationwide)" />
+                    @php
+                        // Voir la même remarque dans create.blade.php : sans ce garde-fou, décocher
+                        // toutes les zones puis échouer sur un autre champ faisait réapparaître les
+                        // anciennes zones du service, comme si le nettoyage n'avait servi à rien.
+                        $defaultAreas = $errors->any() ? [] : $service->areasList();
+                    @endphp
+                    <x-service-areas-picker :selected="old('service_areas', $defaultAreas)" :nationwide="(bool) old('serves_nationwide', $service->serves_nationwide)" />
                     <x-input-error :messages="$errors->get('service_areas')" class="mt-2" />
                     <x-input-error :messages="$errors->get('service_areas.*')" class="mt-2" />
                 </div>
@@ -99,6 +105,7 @@
                                        class="w-full px-4 py-3 pr-20 border-2 border-ink-200 rounded-xl focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
                                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-ink-400 font-bold">FCFA</span>
                             </div>
+                            <p class="text-xs text-ink-400 mt-1">Multiples de 1000 FCFA (ex : 15000, 25000...)</p>
                             <x-input-error :messages="$errors->get('price')" class="mt-2" />
                         </div>
 

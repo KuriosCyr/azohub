@@ -20,12 +20,6 @@
                         <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
                             <h2 class="text-3xl font-serif font-medium text-ink-900 mb-6">Envoyez-nous un message</h2>
 
-                            @if(session('success'))
-                                <div class="bg-forest-600/10 border-l-4 border-forest-600 text-forest-700 p-4 rounded mb-6">
-                                    <p class="font-bold">Message envoyé !</p>
-                                    <p>Nous vous répondrons dans les plus brefs délais.</p>
-                                </div>
-                            @endif
 
                             <form action="{{ route('contact.send') }}" method="POST" class="space-y-6">
                                 @csrf

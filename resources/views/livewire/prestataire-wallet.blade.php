@@ -5,12 +5,6 @@
             <p class="text-ink-500">Suivez vos gains et demandez le retrait de votre solde disponible.</p>
         </div>
 
-        @if(session('success'))
-            <div class="mb-6 bg-forest-600/10 border border-forest-600/20 text-forest-700 px-4 py-3 rounded-xl text-sm">
-                {{ session('success') }}
-            </div>
-        @endif
-
         @unless(Auth::user()->identity_verified)
             <div class="mb-6 bg-ochre-100 border border-ochre-300 text-ochre-800 px-4 py-3 rounded-xl text-sm flex flex-wrap items-center justify-between gap-3">
                 <span>Votre identité doit être vérifiée avant de pouvoir retirer des fonds de votre portefeuille.</span>

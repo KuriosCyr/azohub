@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :hide-flash-banner="true">
     @php
         $slotsFull = $slotsMax !== null && $slotsUsed >= $slotsMax;
     @endphp

@@ -64,6 +64,14 @@ class ConversationController extends Controller
             abort(404);
         }
 
+        // Une image cliquée dans la conversation doit s'afficher (aperçu), pas se télécharger —
+        // ::download() force systématiquement Content-Disposition: attachment, y compris pour
+        // les images, d'où le téléchargement au lieu de l'aperçu attendu. Les autres types de
+        // fichiers (PDF, documents...) continuent de se télécharger, c'est le comportement voulu.
+        if (in_array(strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            return Storage::disk('local')->response($file['path']);
+        }
+
         return Storage::disk('local')->download($file['path'], $file['name']);
     }
 }

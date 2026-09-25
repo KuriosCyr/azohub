@@ -39,12 +39,6 @@
                 </div>
             </div>
 
-            @if(session('success'))
-                <div class="mx-5 mt-4 bg-forest-600/10 border border-forest-600/20 text-forest-700 px-4 py-3 rounded-xl text-sm">
-                    {{ session('success') }}
-                </div>
-            @endif
-
             {{-- Fil de discussion --}}
             <div class="flex-1 overflow-y-auto p-5 space-y-4">
                 @forelse($conversation->messages as $msg)
@@ -92,12 +86,22 @@
                                     @if($msg->attachments)
                                         <div class="{{ filled($msg->message) ? 'mt-2' : '' }} space-y-2">
                                             @foreach($msg->attachments as $index => $file)
-                                                <a href="{{ route('conversations.attachment.download', [$msg, $index]) }}"
-                                                   class="flex items-center gap-2 px-3 py-2 rounded-lg {{ $isMine ? 'bg-white bg-opacity-10 hover:bg-opacity-20' : 'bg-cream-50 hover:bg-cream-100' }} transition text-sm">
-                                                    <x-app-icon name="paperclip" class="w-4 h-4 flex-shrink-0" />
-                                                    <span class="truncate">{{ $file['name'] }}</span>
-                                                    <span class="text-xs opacity-70 flex-shrink-0">({{ number_format($file['size'] / 1024, 1) }} KB)</span>
-                                                </a>
+                                                @php
+                                                    $isImage = in_array(strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
+                                                    $url = route('conversations.attachment.download', [$msg, $index]);
+                                                @endphp
+                                                @if($isImage)
+                                                    <a href="{{ $url }}" target="_blank" rel="noopener" class="block">
+                                                        <img src="{{ $url }}" alt="{{ $file['name'] }}" class="max-w-[220px] max-h-52 rounded-lg object-cover">
+                                                    </a>
+                                                @else
+                                                    <a href="{{ $url }}"
+                                                       class="flex items-center gap-2 px-3 py-2 rounded-lg {{ $isMine ? 'bg-white bg-opacity-10 hover:bg-opacity-20' : 'bg-cream-50 hover:bg-cream-100' }} transition text-sm">
+                                                        <x-app-icon name="paperclip" class="w-4 h-4 flex-shrink-0" />
+                                                        <span class="truncate">{{ $file['name'] }}</span>
+                                                        <span class="text-xs opacity-70 flex-shrink-0">({{ number_format($file['size'] / 1024, 1) }} KB)</span>
+                                                    </a>
+                                                @endif
                                             @endforeach
                                         </div>
                                     @endif
@@ -181,7 +185,9 @@
                     </label>
                     <div class="flex-1">
                         <textarea wire:model.live.debounce.500ms="message" rows="1" placeholder="Écrivez votre message..."
+                                  x-on:keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); $wire.sendMessage(); }"
                                   class="w-full px-4 py-3 rounded-lg border border-ink-200 text-sm focus:ring-2 focus:ring-terracotta-600 focus:border-transparent resize-none"></textarea>
+                        <p class="text-xs text-ink-300 mt-1">Entrée pour envoyer, Maj+Entrée pour aller à la ligne</p>
                         @error('message') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                     </div>
                     <button wire:click="sendMessage" wire:loading.attr="disabled" wire:target="sendMessage,attachments"

@@ -10,12 +10,6 @@
             </ol>
         </nav>
 
-        @if(session('success'))
-            <div class="bg-forest-600/10 border-l-4 border-forest-600 p-4 mb-6 rounded">
-                <p class="text-forest-700 font-medium">{{ session('success') }}</p>
-            </div>
-        @endif
-
         <div class="grid lg:grid-cols-3 gap-8">
             {{-- Détail de la demande --}}
             <div class="lg:col-span-2 space-y-6">
