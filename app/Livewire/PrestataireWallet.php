@@ -43,7 +43,19 @@ class PrestataireWallet extends Component
         $this->validate([
             'amount' => 'required|numeric|min:' . self::MIN_WITHDRAWAL . '|max:' . max($balance, self::MIN_WITHDRAWAL),
             'paymentMethod' => 'required|in:mtn_momo,moov_money,celtiis_cash',
-            'phoneNumber' => 'required|string|min:8|max:20',
+            // BUG021 : depuis la migration du plan de numérotation béninois (2023), tout numéro
+            // mobile fait 10 chiffres et commence par 01 — un ancien numéro à 8 chiffres saisi
+            // sans ce préfixe est accepté ici mais rejeté par l'opérateur Mobile Money au moment
+            // du virement réel, sans qu'on en soit informé avant que l'admin tente le paiement.
+            'phoneNumber' => ['required', 'string', function ($attribute, $value, $fail) {
+                $digits = preg_replace('/[^0-9]/', '', $value);
+                if (str_starts_with($digits, '229') && strlen($digits) > 10) {
+                    $digits = substr($digits, 3);
+                }
+                if (!preg_match('/^01\d{8}$/', $digits)) {
+                    $fail('Le numéro doit être au format béninois à 10 chiffres commençant par 01 (ex : 01 23 45 67 89).');
+                }
+            }],
         ], [
             'amount.required' => 'Veuillez indiquer un montant.',
             'amount.min' => 'Le montant minimum de retrait est de ' . number_format(self::MIN_WITHDRAWAL, 0, ',', ' ') . ' FCFA.',

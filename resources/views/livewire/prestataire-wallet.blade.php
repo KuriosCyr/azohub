@@ -52,8 +52,9 @@
 
                 <div>
                     <label class="block text-sm font-semibold text-ink-700 mb-2">Numéro de réception</label>
-                    <input type="text" wire:model="phoneNumber" placeholder="+229 XX XX XX XX"
+                    <input type="text" wire:model="phoneNumber" placeholder="01 XX XX XX XX"
                            class="w-full px-4 py-2.5 rounded-lg border border-ink-200 text-sm focus:ring-2 focus:ring-terracotta-600 focus:border-transparent">
+                    <p class="text-xs text-ink-400 mt-1">Format béninois à 10 chiffres, en commençant par 01.</p>
                     @error('phoneNumber') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 

@@ -11,7 +11,7 @@
             </div>
 
             {{-- Formulaire --}}
-            <form action="{{ route('prestataire.services.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <form action="{{ route('prestataire.services.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6" id="service-form" onsubmit="return validateServiceAreasBeforeSubmit(event)">
                 @csrf
 
                 {{-- Informations de base --}}
@@ -53,7 +53,7 @@
                             <label for="description" class="block text-sm font-bold text-ink-700 mb-2">
                                 Description détaillée <span class="text-red-500">*</span>
                             </label>
-                            <textarea name="description" id="description" rows="6" required
+                            <textarea name="description" id="description" rows="6" required minlength="50"
                                       placeholder="Décrivez en détail votre service, votre expertise, ce qui vous différencie..."
                                       class="w-full px-4 py-3 border-2 border-ink-200 rounded-xl focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">{{ old('description') }}</textarea>
                             <p class="text-xs text-ink-400 mt-1">Minimum 50 caractères - Soyez détaillé et professionnel</p>
@@ -79,7 +79,7 @@
                 </div>
 
                 {{-- Zone d'intervention --}}
-                <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
+                <div id="service-areas-section" class="bg-cream-50 rounded-xl p-8 border border-ink-100">
                     <h2 class="text-2xl font-serif font-medium text-ink-900 mb-2"><x-app-icon name="map-pin" class="w-6 h-6 inline-block" /> Zone d'intervention <span class="text-red-500">*</span></h2>
                     <p class="text-sm text-ink-500 mb-6">Où pouvez-vous intervenir ? Les clients de ces communes vous trouveront en filtrant par ville. Modifier la zone ne demande pas de nouvelle validation.</p>
 
@@ -247,6 +247,29 @@
                 };
                 reader.readAsDataURL(input.files[0]);
             }
+        }
+
+        // BUG013 : la validation serveur de la zone d'intervention (au moins une commune, ou
+        // "Tout le Bénin") n'a aucun équivalent HTML natif — un <input type="checkbox"> ne
+        // peut pas exprimer "au moins un parmi ce groupe" avec required. Sans ce garde-fou, un
+        // prestataire qui oublie de cocher une zone ne le découvre qu'après le rechargement de
+        // la page, en ayant perdu son image de couverture et son portfolio déjà sélectionnés
+        // (un <input type="file"> ne peut pas être re-rempli par le navigateur après coup).
+        function validateServiceAreasBeforeSubmit(event) {
+            const form = event.target;
+            const nationwide = form.querySelector('input[name="serves_nationwide"][value="1"]');
+            const hasArea = form.querySelector('input[name="service_areas[]"]:checked');
+
+            if (!(nationwide && nationwide.checked) && !hasArea) {
+                event.preventDefault();
+                if (window.notifyAction) {
+                    window.notifyAction('Choisissez au moins une commune, ou cochez « Tout le Bénin ».', { icon: 'warning' });
+                }
+                document.getElementById('service-areas-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
+
+            return true;
         }
 
         const PORTFOLIO_MAX = 5;
