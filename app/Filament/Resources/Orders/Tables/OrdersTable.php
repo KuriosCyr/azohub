@@ -164,13 +164,18 @@ class OrdersTable
                     ->requiresConfirmation()
                     ->modalHeading('Confirmer le remboursement')
                     ->modalDescription('FedaPay ne propose pas de remboursement automatique : confirmez uniquement après avoir traité ce remboursement manuellement depuis le dashboard FedaPay (Transactions → Rembourser).')
-                    ->action(function (Order $record) {
+                    ->action(function (Order $record, $livewire) {
                         $record->confirmRefund();
 
                         Notification::make()
                             ->title('Remboursement confirmé pour la commande ' . $record->order_number)
                             ->success()
                             ->send();
+
+                        // Le badge "Commandes" de la sidebar (compte les remboursements en
+                        // attente) n'est recalculé qu'au chargement complet d'une page : sans cet
+                        // événement, il reste affiché tel quel jusqu'à ce que l'admin recharge.
+                        $livewire->dispatch('refresh-sidebar');
                     }),
                 EditAction::make(),
             ])

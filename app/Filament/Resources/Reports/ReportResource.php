@@ -187,7 +187,7 @@ class ReportResource extends Resource
                     ->color('info')
                     ->visible(fn (Report $record) => $record->status === 'pending')
                     ->requiresConfirmation()
-                    ->action(function (Report $record) {
+                    ->action(function (Report $record, $livewire) {
                         $record->update([
                             'status' => 'reviewing',
                             'reviewed_by' => Auth::id(),
@@ -198,6 +198,12 @@ class ReportResource extends Resource
                             ->title('Signalement marqué « En cours d\'examen »')
                             ->success()
                             ->send();
+
+                        // Le badge "Signalements" de la sidebar (voir getNavigationBadge()) n'est
+                        // recalculé qu'au chargement complet d'une page : sans cet événement, il
+                        // reste affiché tel quel jusqu'à ce que l'admin recharge manuellement,
+                        // même quand l'action vient de changer le nombre qu'il est censé montrer.
+                        $livewire->dispatch('refresh-sidebar');
                     }),
 
                 Action::make('resolve')
@@ -216,7 +222,7 @@ class ReportResource extends Resource
                             ->label('Désactiver le service signalé')
                             ->default(false),
                     ])
-                    ->action(function (Report $record, array $data) {
+                    ->action(function (Report $record, array $data, $livewire) {
                         $record->update([
                             'status' => 'resolved',
                             'admin_notes' => $data['admin_notes'],
@@ -233,6 +239,8 @@ class ReportResource extends Resource
                             ->title('Signalement résolu')
                             ->success()
                             ->send();
+
+                        $livewire->dispatch('refresh-sidebar');
                     }),
 
                 Action::make('dismiss')
@@ -247,7 +255,7 @@ class ReportResource extends Resource
                             ->required()
                             ->placeholder('Expliquez pourquoi ce signalement n\'est pas fondé...'),
                     ])
-                    ->action(function (Report $record, array $data) {
+                    ->action(function (Report $record, array $data, $livewire) {
                         $record->update([
                             'status' => 'dismissed',
                             'admin_notes' => $data['admin_notes'],
@@ -259,6 +267,8 @@ class ReportResource extends Resource
                             ->title('Signalement rejeté')
                             ->success()
                             ->send();
+
+                        $livewire->dispatch('refresh-sidebar');
                     }),
             ])
             ->bulkActions([
@@ -270,7 +280,7 @@ class ReportResource extends Resource
                         ->icon('heroicon-o-eye')
                         ->color('info')
                         ->requiresConfirmation()
-                        ->action(function ($records) {
+                        ->action(function ($records, $livewire) {
                             $records->each->update([
                                 'status' => 'reviewing',
                                 'reviewed_by' => Auth::id(),
@@ -281,6 +291,8 @@ class ReportResource extends Resource
                                 ->title($records->count() . ' signalement(s) marqué(s) « En cours d\'examen »')
                                 ->success()
                                 ->send();
+
+                            $livewire->dispatch('refresh-sidebar');
                         }),
                 ]),
             ])

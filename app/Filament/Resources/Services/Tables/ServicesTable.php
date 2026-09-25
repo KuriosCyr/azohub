@@ -111,13 +111,18 @@ class ServicesTable
                     ->requiresConfirmation()
                     ->modalHeading('Approuver ce service ?')
                     ->modalDescription('Le service devient visible par les clients et le prestataire en est informé.')
-                    ->action(function (Service $record) {
+                    ->action(function (Service $record, $livewire) {
                         $record->approve();
 
                         Notification::make()
                             ->title('Service « ' . $record->title . ' » approuvé')
                             ->success()
                             ->send();
+
+                        // Le badge "Services" de la sidebar (compte les services "pending") n'est
+                        // recalculé qu'au chargement complet d'une page : sans cet événement, il
+                        // reste affiché tel quel jusqu'à ce que l'admin recharge manuellement.
+                        $livewire->dispatch('refresh-sidebar');
                     }),
                 Action::make('reject')
                     ->label('Refuser')
@@ -131,13 +136,15 @@ class ServicesTable
                             ->rows(3)
                             ->maxLength(1000),
                     ])
-                    ->action(function (Service $record, array $data) {
+                    ->action(function (Service $record, array $data, $livewire) {
                         $record->reject($data['reason']);
 
                         Notification::make()
                             ->title('Service « ' . $record->title . ' » refusé')
                             ->success()
                             ->send();
+
+                        $livewire->dispatch('refresh-sidebar');
                     }),
                 EditAction::make(),
             ])
@@ -148,13 +155,15 @@ class ServicesTable
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
                         ->requiresConfirmation()
-                        ->action(function (Collection $records) {
+                        ->action(function (Collection $records, $livewire) {
                             $records->each(fn (Service $service) => $service->status !== 'active' && $service->approve());
 
                             Notification::make()
                                 ->title('Services approuvés')
                                 ->success()
                                 ->send();
+
+                            $livewire->dispatch('refresh-sidebar');
                         })
                         ->deselectRecordsAfterCompletion(),
                     DeleteBulkAction::make(),

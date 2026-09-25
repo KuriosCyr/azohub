@@ -97,13 +97,19 @@ class DisputesTable
                     ->color('info')
                     ->visible(fn (Dispute $record) => $record->status === 'open')
                     ->requiresConfirmation()
-                    ->action(function (Dispute $record) {
+                    ->action(function (Dispute $record, $livewire) {
                         $record->update(['status' => 'under_review']);
 
                         Notification::make()
                             ->title('Litige marqué « En examen »')
                             ->success()
                             ->send();
+
+                        // Le badge "Litiges" de la sidebar (voir getNavigationBadge() sur
+                        // DisputeResource) n'est recalculé qu'au chargement complet d'une page :
+                        // sans cet événement, il reste affiché tel quel jusqu'à ce que l'admin
+                        // recharge manuellement, même quand l'action vient de le changer.
+                        $livewire->dispatch('refresh-sidebar');
                     }),
 
                 Action::make('resolve')
@@ -126,7 +132,7 @@ class DisputesTable
                             ->required()
                             ->rows(4),
                     ])
-                    ->action(function (Dispute $record, array $data) {
+                    ->action(function (Dispute $record, array $data, $livewire) {
                         $record->admin_note = $data['admin_note'];
                         $record->save();
 
@@ -136,6 +142,8 @@ class DisputesTable
                             ->title('Litige résolu pour la commande ' . $record->order->order_number)
                             ->success()
                             ->send();
+
+                        $livewire->dispatch('refresh-sidebar');
                     }),
             ])
             ->toolbarActions([

@@ -76,7 +76,7 @@ class WithdrawalRequestsTable
                     ->visible(fn (WithdrawalRequest $record) => $record->status === 'pending')
                     ->requiresConfirmation()
                     ->modalDescription('Confirmez-vous avoir envoyé les fonds via mobile money à ce prestataire ?')
-                    ->action(function (WithdrawalRequest $record) {
+                    ->action(function (WithdrawalRequest $record, $livewire) {
                         $record->markAsPaid(Auth::id());
                         $record->prestataire->notify(new WithdrawalRequestPaid($record));
 
@@ -84,6 +84,11 @@ class WithdrawalRequestsTable
                             ->title('Retrait de ' . $record->prestataire->name . ' marqué comme payé')
                             ->success()
                             ->send();
+
+                        // Le badge "Retraits" de la sidebar n'est recalculé qu'au chargement
+                        // complet d'une page : sans cet événement, il reste affiché tel quel
+                        // jusqu'à ce que l'admin recharge manuellement.
+                        $livewire->dispatch('refresh-sidebar');
                     }),
 
                 Action::make('reject')
@@ -97,7 +102,7 @@ class WithdrawalRequestsTable
                             ->required()
                             ->rows(3),
                     ])
-                    ->action(function (WithdrawalRequest $record, array $data) {
+                    ->action(function (WithdrawalRequest $record, array $data, $livewire) {
                         $record->reject(Auth::id(), $data['reason']);
                         $record->prestataire->notify(new WithdrawalRequestRejected($record));
 
@@ -105,6 +110,8 @@ class WithdrawalRequestsTable
                             ->title('Retrait de ' . $record->prestataire->name . ' refusé, solde recrédité')
                             ->warning()
                             ->send();
+
+                        $livewire->dispatch('refresh-sidebar');
                     }),
             ])
             ->defaultSort('created_at', 'desc');

@@ -75,7 +75,7 @@ class IdentityVerificationsTable
                     ->color('success')
                     ->visible(fn (User $record) => $record->identity_verification_status === 'pending')
                     ->requiresConfirmation()
-                    ->action(function (User $record) {
+                    ->action(function (User $record, $livewire) {
                         $record->approveIdentityVerification();
                         $record->notify(new IdentityVerificationReviewed(true));
 
@@ -83,6 +83,11 @@ class IdentityVerificationsTable
                             ->title('Identité de ' . $record->name . ' vérifiée')
                             ->success()
                             ->send();
+
+                        // Le badge "Vérifications d'identité" de la sidebar n'est recalculé
+                        // qu'au chargement complet d'une page : sans cet événement, il reste
+                        // affiché tel quel jusqu'à ce que l'admin recharge manuellement.
+                        $livewire->dispatch('refresh-sidebar');
                     }),
 
                 Action::make('reject')
@@ -96,7 +101,7 @@ class IdentityVerificationsTable
                             ->required()
                             ->rows(3),
                     ])
-                    ->action(function (User $record, array $data) {
+                    ->action(function (User $record, array $data, $livewire) {
                         $record->rejectIdentityVerification($data['reason']);
                         $record->notify(new IdentityVerificationReviewed(false, $data['reason']));
 
@@ -104,6 +109,8 @@ class IdentityVerificationsTable
                             ->title('Identité de ' . $record->name . ' rejetée')
                             ->warning()
                             ->send();
+
+                        $livewire->dispatch('refresh-sidebar');
                     }),
             ])
             ->defaultSort('updated_at', 'desc');
