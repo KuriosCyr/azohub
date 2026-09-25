@@ -1,8 +1,9 @@
 # Configuration serveur (référence)
 
 Ce dossier n'est **pas** appliqué automatiquement — c'est une copie de sauvegarde de la
-configuration réellement en place sur le VPS OVH (`/etc/nginx/sites-available/azohub`),
-gardée ici pour ne pas avoir à la reconstruire de mémoire après un changement.
+configuration réellement en place sur le VPS OVH (`/etc/nginx/sites-available/azohub` et
+`/var/www/azohub/deploy.sh`), gardée ici pour ne pas avoir à la reconstruire de mémoire
+après un changement.
 
 ## Piège récurrent : les blocs `location` statiques doivent retomber sur PHP
 
@@ -31,8 +32,19 @@ n'existe pas, la requête part vers Laravel au lieu de s'arrêter sur un 404 mue
 
 ## Redéploiement du serveur (mémo)
 
-Le fichier `deploy.sh` à la racine du projet (sur le serveur, pas dans ce dépôt) fait tout :
-`git pull`, `composer install`, migrations, build des assets, mise en cache, redémarrage de
-la file d'attente. Après toute modification de `nginx.conf` ci-dessous, il faut la recopier
-manuellement sur le serveur puis `sudo nginx -t && sudo systemctl reload nginx` — ce fichier
-n'est lu par rien automatiquement.
+Le fichier `deploy.sh` (racine du projet sur le serveur, copie de sauvegarde ci-contre) fait
+tout : `git pull`, `composer install`, migrations, build des assets, mise en cache,
+redémarrage de la file d'attente. Après toute modification de `nginx.conf` ci-dessous, il
+faut la recopier manuellement sur le serveur puis `sudo nginx -t && sudo systemctl reload
+nginx` — ce fichier n'est lu par rien automatiquement. Même chose pour `deploy.sh` : une
+modification faite directement sur le serveur doit être recopiée ici pour ne pas la perdre.
+
+## Piège récurrent : fichiers de vue compilés appartenant à `www-data`
+
+`php artisan view:cache` (exécuté par `ubuntu`) échoue par intermittence sur
+`Permission denied` en tentant de régénérer un fichier de `storage/framework/views/` qu'une
+visite en direct a fait recompiler entre-temps par PHP-FPM (utilisateur `www-data`, mode 0644
+— illisible en écriture par `ubuntu`, même s'il appartient au groupe `www-data`). D'où l'étape
+`chown -R ubuntu:www-data storage bootstrap/cache` + `chmod -R ug+rwX` juste avant la mise en
+cache dans `deploy.sh` : elle remet tout au bon propriétaire/droits avant que le déploiement
+n'y touche.
