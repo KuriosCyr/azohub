@@ -55,7 +55,8 @@
                                 <p class="text-xs text-ink-400 mt-0.5">Client : {{ $order->client->name }}</p>
                             </div>
                             <div class="text-right flex-shrink-0">
-                                <p class="text-xl font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} F</p>
+                                {{-- "net" précisé car le client voit le montant total qu'il a payé (avant commission) pour cette même commande --}}
+                                <p class="text-xl font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} F net</p>
                                 <p class="text-xs text-ink-400 mt-0.5">{{ $order->created_at->format('d/m/Y') }}</p>
                             </div>
                         </div>

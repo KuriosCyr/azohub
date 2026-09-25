@@ -163,7 +163,8 @@
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                                 {{ $order->created_at->format('d/m/Y') }}
                                             </span>
-                                            <span class="font-bold text-ink-900">{{ number_format($order->total_charged, 0, ',', ' ') }} F</span>
+                                            {{-- "payé" précisé car le prestataire voit un montant net inférieur (après commission) pour cette même commande --}}
+                                            <span class="font-bold text-ink-900">{{ number_format($order->total_charged, 0, ',', ' ') }} F payé</span>
                                         </div>
 
                                         <a href="{{ route('orders.show', $order) }}"

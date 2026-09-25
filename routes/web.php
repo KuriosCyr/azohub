@@ -166,7 +166,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Voir une commande
         Route::get('/{order}', [OrderController::class, 'show'])->name('show');
-        
+
+        // Statut au format JSON, utilisé par la page pour se rafraîchir automatiquement tant
+        // que le paiement est en attente de confirmation par le webhook FedaPay (asynchrone).
+        Route::get('/{order}/status', [OrderController::class, 'status'])->name('status');
+
         // Actions prestataire
         Route::middleware('prestataire')->group(function () {
             Route::post('/{order}/accept', [OrderController::class, 'accept'])->name('accept');

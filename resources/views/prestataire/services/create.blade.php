@@ -249,20 +249,59 @@
             }
         }
 
+        const PORTFOLIO_MAX = 5;
+
+        // Un <input type="file" multiple> REMPLACE entièrement input.files à chaque nouvelle
+        // sélection au lieu d'y ajouter : sans ce cumul manuel (stocké sur l'input lui-même),
+        // choisir une 6e image effaçait les 5 précédentes au lieu de simplement refuser la 6e.
         function previewMultipleImages(input, previewId) {
             const preview = document.getElementById(previewId);
-            preview.innerHTML = '';
+            const incoming = Array.from(input.files || []);
+            const before = (input._accumulatedFiles || []).length;
 
-            if (input.files) {
-                const files = Array.from(input.files).slice(0, 5);
-                files.forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        preview.innerHTML += `<img src="${e.target.result}" class="w-full h-32 object-cover rounded-xl shadow">`;
-                    };
-                    reader.readAsDataURL(file);
-                });
+            input._accumulatedFiles = (input._accumulatedFiles || []).concat(incoming).slice(0, PORTFOLIO_MAX);
+
+            const ignored = before + incoming.length - input._accumulatedFiles.length;
+            if (ignored > 0 && window.notifyAction) {
+                window.notifyAction(`Maximum ${PORTFOLIO_MAX} images : ${ignored} image(s) ignorée(s).`, { icon: 'warning' });
             }
+
+            syncPortfolioPreview(input, preview);
+        }
+
+        function syncPortfolioPreview(input, preview) {
+            // Réinjecte la sélection cumulée dans l'input réel via DataTransfer : c'est ce
+            // tableau (pas ce que le navigateur vient de choisir) qui part au formulaire.
+            const dataTransfer = new DataTransfer();
+            input._accumulatedFiles.forEach(file => dataTransfer.items.add(file));
+            input.files = dataTransfer.files;
+
+            preview.innerHTML = '';
+            input._accumulatedFiles.forEach((file, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative';
+                wrapper.innerHTML = `
+                    <img class="w-full h-32 object-cover rounded-xl shadow bg-ink-100/20">
+                    <button type="button" class="absolute top-1 right-1 bg-ink-900/70 hover:bg-red-600 text-cream-50 rounded-full w-6 h-6 flex items-center justify-center text-sm leading-none transition" title="Retirer cette image">&times;</button>
+                `;
+
+                const img = wrapper.querySelector('img');
+                const reader = new FileReader();
+                reader.onload = e => { img.src = e.target.result; };
+                reader.readAsDataURL(file);
+
+                wrapper.querySelector('button').addEventListener('click', () => {
+                    input._accumulatedFiles.splice(index, 1);
+                    syncPortfolioPreview(input, preview);
+                });
+
+                preview.appendChild(wrapper);
+            });
+
+            const counter = document.createElement('p');
+            counter.className = 'text-xs text-ink-400 col-span-3 mt-1';
+            counter.textContent = `${input._accumulatedFiles.length}/${PORTFOLIO_MAX} image(s) sélectionnée(s)`;
+            preview.appendChild(counter);
         }
     </script>
     @endpush

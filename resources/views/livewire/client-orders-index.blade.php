@@ -40,7 +40,8 @@
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center justify-between gap-2 mb-1">
                                     <h3 class="font-bold text-ink-900 text-sm truncate">{{ $order->display_title }}</h3>
-                                    <span class="font-bold text-ink-900 text-sm whitespace-nowrap">{{ number_format($order->total_charged, 0, ',', ' ') }} F</span>
+                                    {{-- "payé" précisé car le prestataire voit un montant net inférieur (après commission) pour cette même commande --}}
+                                    <span class="font-bold text-ink-900 text-sm whitespace-nowrap">{{ number_format($order->total_charged, 0, ',', ' ') }} F payé</span>
                                 </div>
                                 <div class="flex items-center gap-3 text-xs text-ink-400 flex-wrap">
                                     <span class="font-bold text-ink-400">#{{ $order->order_number }}</span>

@@ -43,6 +43,20 @@ class OrderController extends Controller
     }
 
     /**
+     * Statut courant de la commande, en JSON. Sondé côté client (voir orders/show.blade.php)
+     * pour rafraîchir la page dès que le webhook FedaPay confirme un paiement, sans que le
+     * client n'ait besoin de recharger manuellement la page.
+     */
+    public function status(Order $order)
+    {
+        if ($order->client_id !== Auth::id() && $order->prestataire_id !== Auth::id()) {
+            abort(403);
+        }
+
+        return response()->json(['status' => $order->status]);
+    }
+
+    /**
      * Prestataire accepte la commande.
      */
     public function accept(Order $order)

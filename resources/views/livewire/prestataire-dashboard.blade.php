@@ -318,7 +318,8 @@
                             </div>
                             <div class="flex justify-between items-center text-xs">
                                 <span class="text-ink-400">{{ $order->created_at->diffForHumans() }}</span>
-                                <span class="font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} FCFA</span>
+                                {{-- "net" précisé car le client voit le montant total qu'il a payé (avant commission) pour cette même commande --}}
+                                <span class="font-bold text-ink-900">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} FCFA net</span>
                             </div>
                         </a>
                     @empty

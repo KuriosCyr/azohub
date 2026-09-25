@@ -95,6 +95,15 @@ class DisputesTable
                     ->requiresConfirmation()
                     ->action(function (Dispute $record) {
                         $record->update(['status' => 'under_review']);
+
+                        // Le filtre "Statut" par défaut de cette liste (voir ci-dessus) reste sur
+                        // "Ouvert" : sans ce message, le litige semble disparaître purement et
+                        // simplement dès qu'il passe "En examen", alors qu'il est juste filtré.
+                        Notification::make()
+                            ->title('Litige marqué « En examen »')
+                            ->body('Il n\'apparaît plus dans le filtre "Ouvert" (actif par défaut) : filtrez sur "En examen" pour le retrouver.')
+                            ->success()
+                            ->send();
                     }),
 
                 Action::make('resolve')

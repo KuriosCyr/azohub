@@ -357,6 +357,11 @@
                             <p class="text-sm text-ink-900">
                                 Cette commande est en attente de paiement. Le prestataire ne sera notifié qu'une fois le paiement confirmé.
                             </p>
+                            @if(session('success') && str_contains(session('success'), 'en cours de confirmation'))
+                                <p class="text-xs text-ink-500 mt-2">
+                                    Cette page se mettra à jour automatiquement dès que le paiement sera confirmé — inutile de recharger.
+                                </p>
+                            @endif
                         </div>
 
                         <form action="{{ route('orders.pay', $order) }}" method="POST" class="space-y-4">
@@ -721,4 +726,38 @@
             </form>
         </div>
     </div>
+
+    @if($order->status === 'pending_payment')
+    {{-- La confirmation FedaPay arrive de façon asynchrone (webhook), après le retour du
+         client sur cette page : sans ce sondage, le statut "En attente de paiement" reste
+         affiché tel quel jusqu'à ce que le client recharge lui-même la page, ce qui donne
+         l'impression que rien ne s'est passé alors que le paiement est simplement en cours
+         de traitement côté serveur. --}}
+    <script>
+        (function () {
+            const statusUrl = @json(route('orders.status', $order));
+            let attempts = 0;
+            const maxAttempts = 40; // ~4 minutes à 6s d'intervalle
+
+            const poll = setInterval(async () => {
+                attempts++;
+                if (attempts > maxAttempts) {
+                    clearInterval(poll);
+                    return;
+                }
+                try {
+                    const response = await fetch(statusUrl, { headers: { 'Accept': 'application/json' } });
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    if (data.status && data.status !== 'pending_payment') {
+                        clearInterval(poll);
+                        window.location.reload();
+                    }
+                } catch (e) {
+                    // Silencieux : une requête ratée n'empêche pas la suivante.
+                }
+            }, 6000);
+        })();
+    </script>
+    @endif
 </x-app-layout>
