@@ -214,4 +214,16 @@
             @endif
         </div>
     </div>
+
+    @if(session('success') || session('error'))
+        @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                window.notifyAction(@json(session('success') ?? session('error')), {
+                    icon: @json(session('success') ? 'success' : 'error'),
+                });
+            });
+        </script>
+        @endpush
+    @endif
 </x-app-layout>

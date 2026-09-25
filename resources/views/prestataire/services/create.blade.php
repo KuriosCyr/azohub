@@ -157,7 +157,12 @@
                             Image de couverture <span class="text-red-500">*</span>
                         </label>
                         <div class="border-2 border-dashed border-ink-200 rounded-xl p-8 text-center hover:border-terracotta-600 transition">
-                            <input type="file" name="cover_image" id="cover_image" accept="image/*" required
+                            {{-- Pas de "required" natif ici : sur un champ fichier caché (class="hidden"), le
+                                 navigateur ne peut pas afficher sa bulle de validation et bloque l'envoi du
+                                 formulaire en silence, sans aucun message ni rechargement de page. La validation
+                                 côté serveur (ServiceController::store) prend déjà le relais avec un message
+                                 visible ci-dessous si l'image manque. --}}
+                            <input type="file" name="cover_image" id="cover_image" accept="image/*"
                                    class="hidden" onchange="previewImage(this, 'cover_preview')">
                             <div id="cover_preview" class="mb-4"></div>
                             <button type="button" onclick="document.getElementById('cover_image').click()"
