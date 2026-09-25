@@ -12,6 +12,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -32,7 +33,7 @@ class ReportResource extends Resource
     {
         return $schema
             ->schema([
-                Forms\Components\Section::make('Informations du signalement')
+                Section::make('Informations du signalement')
                     ->schema([
                         Forms\Components\Select::make('service_id')
                             ->label('Service')
@@ -66,7 +67,7 @@ class ReportResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Traitement par l\'admin')
+                Section::make('Traitement par l\'admin')
                     ->schema([
                         Forms\Components\Textarea::make('admin_notes')
                             ->label('Notes de l\'administrateur')
