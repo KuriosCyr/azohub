@@ -11,6 +11,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -144,10 +145,14 @@ class ReportResource extends Resource
                     ->toggleable(),
             ])
             ->filters([
+                // Pas de valeur par défaut : le badge de navigation compte "En attente" +
+                // "En cours d'examen" ensemble (voir getNavigationBadge() ci-dessous) — un filtre
+                // par défaut sur "En attente" seul masquait silencieusement les signalements "En
+                // cours d'examen" de cette liste tout en les comptant dans le badge, donnant
+                // l'impression qu'un signalement annoncé par le badge avait disparu.
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Statut')
-                    ->options(Report::statusLabels())
-                    ->default('pending'),
+                    ->options(Report::statusLabels()),
 
                 Tables\Filters\SelectFilter::make('reason')
                     ->label('Raison')
@@ -188,6 +193,11 @@ class ReportResource extends Resource
                             'reviewed_by' => Auth::id(),
                             'reviewed_at' => now(),
                         ]);
+
+                        Notification::make()
+                            ->title('Signalement marqué « En cours d\'examen »')
+                            ->success()
+                            ->send();
                     }),
 
                 Action::make('resolve')
@@ -218,6 +228,11 @@ class ReportResource extends Resource
                         if ($data['disable_service']) {
                             $record->service->update(['is_active' => false]);
                         }
+
+                        Notification::make()
+                            ->title('Signalement résolu')
+                            ->success()
+                            ->send();
                     }),
 
                 Action::make('dismiss')
@@ -239,6 +254,11 @@ class ReportResource extends Resource
                             'reviewed_by' => Auth::id(),
                             'reviewed_at' => now(),
                         ]);
+
+                        Notification::make()
+                            ->title('Signalement rejeté')
+                            ->success()
+                            ->send();
                     }),
             ])
             ->bulkActions([
@@ -256,6 +276,11 @@ class ReportResource extends Resource
                                 'reviewed_by' => Auth::id(),
                                 'reviewed_at' => now(),
                             ]);
+
+                            Notification::make()
+                                ->title($records->count() . ' signalement(s) marqué(s) « En cours d\'examen »')
+                                ->success()
+                                ->send();
                         }),
                 ]),
             ])

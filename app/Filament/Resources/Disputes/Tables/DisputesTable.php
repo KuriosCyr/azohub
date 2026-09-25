@@ -75,10 +75,14 @@ class DisputesTable
                     ->sortable(),
             ])
             ->filters([
+                // Pas de valeur par défaut : le badge de navigation compte "Ouvert" + "En examen"
+                // ensemble (voir getNavigationBadge() sur DisputeResource) — un filtre par défaut
+                // sur "Ouvert" seul masquait donc silencieusement les litiges "En examen" de cette
+                // liste tout en les comptant dans le badge, donnant l'impression que le litige
+                // annoncé par le badge avait disparu.
                 SelectFilter::make('status')
                     ->label('Statut')
-                    ->options(self::STATUS_LABELS)
-                    ->default('open'),
+                    ->options(self::STATUS_LABELS),
                 SelectFilter::make('reason')
                     ->label('Raison')
                     ->options(self::REASON_LABELS),
@@ -96,12 +100,8 @@ class DisputesTable
                     ->action(function (Dispute $record) {
                         $record->update(['status' => 'under_review']);
 
-                        // Le filtre "Statut" par défaut de cette liste (voir ci-dessus) reste sur
-                        // "Ouvert" : sans ce message, le litige semble disparaître purement et
-                        // simplement dès qu'il passe "En examen", alors qu'il est juste filtré.
                         Notification::make()
                             ->title('Litige marqué « En examen »')
-                            ->body('Il n\'apparaît plus dans le filtre "Ouvert" (actif par défaut) : filtrez sur "En examen" pour le retrouver.')
                             ->success()
                             ->send();
                     }),
