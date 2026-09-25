@@ -3,8 +3,10 @@
 namespace App\Livewire;
 
 use App\Models\Conversation;
+use App\Models\Favorite;
 use App\Models\Service;
 use App\Models\ServiceView;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
@@ -12,6 +14,8 @@ class ServiceShow extends Component
 {
     public Service $service;
     public $selectedPackage = 'basic';
+    public bool $isFavorited = false;
+    public int $favoritesCount = 0;
 
     public function mount(Service $service)
     {
@@ -42,11 +46,39 @@ class ServiceShow extends Component
                 ]);
             }
         }
+
+        $this->isFavorited = $service->isFavoritedBy(auth()->user());
+        $this->favoritesCount = $service->favorites()->count();
     }
 
     public function selectPackage($package)
     {
         $this->selectedPackage = $package;
+    }
+
+    // Seuls les clients peuvent mettre un service en favori (un prestataire ne "commande" pas).
+    public function toggleFavorite()
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        if (!Auth::user()->isClient()) {
+            session()->flash('error', 'Seuls les clients peuvent ajouter un service à leurs favoris.');
+            return;
+        }
+
+        $favorite = Favorite::where('user_id', Auth::id())->where('service_id', $this->service->id)->first();
+
+        if ($favorite) {
+            $favorite->delete();
+            $this->isFavorited = false;
+            $this->favoritesCount = max(0, $this->favoritesCount - 1);
+        } else {
+            Favorite::create(['user_id' => Auth::id(), 'service_id' => $this->service->id]);
+            $this->isFavorited = true;
+            $this->favoritesCount++;
+        }
     }
 
     public function orderService()

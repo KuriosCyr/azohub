@@ -18,7 +18,7 @@
             <div class="lg:col-span-2 space-y-6">
                 {{-- En-tête du service --}}
                 <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
-                    <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-start justify-between mb-4 gap-4">
                         <div class="flex-1">
                             <span class="inline-block bg-terracotta-600 text-cream-50 px-4 py-1 rounded-full text-sm font-bold uppercase mb-3">
                                 {{ $service->category->name }}
@@ -27,7 +27,23 @@
                                 {{ $service->title }}
                             </h1>
                         </div>
+
+                        {{-- Favori --}}
+                        <button wire:click="toggleFavorite" wire:loading.attr="disabled"
+                                class="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 transition flex-shrink-0
+                                {{ $isFavorited ? 'border-red-300 bg-red-50' : 'border-ink-100 hover:border-red-200 hover:bg-red-50/50' }}">
+                            <x-app-icon name="heart" class="w-6 h-6 {{ $isFavorited ? 'text-red-500 fill-current' : 'text-ink-300' }}" />
+                            <span class="text-xs font-bold {{ $isFavorited ? 'text-red-600' : 'text-ink-400' }}">
+                                {{ $favoritesCount }}
+                            </span>
+                        </button>
                     </div>
+
+                    @if(session('error'))
+                        <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                            {{ session('error') }}
+                        </div>
+                    @endif
 
                     {{-- Prestataire --}}
                     <div class="flex items-center gap-4 pb-6 border-b border-ink-100">
