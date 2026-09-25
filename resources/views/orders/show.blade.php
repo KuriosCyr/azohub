@@ -116,6 +116,31 @@
                         </div>
                     </div>
 
+                    {{-- Besoins du client (texte complet + pièces jointes, tronqués dans le résumé ci-dessus) --}}
+                    @if($order->requirements || !empty($order->attachments))
+                        <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
+                            <h2 class="text-2xl font-serif font-medium text-ink-900 mb-4">Besoins du client</h2>
+
+                            @if($order->requirements)
+                                <p class="text-ink-700 whitespace-pre-line leading-relaxed">{{ $order->requirements }}</p>
+                            @endif
+
+                            @if(!empty($order->attachments))
+                                <div class="{{ $order->requirements ? 'mt-6 pt-6 border-t border-ink-100' : '' }}">
+                                    <p class="text-sm font-bold text-ink-700 mb-3">Pièces jointes</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach($order->attachments as $index => $file)
+                                            <a href="{{ route('orders.attachment.download', [$order, $index]) }}" target="_blank"
+                                               class="text-sm bg-ink-100/30 hover:bg-ink-100/60 px-3 py-2 rounded-lg text-ink-700 transition">
+                                                📎 {{ $file['name'] }}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
                     {{-- Timeline --}}
                     <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
                         <h2 class="text-2xl font-serif font-medium text-ink-900 mb-6">Suivi de la commande</h2>

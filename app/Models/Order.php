@@ -20,6 +20,7 @@ class Order extends Model
         'proposal_id',
         'custom_offer_id',
         'requirements',
+        'attachments',
         'amount',
         'commission',
         'client_fee',
@@ -44,6 +45,7 @@ class Order extends Model
     ];
 
     protected $casts = [
+        'attachments' => 'array',
         'amount' => 'decimal:2',
         'commission' => 'decimal:2',
         'client_fee' => 'decimal:2',

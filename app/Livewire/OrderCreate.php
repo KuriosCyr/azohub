@@ -6,13 +6,17 @@ use App\Models\Order;
 use App\Models\Service;
 use App\Services\PaymentService;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class OrderCreate extends Component
 {
+    use WithFileUploads;
+
     public Service $service;
     public string $package = 'basic';
     public string $requirements = '';
     public string $paymentMethod = 'mtn_momo';
+    public $attachments = [];
 
     public function mount()
     {
@@ -44,11 +48,25 @@ class OrderCreate extends Component
         $this->validate([
             'requirements' => 'required|string|min:20|max:2000',
             'paymentMethod' => 'required|in:mtn_momo,moov_money,celtiis_cash,card',
+            'attachments.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,mp4,mp3,mov',
         ], [
             'requirements.required' => 'Veuillez décrire vos besoins.',
             'requirements.min' => 'La description doit faire au moins 20 caractères.',
             'requirements.max' => 'La description ne peut pas dépasser 2000 caractères.',
+            'attachments.*.max' => 'Chaque fichier ne peut pas dépasser 10 MB.',
+            'attachments.*.mimes' => 'Type de fichier non autorisé.',
         ]);
+
+        $uploadedAttachments = [];
+        foreach ($this->attachments as $file) {
+            $path = $file->store('orders', 'local');
+            $uploadedAttachments[] = [
+                'name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'size' => $file->getSize(),
+                'uploaded_at' => now()->toDateTimeString(),
+            ];
+        }
 
         $commission = round($this->service->price * $this->service->prestataire->commissionRate(), 2);
         $clientFee = round($this->service->price * Order::CLIENT_FEE_RATE, 2);
@@ -58,6 +76,7 @@ class OrderCreate extends Component
             'prestataire_id'   => $this->service->user_id,
             'service_id'       => $this->service->id,
             'requirements'     => $this->requirements,
+            'attachments'      => !empty($uploadedAttachments) ? $uploadedAttachments : null,
             'amount'           => $this->service->price,
             'commission'       => $commission,
             'client_fee'       => $clientFee,

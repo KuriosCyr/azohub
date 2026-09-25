@@ -49,6 +49,28 @@
                         <p class="text-xs text-ink-300 mt-1">{{ strlen($requirements) }}/2000 caractères (min. 20)</p>
                     </div>
 
+                    {{-- Pièces jointes --}}
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-ink-700 mb-2">
+                            Fichiers à joindre <span class="text-ink-400 font-normal">(optionnel)</span>
+                        </label>
+                        <p class="text-sm text-ink-400 mb-3">
+                            Cahier des charges, visuels de référence, logo existant... tout ce qui peut aider le prestataire.
+                        </p>
+                        <input type="file" wire:model="attachments" multiple
+                               class="w-full px-4 py-3 border-2 border-dashed border-ink-200 rounded-xl focus:border-terracotta-600 transition text-sm">
+                        <div wire:loading wire:target="attachments" class="text-sm text-ink-400 mt-1">Chargement...</div>
+                        @error('attachments.*') <p class="text-red-500 text-sm mt-1">{{ $message }}</p> @enderror
+                        @if(!empty($attachments))
+                            <ul class="mt-2 space-y-1">
+                                @foreach($attachments as $file)
+                                    <li class="text-sm text-ink-500">📎 {{ $file->getClientOriginalName() }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+                        <p class="text-xs text-ink-300 mt-1">10 MB max par fichier.</p>
+                    </div>
+
                     {{-- Mode de paiement --}}
                     <div class="mb-6">
                         <label class="block text-sm font-bold text-ink-700 mb-3">
