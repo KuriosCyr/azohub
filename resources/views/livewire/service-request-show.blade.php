@@ -162,6 +162,8 @@
 
                                     @if($proposal->status === 'pending')
                                         <div class="flex gap-2" x-data>
+                                            {{-- Pas de swal ici : ce lien mène à une page dédiée (choix du mode de
+                                                 paiement + bouton "Confirmer") qui sert déjà d'étape de confirmation. --}}
                                             <a href="{{ route('service-requests.proposals.accept', [$serviceRequest, $proposal]) }}"
                                                class="flex-1 text-center bg-forest-600 hover:bg-forest-700 text-cream-50 font-semibold text-sm py-2 rounded-lg transition">
                                                 Accepter

@@ -78,18 +78,24 @@ class ReviewController extends Controller
 
         $validated = $isClient
             ? $request->validate([
-                'rating' => 'required|integer|min:1|max:5',
                 'quality_rating' => 'required|integer|min:1|max:5',
                 'communication_rating' => 'required|integer|min:1|max:5',
                 'timeliness_rating' => 'required|integer|min:1|max:5',
                 'comment' => 'nullable|string|max:1000',
             ])
             : $request->validate([
-                'rating' => 'required|integer|min:1|max:5',
                 'clarity_rating' => 'required|integer|min:1|max:5',
                 'responsiveness_rating' => 'required|integer|min:1|max:5',
                 'comment' => 'nullable|string|max:1000',
             ]);
+
+        // La note globale n'est plus saisie à part : elle est calculée à partir des critères
+        // détaillés (arrondie au plus proche), pour qu'elle en soit toujours le reflet fidèle
+        // plutôt qu'une évaluation indépendante potentiellement incohérente avec eux.
+        $subRatings = $isClient
+            ? [$validated['quality_rating'], $validated['communication_rating'], $validated['timeliness_rating']]
+            : [$validated['clarity_rating'], $validated['responsiveness_rating']];
+        $overallRating = (int) round(array_sum($subRatings) / count($subRatings));
 
         $review = Review::create([
             'order_id' => $order->id,
@@ -97,7 +103,7 @@ class ReviewController extends Controller
             'reviewee_id' => $isClient ? $order->prestataire_id : $order->client_id,
             'service_id' => $order->service_id,
             'review_type' => $isClient ? 'client_to_prestataire' : 'prestataire_to_client',
-            'rating' => $validated['rating'],
+            'rating' => $overallRating,
             'quality_rating' => $validated['quality_rating'] ?? null,
             'communication_rating' => $validated['communication_rating'] ?? null,
             'timeliness_rating' => $validated['timeliness_rating'] ?? null,

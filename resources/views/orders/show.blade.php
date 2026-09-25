@@ -326,7 +326,8 @@
                         <h2 class="text-2xl font-serif font-medium text-ink-900 mb-6">Actions requises</h2>
 
                         <div class="flex gap-4">
-                            <form action="{{ route('orders.accept', $order) }}" method="POST" class="flex-1">
+                            <form action="{{ route('orders.accept', $order) }}" method="POST" class="flex-1" x-data
+                                  @submit.prevent="confirmAction('Vous confirmez pouvoir réaliser cette commande dans le délai annoncé ?', { confirmText: 'Accepter' }).then(ok => ok && $el.submit())">
                                 @csrf
                                 <button type="submit"
                                     class="w-full bg-forest-600 hover:bg-forest-700 text-white font-bold px-6 py-4 rounded-lg transition">
@@ -344,7 +345,15 @@
                     <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
                         <h2 class="text-2xl font-serif font-medium text-ink-900 mb-6">Livrer le travail</h2>
 
-                        <form action="{{ route('orders.deliver', $order) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                        <form action="{{ route('orders.deliver', $order) }}" method="POST" enctype="multipart/form-data" class="space-y-6"
+                              x-data
+                              @submit.prevent="
+                                  const hasFiles = $el.querySelector('input[name=&quot;deliverables[]&quot;]').files.length > 0;
+                                  const message = hasFiles
+                                      ? 'Confirmez-vous la livraison de ce travail au client ?'
+                                      : 'Aucun fichier n\'est joint à cette livraison — êtes-vous sûr de vouloir marquer la commande comme livrée sans fichier ?';
+                                  confirmAction(message, { confirmText: hasFiles ? 'Marquer comme livré' : 'Livrer quand même', icon: hasFiles ? 'question' : 'warning' }).then(ok => ok && $el.submit());
+                              ">
                             @csrf
 
                             <div>
@@ -417,7 +426,14 @@
                         </div>
 
                         <div class="flex gap-4">
-                            <form action="{{ route('orders.validate', $order) }}" method="POST" class="flex-1">
+                            @php
+                                $hasDeliverables = !empty($order->deliverables);
+                                $validateMessage = $hasDeliverables
+                                    ? 'Une fois validé, le paiement sera libéré au prestataire. Confirmez-vous ?'
+                                    : "Le prestataire n'a joint aucun fichier à sa livraison. Êtes-vous sûr de vouloir valider et libérer le paiement quand même ?";
+                            @endphp
+                            <form action="{{ route('orders.validate', $order) }}" method="POST" class="flex-1" x-data
+                                  @submit.prevent="confirmAction(@js($validateMessage), { confirmText: {{ $hasDeliverables ? "'Valider'" : "'Valider quand même'" }}, icon: '{{ $hasDeliverables ? 'question' : 'warning' }}' }).then(ok => ok && $el.submit())">
                                 @csrf
                                 <button type="submit"
                                     class="w-full bg-forest-600 hover:bg-forest-700 text-white font-bold px-6 py-4 rounded-lg transition">
@@ -436,7 +452,8 @@
                     @if(in_array($order->status, ['pending_payment', 'paid']))
                     <details class="bg-cream-50 rounded-xl border border-ink-100 p-6 mt-6">
                         <summary class="cursor-pointer text-sm font-bold text-red-600 hover:text-red-700">Annuler cette commande</summary>
-                        <form action="{{ route('orders.cancel', $order) }}" method="POST" class="mt-4 space-y-3">
+                        <form action="{{ route('orders.cancel', $order) }}" method="POST" class="mt-4 space-y-3" x-data
+                              @submit.prevent="confirmAction('Cette commande sera annulée' + {{ $order->status === 'paid' ? "' et le remboursement traité manuellement.'" : "'.'" }}, { danger: true, confirmText: 'Annuler la commande' }).then(ok => ok && $el.submit())">
                             @csrf
                             <label class="block text-sm font-bold text-ink-700">Motif de l'annulation</label>
                             <textarea name="cancellation_reason" rows="3" required maxlength="500"
