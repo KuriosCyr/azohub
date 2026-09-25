@@ -30,15 +30,28 @@ class HomePage extends Component
             ]
         ])->layout('components.layouts.app', [
             'description' => "Trouvez un plombier, un électricien, un designer ou tout autre prestataire qualifié au Bénin. Paiement sécurisé, livraison suivie, avis vérifiés.",
+            // Deux entités distinctes (Organization + WebSite) plutôt qu'une seule : c'est ce que
+            // la documentation de Google sur les "noms de site" dans les résultats de recherche
+            // (celui affiché en gras au-dessus du lien, ex. "Azohub" plutôt que "azohub.bj")
+            // demande explicitement pour influencer ce nom.
             'jsonLd' => [
-                '@context' => 'https://schema.org',
-                '@type' => 'Organization',
-                'name' => 'Azohub',
-                'url' => url('/'),
-                // 'design-exports/azohub-symbol.svg' n'a jamais existé (mauvais nom de fichier en
-                // plus du mauvais dossier) : ce champ pointait vers une 404 depuis le début.
-                'logo' => asset('favicon.svg'),
-                'areaServed' => 'Bénin',
+                [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'Organization',
+                    'name' => 'Azohub',
+                    'url' => url('/'),
+                    // Google ne lit pas le SVG comme logo de structured data (formats acceptés :
+                    // JPG/PNG/WebP) : le favicon.svg était donc silencieusement ignoré. On réutilise
+                    // le PNG déjà utilisé comme logo dans les emails, seul raster déjà en place.
+                    'logo' => asset('images/email-logo.png'),
+                    'areaServed' => 'Bénin',
+                ],
+                [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'WebSite',
+                    'name' => 'Azohub',
+                    'url' => url('/'),
+                ],
             ],
         ]);
     }

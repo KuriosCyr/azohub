@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Service;
 use App\Models\Category;
+use App\Services\AdminNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -114,6 +115,12 @@ class ServiceController extends Controller
             }
         }
 
+        AdminNotifier::actionRequired(
+            'Nouveau service à modérer',
+            "{$service->prestataire->name} a soumis le service « {$service->title} » pour validation.",
+            route('filament.admin.resources.services.edit', $service),
+        );
+
         return redirect()
             ->route('prestataire.services.index')
             ->with('success', 'Service créé ! Il sera visible par les clients dès qu\'il aura été validé par notre équipe.');
@@ -222,6 +229,14 @@ class ServiceController extends Controller
             $service->moderation_note = null;
         }
         $service->save();
+
+        if ($contentChanged) {
+            AdminNotifier::actionRequired(
+                'Service modifié à modérer',
+                "{$service->prestataire->name} a modifié le service « {$service->title} », qui repasse en attente de validation.",
+                route('filament.admin.resources.services.edit', $service),
+            );
+        }
 
         return redirect()
             ->route('prestataire.services.edit', $service)

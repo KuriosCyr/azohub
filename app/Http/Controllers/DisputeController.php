@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Dispute;
 use App\Models\Order;
 use App\Notifications\DisputeOpened;
+use App\Services\AdminNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -66,6 +67,12 @@ class DisputeController extends Controller
 
         $otherParty = $order->client_id === Auth::id() ? $order->prestataire : $order->client;
         $otherParty->notify(new DisputeOpened($dispute));
+
+        AdminNotifier::actionRequired(
+            'Nouveau litige à examiner',
+            "Un litige a été ouvert sur la commande {$order->order_number}.",
+            route('filament.admin.resources.disputes.edit', $dispute),
+        );
 
         return redirect()
             ->back()

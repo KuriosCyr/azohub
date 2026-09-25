@@ -29,7 +29,9 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->passwordReset() // "Mot de passe oublié" sur la page de connexion admin — absent par défaut chez Filament tant qu'on ne l'active pas explicitement.
             ->profile() // Page "Modifier le profil" (nom, e-mail, mot de passe) accessible depuis le menu utilisateur.
+            ->databaseNotifications() // Cloche de notifications dans la topbar — voir App\Services\AdminNotifier.
 
             // Palette de couleurs Azohub
             ->colors([

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AdminNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -38,6 +39,12 @@ class IdentityVerificationController extends Controller
         $path = $request->file('identity_document')->store('identity-documents', 'local');
 
         $user->submitIdentityDocument($path);
+
+        AdminNotifier::actionRequired(
+            'Nouvelle vérification d\'identité à examiner',
+            "{$user->name} a soumis une pièce d'identité pour vérification.",
+            route('filament.admin.resources.identity-verifications.index'),
+        );
 
         return redirect()
             ->route('profile.edit')

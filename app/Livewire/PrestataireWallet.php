@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\WithdrawalRequest;
+use App\Services\AdminNotifier;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -85,6 +86,12 @@ class PrestataireWallet extends Component
             $this->addError('amount', 'Solde insuffisant.');
             return;
         }
+
+        AdminNotifier::actionRequired(
+            'Nouvelle demande de retrait à traiter',
+            Auth::user()->name . ' demande le retrait de ' . number_format($amount, 0, ',', ' ') . ' FCFA.',
+            route('filament.admin.resources.withdrawal-requests.index'),
+        );
 
         $this->reset(['amount', 'showRequestForm']);
         session()->flash('success', 'Votre demande de retrait a été envoyée. Elle sera traitée sous peu.');
