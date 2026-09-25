@@ -26,5 +26,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Un onglet resté ouvert depuis avant un déploiement peut renvoyer, à sa reconnexion,
+        // un instantané Livewire périmé du composant interne de notifications de Filament (le
+        // système de "toasts" de l'admin) avec un type corrompu. Ça ne casse rien pour
+        // l'utilisateur — l'admin n'a qu'à rafraîchir sa page pour repartir sur un instantané
+        // à jour — mais ça polluait les logs comme si c'était un vrai bug applicatif à chaque
+        // fois qu'un onglet oublié se reconnectait.
+        $exceptions->reportable(function (\TypeError $e) {
+            if (str_contains($e->getMessage(), 'isFilamentNotificationsComponent')) {
+                return false;
+            }
+        });
     })->create();
