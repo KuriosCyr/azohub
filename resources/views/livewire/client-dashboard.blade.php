@@ -118,6 +118,46 @@
             </div>
         @endif
 
+        {{-- Commandes en retard --}}
+        @if($overdueOrders->isNotEmpty())
+            <div class="bg-red-50 border border-red-200 rounded-lg p-5 mb-8">
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-base font-bold text-ink-900 mb-1">
+                            {{ $overdueOrders->count() }} commande(s) en retard de livraison
+                        </h3>
+                        <p class="text-ink-700 text-sm mb-4">
+                            Le délai annoncé par le prestataire est dépassé. Vous pouvez le contacter ou signaler un litige depuis la commande.
+                        </p>
+                        <div class="space-y-2">
+                            @foreach($overdueOrders as $order)
+                                <div class="bg-cream-50 rounded-xl p-4 flex items-center justify-between border border-red-200">
+                                    <div class="flex items-center gap-3">
+                                        <img src="{{ $order->prestataire->avatar ? Storage::url($order->prestataire->avatar) : 'https://ui-avatars.com/api/?name=' . urlencode($order->prestataire->name) }}"
+                                             alt="{{ $order->prestataire->name }}"
+                                             class="w-10 h-10 rounded-full border-2 border-red-200">
+                                        <div>
+                                            <p class="font-bold text-ink-900 text-sm">{{ $order->display_title }}</p>
+                                            <p class="text-xs text-ink-400">Par {{ $order->prestataire->name }} · attendu le {{ $order->expected_delivery_at->translatedFormat('d M à H\hi') }}</p>
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('orders.show', $order) }}"
+                                       class="bg-ink-900 hover:bg-ink-700 text-cream-50 font-bold px-4 py-2 rounded-lg transition text-sm">
+                                        Voir
+                                    </a>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="grid lg:grid-cols-3 gap-6">
             {{-- Colonne principale --}}
             <div class="lg:col-span-2 space-y-6">

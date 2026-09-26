@@ -8,6 +8,10 @@ Schedule::command('orders:validate-expired')->hourly();
 // Rappelle au prestataire l'échéance de livraison d'une commande, 12h puis 1h avant.
 Schedule::command('orders:remind-deadlines')->everyFifteenMinutes();
 
+// Prévient client et prestataire une fois le délai de livraison dépassé (une seule fois par
+// commande, cf. deadline_overdue_notified_at).
+Schedule::command('orders:notify-overdue')->everyFifteenMinutes();
+
 // Abonnements : rappel avant expiration, puis passage au statut "expiré"
 Schedule::command('subscriptions:remind-expiring')->daily();
 Schedule::command('subscriptions:expire')->hourly();

@@ -599,27 +599,32 @@
                     <div class="bg-cream-50 rounded-xl p-6 border border-ink-100">
                         <h3 class="text-lg font-bold text-ink-900 mb-4">Détails de paiement</h3>
 
+                        {{-- Le prestataire ne voit ni les frais de service client ni le total payé par le
+                             client : il ne perçoit que prix - commission, cette ligne ne le concerne pas
+                             et n'apportait que de la confusion (deux totaux différents pour la même
+                             commande, sans lien visible entre eux pour qui ne voit qu'un des deux). --}}
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-ink-500">Prix service</span>
                                 <span class="font-bold">{{ number_format($order->amount, 0, ',', ' ') }} FCFA</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0, ',', ' ') }}%, client)</span>
-                                <span class="font-bold">{{ number_format($order->client_fee, 0, ',', ' ') }} FCFA</span>
-                            </div>
-                            <div class="border-t pt-3 flex justify-between">
-                                <span class="font-bold text-ink-900">Total payé par le client</span>
-                                <span class="text-2xl font-bold text-ink-900">{{ number_format($order->total_charged, 0, ',', ' ') }} FCFA</span>
-                            </div>
                             @if($userRole === 'prestataire')
-                                <div class="border-t pt-3 flex justify-between text-sm">
-                                    <span class="text-ink-500">Commission Azohub ({{ round($order->commission / max((float) $order->amount, 1) * 100) }}%, prestataire)</span>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-ink-500">Commission Azohub ({{ round($order->commission / max((float) $order->amount, 1) * 100) }}%)</span>
                                     <span class="font-semibold text-ink-700">-{{ number_format($order->commission, 0, ',', ' ') }} FCFA</span>
                                 </div>
-                                <div class="flex justify-between">
+                                <div class="border-t pt-3 flex justify-between">
                                     <span class="font-bold text-ink-900">Vous recevrez</span>
-                                    <span class="text-xl font-bold text-forest-700">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} FCFA</span>
+                                    <span class="text-2xl font-bold text-forest-700">{{ number_format($order->prestataire_amount, 0, ',', ' ') }} FCFA</span>
+                                </div>
+                            @else
+                                <div class="flex justify-between">
+                                    <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0, ',', ' ') }}%)</span>
+                                    <span class="font-bold">{{ number_format($order->client_fee, 0, ',', ' ') }} FCFA</span>
+                                </div>
+                                <div class="border-t pt-3 flex justify-between">
+                                    <span class="font-bold text-ink-900">Total payé</span>
+                                    <span class="text-2xl font-bold text-ink-900">{{ number_format($order->total_charged, 0, ',', ' ') }} FCFA</span>
                                 </div>
                             @endif
                         </div>

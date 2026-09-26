@@ -62,6 +62,23 @@ class ClientDashboard extends Component
     }
 
     /**
+     * Commandes en cours dont le délai de livraison est dépassé : jusqu'ici visible
+     * uniquement sur la page de la commande elle-même (compte à rebours) et dans le "à faire"
+     * du dashboard PRESTATAIRE, jamais ici — le client n'avait aucun moyen de le remarquer
+     * sans ouvrir chaque commande une par une.
+     */
+    public function getOverdueOrdersProperty()
+    {
+        return Order::where('client_id', Auth::id())
+            ->where('status', 'in_progress')
+            ->whereNotNull('expected_delivery_at')
+            ->where('expected_delivery_at', '<', now())
+            ->with(['service.prestataire', 'service.category', 'serviceRequest.category', 'customOffer'])
+            ->latest()
+            ->get();
+    }
+
+    /**
      * Services recommandés (populaires)
      */
     public function getRecommendedServicesProperty()
@@ -80,6 +97,7 @@ class ClientDashboard extends Component
             'stats' => $this->stats,
             'recentOrders' => $this->recentOrders,
             'actionRequiredOrders' => $this->actionRequiredOrders,
+            'overdueOrders' => $this->overdueOrders,
             'recommendedServices' => $this->recommendedServices,
         ])->layout('components.layouts.app');
     }

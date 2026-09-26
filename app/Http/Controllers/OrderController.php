@@ -165,6 +165,11 @@ class OrderController extends Controller
             // Re-livraison après une révision sans nouveau fichier : on garde les fichiers déjà livrés.
             'deliverables' => !empty($deliverables) ? array_merge($order->deliverables ?? [], $deliverables) : ($order->deliverables ?: null),
             'validation_deadline' => now()->addHours(72),
+            // Sans ce reset, une commande sur laquelle une révision a un jour été demandée
+            // continuait à apparaître dans le "À faire" du dashboard prestataire indéfiniment —
+            // y compris après cette re-livraison, sa validation par le client, voire une fois
+            // la commande "completed" : ce champ n'était jamais remis à false nulle part.
+            'revision_requested' => false,
         ]);
 
         $order->client->notify(new OrderDelivered($order));
