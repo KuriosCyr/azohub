@@ -20,14 +20,10 @@ class FaqPage extends Component
         }
     }
 
-    public function toggleFaq($faqId)
-    {
-        if ($this->openFaqId === $faqId) {
-            $this->openFaqId = null;
-        } else {
-            $this->openFaqId = $faqId;
-        }
-    }
+    // toggleFaq() a été retiré : le dépliage est désormais géré côté client (Alpine, voir la
+    // vue) — un aller-retour serveur pour un simple show/hide rendait le dépliement
+    // perceptiblement lent (BUG043 QA). $openFaqId ne sert plus qu'à définir l'état initial
+    // (première FAQ dépliée par défaut, cf. mount()) au premier rendu de chaque page.
 
     public function setCategory($category)
     {

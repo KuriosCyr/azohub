@@ -342,7 +342,7 @@
                         </div>
                     </div>
                     @elseif($order->status === 'in_progress')
-                    <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
+                    <div id="livraison" class="bg-cream-50 rounded-xl p-8 border border-ink-100 scroll-mt-24">
                         <h2 class="text-2xl font-serif font-medium text-ink-900 mb-6">Livrer le travail</h2>
 
                         <form action="{{ route('orders.deliver', $order) }}" method="POST" enctype="multipart/form-data" class="space-y-6"

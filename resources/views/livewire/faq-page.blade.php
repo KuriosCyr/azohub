@@ -57,9 +57,13 @@
                     </h2>
 
                     @forelse($faqs as $faq)
-                        <div class="mb-4 last:mb-0 border-b last:border-0 pb-4 last:pb-0">
+                        {{-- Dépliage géré entièrement côté client (Alpine) : avant, chaque clic
+                             appelait toggleFaq() côté serveur (propriété Livewire $openFaqId),
+                             un aller-retour réseau pour un simple show/hide qui rendait le
+                             dépliement perceptiblement lent (BUG043 QA). --}}
+                        <div x-data="{ open: {{ $openFaqId === $faq->id ? 'true' : 'false' }} }" class="mb-4 last:mb-0 border-b last:border-0 pb-4 last:pb-0">
                             <button
-                                wire:click="toggleFaq({{ $faq->id }})"
+                                @click="open = !open"
                                 class="w-full flex items-center justify-between p-4 hover:bg-ink-100/30 rounded-lg transition text-left">
                                 <div class="flex-1">
                                     <span class="px-3 py-1 bg-terracotta-50 text-terracotta-700 text-xs font-bold rounded-full">
@@ -67,17 +71,17 @@
                                     </span>
                                     <h3 class="font-bold text-ink-900 mt-2 text-lg">{{ $faq->question }}</h3>
                                 </div>
-                                <svg class="w-6 h-6 text-ink-300 flex-shrink-0 ml-4 transition transform {{ $openFaqId === $faq->id ? 'rotate-180' : '' }}"
+                                <svg class="w-6 h-6 text-ink-300 flex-shrink-0 ml-4 transition transform" :class="open ? 'rotate-180' : ''"
                                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
 
-                            @if($openFaqId === $faq->id)
+                            <div x-show="open" x-transition>
                                 <div class="px-4 pb-4 text-ink-700 leading-relaxed">
                                     {!! nl2br(e($faq->answer)) !!}
                                 </div>
-                            @endif
+                            </div>
                         </div>
                     @empty
                         <div class="text-center py-12">
@@ -110,22 +114,22 @@
 
                             <div class="space-y-4">
                                 @foreach($categoryData['faqs'] as $faq)
-                                    <div class="border-b last:border-0 pb-4 last:pb-0">
+                                    <div x-data="{ open: {{ $openFaqId === $faq->id ? 'true' : 'false' }} }" class="border-b last:border-0 pb-4 last:pb-0">
                                         <button
-                                            wire:click="toggleFaq({{ $faq->id }})"
+                                            @click="open = !open"
                                             class="w-full flex items-center justify-between p-4 hover:bg-ink-100/30 rounded-lg transition text-left">
                                             <h3 class="font-bold text-ink-900 text-lg flex-1">{{ $faq->question }}</h3>
-                                            <svg class="w-6 h-6 text-ink-300 flex-shrink-0 ml-4 transition transform {{ $openFaqId === $faq->id ? 'rotate-180' : '' }}"
+                                            <svg class="w-6 h-6 text-ink-300 flex-shrink-0 ml-4 transition transform" :class="open ? 'rotate-180' : ''"
                                                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                             </svg>
                                         </button>
 
-                                        @if($openFaqId === $faq->id)
+                                        <div x-show="open" x-transition>
                                             <div class="px-4 pb-4 text-ink-700 leading-relaxed">
                                                 {!! nl2br(e($faq->answer)) !!}
                                             </div>
-                                        @endif
+                                        </div>
                                     </div>
                                 @endforeach
                             </div>
@@ -140,22 +144,22 @@
 
                         <div class="space-y-4">
                             @forelse($faqs as $faq)
-                                <div class="border-b last:border-0 pb-4 last:pb-0">
+                                <div x-data="{ open: {{ $openFaqId === $faq->id ? 'true' : 'false' }} }" class="border-b last:border-0 pb-4 last:pb-0">
                                     <button
-                                        wire:click="toggleFaq({{ $faq->id }})"
+                                        @click="open = !open"
                                         class="w-full flex items-center justify-between p-4 hover:bg-ink-100/30 rounded-lg transition text-left">
                                         <h3 class="font-bold text-ink-900 text-lg flex-1">{{ $faq->question }}</h3>
-                                        <svg class="w-6 h-6 text-ink-300 flex-shrink-0 ml-4 transition transform {{ $openFaqId === $faq->id ? 'rotate-180' : '' }}"
+                                        <svg class="w-6 h-6 text-ink-300 flex-shrink-0 ml-4 transition transform" :class="open ? 'rotate-180' : ''"
                                              fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                         </svg>
                                     </button>
 
-                                    @if($openFaqId === $faq->id)
+                                    <div x-show="open" x-transition>
                                         <div class="px-4 pb-4 text-ink-700 leading-relaxed">
                                             {!! nl2br(e($faq->answer)) !!}
                                         </div>
-                                    @endif
+                                    </div>
                                 </div>
                             @empty
                                 <div class="text-center py-12">

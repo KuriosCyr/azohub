@@ -24,7 +24,12 @@
 
         <div class="max-h-96 overflow-y-auto divide-y divide-ink-100">
             @forelse($notifications as $notification)
+                {{-- wire:key manquant : sans lui, Livewire ne peut pas fiabiliser sa
+                     réconciliation du DOM d'un rafraîchissement à l'autre (ex. via
+                     wire:poll.30s ci-dessus) et peut laisser des éléments en double affichés
+                     à l'écran alors qu'il n'y a bien qu'une seule notification en base. --}}
                 <a href="{{ $notification->data['url'] ?? '#' }}"
+                   wire:key="notification-{{ $notification->id }}"
                    wire:click="markAsRead('{{ $notification->id }}')"
                    class="flex items-start gap-3 px-4 py-3 hover:bg-ink-100/30 transition {{ is_null($notification->read_at) ? 'bg-terracotta-50/40' : '' }}">
                     <div class="w-9 h-9 rounded-full bg-terracotta-50 flex items-center justify-center text-terracotta-700 flex-shrink-0">

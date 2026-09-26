@@ -68,6 +68,18 @@ Livewire.hook('request', ({ fail }) => {
     });
 });
 
+// Après une soumission de formulaire classique (rechargement complet, pas Livewire) refusée
+// par la validation, la page se rouvre en haut : une erreur sur un champ bas dans un long
+// formulaire (ex. l'image de couverture d'un service) passe inaperçue tant que personne ne
+// pense à faire défiler soi-même. Fait défiler automatiquement jusqu'à la première erreur
+// visible (voir x-input-error, qui pose le repère data-field-error).
+document.addEventListener('DOMContentLoaded', () => {
+    const firstError = document.querySelector('[data-field-error]');
+    if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
 Alpine.plugin(intersect);
 
 // Compteur animé : x-data="counter(1234)" x-intersect.once="start()" x-text="display"
