@@ -1,4 +1,4 @@
-<div class="py-8 bg-cream min-h-screen">
+<div class="py-8 bg-cream min-h-screen" wire:poll.5s="refreshMessages">
     <div class="container mx-auto px-4 max-w-3xl">
         <nav class="mb-6 text-sm">
             <ol class="flex items-center gap-2 text-ink-500">
@@ -43,7 +43,7 @@
             <div class="flex-1 overflow-y-auto p-5 space-y-4">
                 @forelse($conversation->messages as $msg)
                     @php $isMine = $msg->sender_id === Auth::id(); @endphp
-                    <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}">
+                    <div wire:key="conv-message-{{ $msg->id }}" class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}">
                         <div class="max-w-[80%]">
                             @if($msg->customOffer)
                                 @php $offer = $msg->customOffer; @endphp

@@ -153,6 +153,19 @@ class ConversationShow extends Component
         session()->flash('success', 'Offre déclinée.');
     }
 
+    // Marque comme lus les messages arrivés PENDANT que la conversation est déjà ouverte (le
+    // mount() ne le fait qu'une fois, au chargement initial) et sert de cible à wire:poll côté
+    // vue — sans lequel un message de l'autre partie n'apparaissait qu'après un rechargement
+    // manuel de la page (même trou que celui déjà comblé sur le chat de commande, où une
+    // méthode de sondage existait déjà mais n'était jamais déclenchée depuis la vue).
+    public function refreshMessages()
+    {
+        $this->conversation->messages()
+            ->where('sender_id', '!=', Auth::id())
+            ->where('is_read', false)
+            ->update(['is_read' => true, 'read_at' => now()]);
+    }
+
     public function render()
     {
         $this->conversation->load([
