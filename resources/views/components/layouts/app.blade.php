@@ -147,9 +147,13 @@
                         Tous les services
                     </a>
 
-                    <a href="{{ route('how-it-works') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('how-it-works') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
-                        Comment ça marche
-                    </a>
+                    {{-- Contenu d'onboarding pour un visiteur qui découvre le concept : plus
+                         utile une fois connecté (déplacé dans le menu du profil). --}}
+                    @guest
+                        <a href="{{ route('how-it-works') }}" class="text-sm font-medium text-ink-500 hover:text-ink-900 transition {{ request()->routeIs('how-it-works') ? 'text-ink-900 border-b-2 border-terracotta-600 pb-1' : '' }}">
+                            Comment ça marche
+                        </a>
+                    @endguest
 
                     @auth
                         @php
@@ -288,6 +292,12 @@
                                             Mes commandes
                                         </a>
                                     @endif
+                                    {{-- Déplacé ici depuis la nav principale : plus utile pour un
+                                         nouveau visiteur que pour un utilisateur déjà connecté. --}}
+                                    <a href="{{ route('how-it-works') }}" class="flex items-center gap-3 px-4 py-3 hover:bg-ink-100/30 transition text-ink-700 font-medium">
+                                        <x-app-icon name="question-circle" class="w-4 h-4 text-ink-300" />
+                                        Comment ça marche
+                                    </a>
                                 </div>
 
                                 <div class="border-t border-ink-100 py-2">
@@ -378,10 +388,12 @@
                     <x-app-icon name="box" class="w-4 h-4" />
                     Tous les services
                 </a>
-                <a href="{{ route('how-it-works') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition {{ request()->routeIs('how-it-works') ? 'bg-terracotta-50 text-terracotta-700' : '' }}">
-                    <x-app-icon name="question-circle" class="w-4 h-4" />
-                    Comment ça marche
-                </a>
+                @guest
+                    <a href="{{ route('how-it-works') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition {{ request()->routeIs('how-it-works') ? 'bg-terracotta-50 text-terracotta-700' : '' }}">
+                        <x-app-icon name="question-circle" class="w-4 h-4" />
+                        Comment ça marche
+                    </a>
+                @endguest
 
                 @auth
                     <div class="border-t border-ink-100 my-3"></div>
@@ -429,6 +441,10 @@
                                 {{ $unreadMessagesCount > 99 ? '99+' : $unreadMessagesCount }}
                             </span>
                         @endif
+                    </a>
+                    <a href="{{ route('how-it-works') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
+                        <x-app-icon name="question-circle" class="w-4 h-4" />
+                        Comment ça marche
                     </a>
                     <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-ink-700 hover:bg-terracotta-50 hover:text-terracotta-700 transition">
                         <x-app-icon name="cog" class="w-4 h-4" />

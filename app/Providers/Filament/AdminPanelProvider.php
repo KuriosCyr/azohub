@@ -77,6 +77,16 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => '<script>window.addEventListener("pageshow",e=>{if(e.persisted)location.reload()});</script>',
             )
 
+            // Même correctif que resources/js/app.js côté site public (voir ce fichier) : sans
+            // lui, le confirm() natif de Livewire ("This page has expired...") peut surgir sans
+            // prévenir dès qu'une requête répond 419 (session expirée) — y compris un sondage en
+            // arrière-plan comme celui de la cloche de notifications admin (databaseNotifications,
+            // 30s par défaut), sans aucune action de l'admin.
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => '<script>document.addEventListener("livewire:init",()=>{Livewire.hook("request",({fail})=>{fail(({status,preventDefault})=>{if(status===419){preventDefault();location.href="/admin/login";}});});});</script>',
+            )
+
             // Thème : clair par défaut, dark mode disponible
             ->darkMode(true)
             ->defaultThemeMode(ThemeMode::Light)

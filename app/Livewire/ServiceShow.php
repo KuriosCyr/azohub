@@ -163,22 +163,38 @@ class ServiceShow extends Component
         $service = $this->service;
         $description = \Illuminate\Support\Str::limit(strip_tags($service->description), 155);
 
+        // Les services de démonstration stockent parfois une URL externe (Unsplash) telle
+        // quelle dans cover_image plutôt qu'un chemin local — les vrais envois de prestataires
+        // sont toujours locaux, mais autant gérer les deux plutôt que produire une URL cassée.
+        $ogImage = $service->cover_image
+            ? (\Illuminate\Support\Str::startsWith($service->cover_image, 'http') ? $service->cover_image : \Illuminate\Support\Facades\Storage::url($service->cover_image))
+            : null;
+
+        // @type "Service" n'est pas dans la liste des types que Google reconnaît pour le rich
+        // result "extrait d'avis" (AggregateRating) — Search Console a signalé une erreur
+        // "Type d'objet non valide" dès qu'un service recevait son premier avis. "Product" en
+        // fait partie et correspond bien à ce qui est vendu ici (un service à prix fixe, avec
+        // offre et avis) : c'est le type que la documentation Google recommande dans ce cas.
         $jsonLd = [
             '@context' => 'https://schema.org',
-            '@type' => 'Service',
+            '@type' => 'Product',
             'name' => $service->title,
             'description' => $description,
-            'provider' => [
-                '@type' => 'Person',
+            'brand' => [
+                '@type' => 'Brand',
                 'name' => $service->prestataire->name,
             ],
-            'areaServed' => $service->serves_nationwide ? 'Bénin' : ($service->areasList() ?: ['Bénin']),
             'offers' => [
                 '@type' => 'Offer',
                 'price' => (string) $service->price,
                 'priceCurrency' => 'XOF',
+                'availability' => $service->isOrderable() ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
             ],
         ];
+
+        if ($ogImage) {
+            $jsonLd['image'] = $ogImage;
+        }
 
         if ($service->total_reviews > 0) {
             $jsonLd['aggregateRating'] = [
@@ -191,12 +207,7 @@ class ServiceShow extends Component
         return [
             'title' => $service->title . ' — ' . $service->category->name,
             'description' => $description,
-            // Les services de démonstration stockent parfois une URL externe (Unsplash) telle
-            // quelle dans cover_image plutôt qu'un chemin local — les vrais envois de prestataires
-            // sont toujours locaux, mais autant gérer les deux plutôt que produire une URL cassée.
-            'ogImage' => $service->cover_image
-                ? (\Illuminate\Support\Str::startsWith($service->cover_image, 'http') ? $service->cover_image : \Illuminate\Support\Facades\Storage::url($service->cover_image))
-                : null,
+            'ogImage' => $ogImage,
             'ogType' => 'product',
             // Un service qu'on ne voit que parce qu'on en est le propriétaire (en modération,
             // refusé, désactivé) ne doit jamais s'indexer — même s'il n'est pas bloqué par
