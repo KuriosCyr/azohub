@@ -324,6 +324,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
         if ($orders->isEmpty()) {
             $this->update(['on_time_delivery_rate' => null, 'timed_deliveries_count' => 0]);
+            // updateLevel() traite déjà un taux null comme 0% (voir son propre commentaire) :
+            // sans cet appel ici aussi, un prestataire sans aucune donnée de ponctualité encore
+            // connue garderait un niveau confirme/expert obtenu avant l'introduction de ce
+            // critère, au lieu d'être ramené à nouveau comme le reste de la méthode le fait.
+            $this->refresh()->updateLevel();
             return;
         }
 
