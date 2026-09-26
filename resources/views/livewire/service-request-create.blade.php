@@ -22,7 +22,9 @@
                     <label class="block text-sm font-bold text-ink-700 mb-2">
                         Catégorie <span class="text-red-500">*</span>
                     </label>
-                    <select wire:model="categoryId" class="w-full px-4 py-3 border-2 border-ink-200 rounded-xl focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
+                    {{-- pr-10 : voir services-index.blade.php (BUG040), même risque de
+                         chevauchement texte/flèche avec le plugin @tailwindcss/forms. --}}
+                    <select wire:model="categoryId" class="w-full pl-4 pr-10 py-3 border-2 border-ink-200 rounded-xl focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
                         <option value="">Choisir une catégorie...</option>
                         @foreach($categories as $cat)
                             <option value="{{ $cat->id }}">{{ $cat->name }}</option>

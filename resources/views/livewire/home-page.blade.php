@@ -192,7 +192,9 @@
                         <div class="relative h-44 overflow-hidden">
                             <x-service-cover :service="$service" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
 
-                            <span class="absolute top-3 left-3 bg-cream-50 text-terracotta-700 px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
+                            {{-- max-w + truncate : un nom de catégorie long dépassait le cadre de
+                                 la carte, ce badge étant en position absolue (BUG032). --}}
+                            <span class="absolute top-3 left-3 right-3 max-w-[calc(100%-1.5rem)] truncate bg-cream-50 text-terracotta-700 px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
                                 {{ $service->category->name }}
                             </span>
 
@@ -216,9 +218,9 @@
                                      class="w-8 h-8 rounded-full border border-ink-100">
                                 <div class="flex-1 min-w-0">
                                     <p class="font-medium text-ink-700 text-sm truncate">{{ $service->prestataire->name }}</p>
-                                    <div class="flex items-center gap-1 text-xs text-ink-400" title="{{ $service->serves_nationwide ? 'Partout au Bénin' : implode(', ', $service->areasList()) }}">
-                                        <x-app-icon name="map-pin" class="w-3 h-3" />
-                                        {{ $service->areasLabel() }}
+                                    <div class="flex items-center gap-1 text-xs text-ink-400 min-w-0" title="{{ $service->serves_nationwide ? 'Partout au Bénin' : implode(', ', $service->areasList()) }}">
+                                        <x-app-icon name="map-pin" class="w-3 h-3 flex-shrink-0" />
+                                        <span class="truncate">{{ $service->areasLabel() }}</span>
                                     </div>
                                 </div>
                             </div>

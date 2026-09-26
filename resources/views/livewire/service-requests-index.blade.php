@@ -37,7 +37,9 @@
         @if(!$mine)
             {{-- Filtres --}}
             <div class="bg-cream-50 rounded-lg p-4 border border-ink-100 mb-8 flex flex-wrap gap-4 items-center">
-                <select wire:model.live="categoryFilter" class="px-4 py-2.5 rounded-lg border border-ink-200 text-sm font-semibold focus:ring-2 focus:ring-terracotta-600 focus:border-transparent">
+                {{-- pr-10 : voir services-index.blade.php, même plugin @tailwindcss/forms, même
+                     risque de chevauchement texte/flèche avec un simple px-4. --}}
+                <select wire:model.live="categoryFilter" class="pl-4 pr-10 py-2.5 rounded-lg border border-ink-200 text-sm font-semibold focus:ring-2 focus:ring-terracotta-600 focus:border-transparent">
                     <option value="">Toutes les catégories</option>
                     @foreach($categories as $cat)
                         <option value="{{ $cat->id }}">{{ $cat->name }}</option>

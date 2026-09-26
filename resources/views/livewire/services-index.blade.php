@@ -125,7 +125,11 @@
                         <span class="text-sm text-ink-500">Trier par:</span>
                         <select
                             wire:model.live="sortBy"
-                            class="px-4 py-2 rounded-lg border border-ink-200 text-sm font-semibold focus:ring-2 focus:ring-terracotta-600 focus:border-transparent"
+                            {{-- pr-10 (pas px-4 des deux côtés) : le plugin @tailwindcss/forms réserve
+                                 la place de sa flèche via un padding-droit fixe qu'un simple px-4
+                                 réduisait trop — le texte le plus long ("Prix décroissant") finissait
+                                 par chevaucher la flèche, surtout sur un select étroit (mobile). --}}
+                            class="pl-4 pr-10 py-2 rounded-lg border border-ink-200 text-sm font-semibold focus:ring-2 focus:ring-terracotta-600 focus:border-transparent"
                         >
                             <option value="recent">Plus récents</option>
                             <option value="popular">Populaires</option>
@@ -151,8 +155,11 @@
                             <div class="relative h-48 overflow-hidden">
                                 <x-service-cover :service="$service" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
 
-                                {{-- Category Badge --}}
-                                <span class="absolute top-3 left-3 bg-terracotta-600 text-cream-50 px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg">
+                                {{-- Category Badge : max-w + truncate, sinon un nom de catégorie
+                                     long ("Éducation & Formation"...) dépasse le cadre de la carte
+                                     — ce badge est en position absolue, donc pas contraint par la
+                                     largeur de la carte comme le reste du contenu (BUG032). --}}
+                                <span class="absolute top-3 left-3 right-3 max-w-[calc(100%-1.5rem)] truncate bg-terracotta-600 text-cream-50 px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg">
                                     {{ $service->category->name }}
                                 </span>
 
@@ -198,9 +205,12 @@
                                                 </span>
                                             @endif
                                         </p>
-                                        <p class="text-xs text-ink-400 flex items-center gap-1" title="{{ $service->serves_nationwide ? 'Partout au Bénin' : implode(', ', $service->areasList()) }}">
+                                        <p class="text-xs text-ink-400 flex items-center gap-1 min-w-0" title="{{ $service->serves_nationwide ? 'Partout au Bénin' : implode(', ', $service->areasList()) }}">
                                             <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                            {{ $service->areasLabel() }}
+                                            {{-- truncate : plusieurs communes ("Cotonou, Porto-Novo,
+                                                 Abomey-Calavi...") pouvaient dépasser la carte, seul le
+                                                 nom du prestataire juste au-dessus avait ce traitement (BUG032). --}}
+                                            <span class="truncate">{{ $service->areasLabel() }}</span>
                                         </p>
                                     </div>
                                 </div>
