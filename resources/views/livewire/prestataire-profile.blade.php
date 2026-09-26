@@ -127,7 +127,7 @@
     {{-- Stats détaillées --}}
     <div class="bg-cream-50 border-b border-ink-100 sticky top-16 z-40 shadow-sm">
         <div class="container mx-auto px-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 py-6">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-6 py-6">
                 <div class="text-center">
                     <p class="text-2xl font-bold text-ink-900 mb-1 flex items-center justify-center gap-1">
                         {{ number_format($stats['rating'], 1) }}
@@ -147,6 +147,10 @@
                 <div class="text-center">
                     <p class="text-2xl font-bold text-ink-900 mb-1">{{ $stats['completion_rate'] !== null ? $stats['completion_rate'] . '%' : '—' }}</p>
                     <p class="text-sm text-ink-500">Taux de réussite</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-ink-900 mb-1">{{ $stats['on_time_delivery_rate'] !== null ? number_format($stats['on_time_delivery_rate'], 0) . '%' : '—' }}</p>
+                    <p class="text-sm text-ink-500">Livré à l'heure</p>
                 </div>
             </div>
         </div>

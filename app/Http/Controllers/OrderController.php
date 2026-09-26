@@ -161,6 +161,9 @@ class OrderController extends Controller
         $order->update([
             'status' => 'delivered',
             'delivered_at' => now(),
+            // Renseigné une seule fois : sert de référence pour juger la ponctualité, une
+            // re-livraison après révision ne doit pas la faire passer "en retard" après coup.
+            'first_delivered_at' => $order->first_delivered_at ?? now(),
             'delivery_note' => $validated['delivery_notes'] ?? null,
             // Re-livraison après une révision sans nouveau fichier : on garde les fichiers déjà livrés.
             'deliverables' => !empty($deliverables) ? array_merge($order->deliverables ?? [], $deliverables) : ($order->deliverables ?: null),
@@ -171,6 +174,11 @@ class OrderController extends Controller
             // la commande "completed" : ce champ n'était jamais remis à false nulle part.
             'revision_requested' => false,
         ]);
+
+        // Recalculé dès la livraison (pas seulement à la validation finale par le client, qui
+        // peut arriver des jours plus tard) : first_delivered_at vient d'être fixé, la
+        // ponctualité de cette commande est donc déjà connue.
+        $order->prestataire->updatePunctuality();
 
         $order->client->notify(new OrderDelivered($order));
 

@@ -77,7 +77,7 @@
         </div>
 
         {{-- STATS --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <a href="{{ route('prestataire.wallet') }}" class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm hover:shadow-md transition">
                 <div class="flex items-center justify-between mb-3">
                     <div class="w-10 h-10 bg-ochre-500/15 rounded-xl flex items-center justify-center">
@@ -132,6 +132,24 @@
                 <p class="text-3xl font-bold text-ink-900">{{ number_format($stats['rating'], 1) }}</p>
                 <p class="text-ink-400 text-xs mt-0.5">{{ $stats['total_reviews'] }} avis</p>
             </div>
+
+            <div class="bg-cream-50 rounded-lg p-5 border border-ink-100 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-10 h-10 bg-forest-600/10 rounded-xl flex items-center justify-center">
+                        <svg class="w-5 h-5 text-forest-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-ink-300 text-xs font-semibold uppercase tracking-wide">Ponctualité</span>
+                </div>
+                @if($stats['on_time_delivery_rate'] !== null)
+                    <p class="text-3xl font-bold text-ink-900">{{ number_format($stats['on_time_delivery_rate'], 0) }}%</p>
+                    <p class="text-ink-400 text-xs mt-0.5">{{ $stats['timed_deliveries_count'] }} livraison(s) chronométrée(s)</p>
+                @else
+                    <p class="text-3xl font-bold text-ink-300">—</p>
+                    <p class="text-ink-400 text-xs mt-0.5">Pas encore de livraison à délai</p>
+                @endif
+            </div>
         </div>
 
         {{-- MON ACTIVITE --}}
@@ -165,14 +183,14 @@
                 @if(Auth::user()->level !== 'expert')
                     @php
                         $nextLevel = Auth::user()->level === 'nouveau'
-                            ? ['orders' => 15, 'rating' => 4.3, 'label' => 'Confirmé']
-                            : ['orders' => 50, 'rating' => 4.7, 'label' => 'Expert'];
+                            ? ['orders' => 15, 'rating' => 4.3, 'punctuality' => 80, 'label' => 'Confirmé']
+                            : ['orders' => 50, 'rating' => 4.7, 'punctuality' => 90, 'label' => 'Expert'];
                         $ordersProgress = $nextLevel['orders'] > 0 ? min(100, ($stats['completed_orders'] / $nextLevel['orders']) * 100) : 100;
                     @endphp
                     <div class="mt-5 pt-4 border-t border-white/15">
                         <div class="flex justify-between text-xs text-cream-100/70 mb-1.5">
                             <span>Progression vers <strong class="text-cream-50">{{ $nextLevel['label'] }}</strong> (commission réduite)</span>
-                            <span>{{ $stats['completed_orders'] }}/{{ $nextLevel['orders'] }} commandes · note ≥ {{ $nextLevel['rating'] }}</span>
+                            <span>{{ $stats['completed_orders'] }}/{{ $nextLevel['orders'] }} commandes · note ≥ {{ $nextLevel['rating'] }} · ponctualité ≥ {{ $nextLevel['punctuality'] }}%</span>
                         </div>
                         <div class="h-2 bg-white/15 rounded-full overflow-hidden">
                             <div class="h-full rounded-full" style="width: {{ $ordersProgress }}%; background: {{ $levelTheme['icon'] }};"></div>

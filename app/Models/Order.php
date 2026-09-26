@@ -21,6 +21,7 @@ class Order extends Model
         'custom_offer_id',
         'requirements',
         'attachments',
+        'first_delivered_at',
         'amount',
         'commission',
         'client_fee',
@@ -56,6 +57,7 @@ class Order extends Model
         'auto_validated' => 'boolean',
         'revision_requested' => 'boolean',
         'expected_delivery_at' => 'datetime',
+        'first_delivered_at' => 'datetime',
         'deadline_reminded_12h_at' => 'datetime',
         'deadline_reminded_1h_at' => 'datetime',
         'deadline_overdue_notified_at' => 'datetime',
@@ -237,6 +239,26 @@ class Order extends Model
         return $this->expected_delivery_at !== null
             && $this->expected_delivery_at->isPast()
             && in_array($this->status, ['in_progress'], true);
+    }
+
+    // Marge de tolérance avant de considérer une livraison "en retard" pour le calcul de
+    // ponctualité (User::updatePunctuality()) : évite de sanctionner un dépôt à quelques
+    // minutes/heures près pour un motif purement horaire.
+    public const PUNCTUALITY_GRACE_HOURS = 3;
+
+    // Ponctualité de la PREMIÈRE livraison (first_delivered_at, jamais écrasé par une
+    // re-livraison après révision) comparée au délai annoncé. Null tant que la commande n'a
+    // jamais été livrée, ou qu'aucun délai n'était attendu (offre personnalisée sans délai
+    // par ex.) : dans ce cas elle ne doit compter ni pour ni contre le prestataire.
+    public function wasDeliveredOnTime(): ?bool
+    {
+        if ($this->first_delivered_at === null || $this->expected_delivery_at === null) {
+            return null;
+        }
+
+        return $this->first_delivered_at->lessThanOrEqualTo(
+            $this->expected_delivery_at->copy()->addHours(self::PUNCTUALITY_GRACE_HOURS)
+        );
     }
 
     // Un litige peut être ouvert par le client ou le prestataire tant que la

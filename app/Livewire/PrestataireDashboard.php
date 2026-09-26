@@ -30,6 +30,11 @@ class PrestataireDashboard extends Component
                 ->sum('prestataire_amount') ?? 0,
             'rating' => $user->rating ?? 0,
             'total_reviews' => $user->total_reviews ?? 0,
+            // Valeur brute (pas la version filtrée public_on_time_delivery_rate) : sur son
+            // propre dashboard, le prestataire a intérêt à voir son vrai chiffre même sur un
+            // petit historique.
+            'on_time_delivery_rate' => $user->on_time_delivery_rate,
+            'timed_deliveries_count' => $user->timed_deliveries_count ?? 0,
             'unread_messages' => $this->getUnreadMessagesCount($user->id),
         ];
 

@@ -58,6 +58,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'total_reviews',
         'completed_orders',
         'level',
+        'on_time_delivery_rate',
+        'timed_deliveries_count',
         'badges',
         'identity_verified',
         'identity_document',
@@ -80,6 +82,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'languages' => 'array',
         'badges' => 'array',
         'rating' => 'decimal:2',
+        'on_time_delivery_rate' => 'decimal:2',
+        'timed_deliveries_count' => 'integer',
         'wallet_balance' => 'decimal:2',
         'identity_verified' => 'boolean',
         'is_active' => 'boolean',
@@ -294,6 +298,60 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         ]);
     }
 
+    // Nombre minimum de livraisons "chronométrées" (délai attendu connu) avant d'afficher
+    // publiquement le taux de ponctualité — sous ce seuil, un seul retard ferait chuter le
+    // pourcentage de façon statistiquement absurde (1 retard sur 1 commande = 0%).
+    public const PUNCTUALITY_MIN_SAMPLE = 5;
+
+    /**
+     * Recalculer le taux de livraison à l'heure, à partir de TOUTES les commandes ayant déjà
+     * été livrées avec un délai attendu (quel que soit leur statut final ensuite — annulée,
+     * remboursée... la livraison a eu lieu à une date connue, comparable au délai). Mis en
+     * cache comme 'rating'/'completed_orders' : recalculé au moment de la livraison
+     * (OrderController::markAsDelivered), pas à chaque affichage, car updateLevel() a besoin
+     * d'une valeur stable au même instant que les autres critères de niveau.
+     */
+    public function updatePunctuality(): void
+    {
+        if (!$this->isPrestataire()) {
+            return;
+        }
+
+        $orders = $this->prestataireOrders()
+            ->whereNotNull('first_delivered_at')
+            ->whereNotNull('expected_delivery_at')
+            ->get(['first_delivered_at', 'expected_delivery_at']);
+
+        if ($orders->isEmpty()) {
+            $this->update(['on_time_delivery_rate' => null, 'timed_deliveries_count' => 0]);
+            return;
+        }
+
+        $onTime = $orders->filter(fn ($order) => $order->first_delivered_at->lessThanOrEqualTo(
+            $order->expected_delivery_at->copy()->addHours(Order::PUNCTUALITY_GRACE_HOURS)
+        ))->count();
+
+        $this->update([
+            'on_time_delivery_rate' => round($onTime / $orders->count() * 100, 2),
+            'timed_deliveries_count' => $orders->count(),
+        ]);
+
+        $this->refresh()->updateLevel();
+    }
+
+    // Taux de ponctualité à afficher PUBLIQUEMENT (profil, badges...), null tant que
+    // l'échantillon est trop petit pour être honnête (voir PUNCTUALITY_MIN_SAMPLE). Le
+    // dashboard du prestataire lui-même affiche la valeur brute, pas cette version filtrée :
+    // lui a intérêt à voir son vrai chiffre même sur peu de commandes.
+    public function getPublicOnTimeDeliveryRateAttribute(): ?float
+    {
+        if ($this->timed_deliveries_count < self::PUNCTUALITY_MIN_SAMPLE) {
+            return null;
+        }
+
+        return $this->on_time_delivery_rate === null ? null : (float) $this->on_time_delivery_rate;
+    }
+
     /**
      * Mettre à jour le niveau du prestataire en fonction de ses stats
      */
@@ -305,11 +363,15 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 
         $completedOrders = $this->completed_orders ?? 0;
         $rating = $this->rating ?? 0;
+        // Aucune commande livrée à délai connu pour l'instant = 0%, pas "niveau supérieur par
+        // défaut" : un prestataire ne doit jamais atteindre confirmé/expert sans historique de
+        // ponctualité, même si le reste de ses conditions est déjà rempli.
+        $punctuality = $this->on_time_delivery_rate !== null ? (float) $this->on_time_delivery_rate : 0.0;
 
         // Déterminer le niveau (valeurs alignées sur l'enum users.level : nouveau/confirme/expert)
-        if ($completedOrders >= 50 && $rating >= 4.7) {
+        if ($completedOrders >= 50 && $rating >= 4.7 && $punctuality >= 90) {
             $level = 'expert';
-        } elseif ($completedOrders >= 15 && $rating >= 4.3) {
+        } elseif ($completedOrders >= 15 && $rating >= 4.3 && $punctuality >= 80) {
             $level = 'confirme';
         } else {
             $level = 'nouveau';

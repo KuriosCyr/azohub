@@ -70,6 +70,16 @@ class UserForm
                     ->required()
                     ->numeric()
                     ->default(0),
+                TextInput::make('on_time_delivery_rate')
+                    ->label('Ponctualité (%)')
+                    ->numeric()
+                    ->suffix('%')
+                    ->helperText("Recalculé automatiquement à chaque livraison — n'ajuster qu'en cas de correction manuelle."),
+                TextInput::make('timed_deliveries_count')
+                    ->label('Livraisons chronométrées')
+                    ->required()
+                    ->numeric()
+                    ->default(0),
                 Select::make('level')
                     ->label('Niveau')
                     ->options(['nouveau' => 'Nouveau', 'confirme' => 'Confirmé', 'expert' => 'Expert'])

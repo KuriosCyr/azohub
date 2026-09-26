@@ -102,6 +102,9 @@ class PrestataireProfile extends Component
             'total_reviews' => $this->prestataire->receivedReviews()->visible()->count(),
             'response_time' => $this->prestataire->responseTimeLabel(),
             'completion_rate' => $this->prestataire->completionRate(),
+            // Null tant que l'historique est trop court pour être honnête (voir
+            // User::PUNCTUALITY_MIN_SAMPLE) : jamais affiché publiquement en dessous.
+            'on_time_delivery_rate' => $this->prestataire->public_on_time_delivery_rate,
         ];
 
         return view('livewire.prestataire-profile', $data)->layout('components.layouts.app', [
