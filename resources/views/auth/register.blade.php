@@ -25,7 +25,7 @@
                                 <input type="radio"
                                        name="role"
                                        value="client"
-                                       checked
+                                       {{ old('role', request('role')) !== 'prestataire' ? 'checked' : '' }}
                                        class="peer sr-only">
                                 <div class="border-2 border-ink-100 peer-checked:border-terracotta-600 peer-checked:bg-terracotta-50 rounded-lg p-6 text-center transition hover:border-terracotta-600/40">
                                     <div class="mb-2"><x-app-icon name="user" class="w-10 h-10 inline-block" /></div>
@@ -38,6 +38,7 @@
                                 <input type="radio"
                                        name="role"
                                        value="prestataire"
+                                       {{ old('role', request('role')) === 'prestataire' ? 'checked' : '' }}
                                        class="peer sr-only">
                                 <div class="border-2 border-ink-100 peer-checked:border-ochre-500 peer-checked:bg-ochre-500/15 rounded-lg p-6 text-center transition hover:border-ochre-500/50">
                                     <div class="mb-2"><x-app-icon name="briefcase" class="w-10 h-10 inline-block" /></div>

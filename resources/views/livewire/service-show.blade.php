@@ -28,15 +28,51 @@
                             </h1>
                         </div>
 
-                        {{-- Favori --}}
-                        <button wire:click="toggleFavorite" wire:loading.attr="disabled"
-                                class="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 transition flex-shrink-0
-                                {{ $isFavorited ? 'border-red-300 bg-red-50' : 'border-ink-100 hover:border-red-200 hover:bg-red-50/50' }}">
-                            <x-app-icon name="heart" class="w-6 h-6 {{ $isFavorited ? 'text-red-500 fill-current' : 'text-ink-300' }}" />
-                            <span class="text-xs font-bold {{ $isFavorited ? 'text-red-600' : 'text-ink-400' }}">
-                                {{ $favoritesCount }}
-                            </span>
-                        </button>
+                        <div class="flex items-start gap-2 flex-shrink-0">
+                            {{-- Favori --}}
+                            <button wire:click="toggleFavorite" wire:loading.attr="disabled"
+                                    class="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 transition
+                                    {{ $isFavorited ? 'border-red-300 bg-red-50' : 'border-ink-100 hover:border-red-200 hover:bg-red-50/50' }}">
+                                <x-app-icon name="heart" class="w-6 h-6 {{ $isFavorited ? 'text-red-500 fill-current' : 'text-ink-300' }}" />
+                                <span class="text-xs font-bold {{ $isFavorited ? 'text-red-600' : 'text-ink-400' }}">
+                                    {{ $favoritesCount }}
+                                </span>
+                            </button>
+
+                            {{-- Partager : og:title/og:image/description sont déjà corrects (voir
+                                 ServiceShow::seoData()), il ne manquait que ce bouton — aucun moyen
+                                 de partager la fiche n'existait jusqu'ici (cahier des charges, section
+                                 aperçu WhatsApp/Facebook). --}}
+                            <div x-data="{ open: false }" @click.away="open = false" class="relative">
+                                <button @click="open = !open"
+                                        class="flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 border-ink-100 hover:border-terracotta-600/40 hover:bg-terracotta-50/50 transition">
+                                    <x-app-icon name="share" class="w-6 h-6 text-ink-300" />
+                                    <span class="text-xs font-bold text-ink-400">Partager</span>
+                                </button>
+
+                                <div x-show="open" x-transition
+                                     class="absolute right-0 top-full mt-2 w-56 bg-cream-50 rounded-lg shadow-lg py-2 z-30 border border-ink-100"
+                                     style="display: none;">
+                                    <a href="https://wa.me/?text={{ urlencode($service->title . ' — ' . request()->url()) }}" target="_blank" rel="noopener"
+                                       class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink-700 hover:bg-ink-100/40 transition">
+                                        <img src="{{ asset('images/social/whatsapp.svg') }}" alt="" class="w-5 h-5 flex-shrink-0"> WhatsApp
+                                    </a>
+                                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(request()->url()) }}" target="_blank" rel="noopener"
+                                       class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink-700 hover:bg-ink-100/40 transition">
+                                        <img src="{{ asset('images/social/facebook.svg') }}" alt="" class="w-5 h-5 flex-shrink-0"> Facebook
+                                    </a>
+                                    <a href="https://twitter.com/intent/tweet?text={{ urlencode($service->title) }}&url={{ urlencode(request()->url()) }}" target="_blank" rel="noopener"
+                                       class="flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink-700 hover:bg-ink-100/40 transition">
+                                        <img src="{{ asset('images/social/x.svg') }}" alt="" class="w-4 h-4 flex-shrink-0"> X
+                                    </a>
+                                    <button type="button"
+                                            @click="navigator.clipboard.writeText(@js(request()->url())); open = false; window.notifyAction && window.notifyAction('Lien copié !')"
+                                            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-ink-700 hover:bg-ink-100/40 transition text-left">
+                                        <x-app-icon name="link" class="w-5 h-5 flex-shrink-0 text-ink-400" /> Copier le lien
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     @if(session('error'))

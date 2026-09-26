@@ -95,7 +95,13 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([])
 
             // Groupes de navigation avec icônes
+            // BUG033 (QA) : 'Contenu' (FAQ) n'était pas déclaré ici alors que FaqResource
+            // l'utilise déjà (navigationGroup = 'Contenu') — Filament le recrée alors à la
+            // volée SANS l'icône ni la position voulues, d'où l'entrée visuellement décalée
+            // en haut de la sidebar admin.
             ->navigationGroups([
+                NavigationGroup::make('Contenu')
+                    ->icon('heroicon-o-document-text'),
                 NavigationGroup::make('Utilisateurs')
                     ->icon('heroicon-o-users'),
                 NavigationGroup::make('Services')
