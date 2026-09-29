@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RateLimitsActions;
 use App\Models\Proposal;
 use App\Models\ServiceRequest;
 use App\Notifications\NewProposalReceived;
@@ -11,6 +12,8 @@ use Livewire\Component;
 
 class ServiceRequestShow extends Component
 {
+    use RateLimitsActions;
+
     public ServiceRequest $serviceRequest;
 
     public string $message = '';
@@ -62,6 +65,10 @@ class ServiceRequestShow extends Component
         abort_unless(Auth::check() && Auth::user()->isPrestataire(), 403);
         abort_if($this->serviceRequest->status !== 'open', 403, 'Cette demande n\'est plus ouverte aux propositions.');
         abort_if($this->myProposal, 403, 'Vous avez déjà soumis une proposition pour cette demande.');
+
+        if ($this->tooManyActions('submit-proposal', maxAttempts: 10, decayMinutes: 60, field: 'message')) {
+            return;
+        }
 
         $validated = $this->validate();
 

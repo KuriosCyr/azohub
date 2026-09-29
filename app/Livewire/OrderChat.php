@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RateLimitsActions;
 use App\Models\Order;
 use App\Models\Message;
 use App\Notifications\NewMessageReceived;
@@ -13,11 +14,20 @@ use Illuminate\Support\Facades\Storage;
 
 class OrderChat extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, RateLimitsActions;
 
     public Order $order;
     public $message = '';
     public $attachments = [];
+
+    // Même principe que ConversationShow::$messagesLimit : évite de recharger tout l'historique
+    // à chaque sondage (wire:poll.5s) sur une commande avec beaucoup d'échanges.
+    public int $messagesLimit = 50;
+
+    public function loadMoreMessages(): void
+    {
+        $this->messagesLimit += 50;
+    }
 
     protected $rules = [
         'message' => 'required|string|max:2000',
@@ -60,6 +70,10 @@ class OrderChat extends Component
 
     public function sendMessage()
     {
+        if ($this->tooManyActions('order-chat-message', maxAttempts: 20, field: 'message')) {
+            return;
+        }
+
         $this->validate();
 
         // Déterminer le destinataire
@@ -113,14 +127,19 @@ class OrderChat extends Component
 
     public function render()
     {
-        // Charger les messages à chaque render
+        $totalMessages = Message::where('order_id', $this->order->id)->count();
+
         $messages = Message::where('order_id', $this->order->id)
             ->with(['sender', 'receiver'])
-            ->orderBy('created_at', 'asc')
-            ->get();
+            ->latest()
+            ->limit($this->messagesLimit)
+            ->get()
+            ->sortBy('id')
+            ->values();
 
         return view('livewire.order-chat', [
-            'messages' => $messages
+            'messages' => $messages,
+            'hasMoreMessages' => $totalMessages > $this->messagesLimit,
         ]);
     }
 }

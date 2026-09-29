@@ -163,17 +163,6 @@ class Order extends Model
         return $this->hasMany(OrderStatus::class)->latest();
     }
 
-    // Accesseurs pour compatibilité avec le code existant
-    public function getTotalPriceAttribute()
-    {
-        return $this->amount;
-    }
-
-    public function setTotalPriceAttribute($value)
-    {
-        $this->attributes['amount'] = $value;
-    }
-
     // Relations
     public function client()
     {
@@ -219,12 +208,6 @@ class Order extends Model
     public function review()
     {
         return $this->hasOne(Review::class);
-    }
-
-    // Relation reviews au PLURIEL pour compatibilité
-    public function reviews()
-    {
-        return $this->hasMany(Review::class);
     }
 
     public function dispute()

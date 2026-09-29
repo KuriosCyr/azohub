@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RateLimitsActions;
 use App\Models\Category;
 use App\Models\ServiceRequest;
 use Illuminate\Support\Facades\Auth;
@@ -10,7 +11,7 @@ use Livewire\WithFileUploads;
 
 class ServiceRequestCreate extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, RateLimitsActions;
 
     public $categoryId = '';
     public string $title = '';
@@ -45,6 +46,10 @@ class ServiceRequestCreate extends Component
 
     public function submit()
     {
+        if ($this->tooManyActions('create-service-request', maxAttempts: 5, decayMinutes: 60, field: 'title')) {
+            return;
+        }
+
         $validated = $this->validate();
 
         $uploadedAttachments = [];

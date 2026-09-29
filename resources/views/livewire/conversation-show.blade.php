@@ -41,7 +41,15 @@
 
             {{-- Fil de discussion --}}
             <div class="flex-1 overflow-y-auto p-5 space-y-4">
-                @forelse($conversation->messages as $msg)
+                @if($hasMoreMessages)
+                    <div class="text-center">
+                        <button wire:click="loadMoreMessages" wire:loading.attr="disabled" wire:target="loadMoreMessages"
+                                class="text-sm font-semibold text-terracotta-700 hover:text-terracotta-800 underline disabled:opacity-50">
+                            Charger les messages précédents
+                        </button>
+                    </div>
+                @endif
+                @forelse($messages as $msg)
                     @php $isMine = $msg->sender_id === Auth::id(); @endphp
                     <div wire:key="conv-message-{{ $msg->id }}" class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}">
                         <div class="max-w-[80%]">

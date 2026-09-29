@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RateLimitsActions;
 use App\Models\Conversation;
 use App\Models\CustomOffer;
 use App\Notifications\CustomOfferDeclined;
@@ -14,12 +15,24 @@ use Livewire\WithFileUploads;
 
 class ConversationShow extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, RateLimitsActions;
 
     public Conversation $conversation;
 
     public string $message = '';
     public $attachments = [];
+
+    // Nombre de messages les plus récents chargés. render() rechargeait TOUTE la conversation à
+    // chaque sondage (wire:poll toutes les 5s) — sans conséquence pour un échange court, mais un
+    // historique de plusieurs centaines de messages repartait intégralement de la base à chaque
+    // fois. "Charger les messages précédents" augmente cette limite à la demande plutôt que de
+    // tout charger d'un coup.
+    public int $messagesLimit = 50;
+
+    public function loadMoreMessages(): void
+    {
+        $this->messagesLimit += 50;
+    }
 
     public function getContainsContactInfoProperty(): bool
     {
@@ -52,6 +65,10 @@ class ConversationShow extends Component
 
     public function sendMessage()
     {
+        if ($this->tooManyActions('conversation-message', maxAttempts: 20, field: 'message')) {
+            return;
+        }
+
         $this->validate([
             'message' => 'nullable|string|max:2000',
             'attachments.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,rar,mp4,mp3,mov',
@@ -99,6 +116,10 @@ class ConversationShow extends Component
     public function sendOffer()
     {
         abort_unless($this->isPrestataire, 403);
+
+        if ($this->tooManyActions('custom-offer', maxAttempts: 10, decayMinutes: 60, field: 'offerTitle')) {
+            return;
+        }
 
         $validated = $this->validate([
             'offerTitle' => 'required|string|max:150',
@@ -172,14 +193,24 @@ class ConversationShow extends Component
 
     public function render()
     {
-        $this->conversation->load([
-            'client', 'prestataire',
-            'messages' => function ($query) {
-                $query->with(['sender', 'customOffer'])->oldest();
-            },
-        ]);
+        $this->conversation->load(['client', 'prestataire']);
 
-        return view('livewire.conversation-show')
-            ->layout('components.layouts.app');
+        $totalMessages = $this->conversation->messages()->count();
+
+        // Les $messagesLimit plus récents, remis dans l'ordre chronologique pour l'affichage
+        // (la requête doit trier par le plus récent d'abord pour que LIMIT retienne les bons,
+        // sort()/values() ensuite pour les réafficher du plus ancien au plus récent comme avant).
+        $messages = $this->conversation->messages()
+            ->with(['sender', 'customOffer'])
+            ->latest()
+            ->limit($this->messagesLimit)
+            ->get()
+            ->sortBy('id')
+            ->values();
+
+        return view('livewire.conversation-show', [
+            'messages' => $messages,
+            'hasMoreMessages' => $totalMessages > $this->messagesLimit,
+        ])->layout('components.layouts.app');
     }
 }

@@ -11,6 +11,14 @@
 
     {{-- Zone de messages --}}
     <div id="messages-container" class="h-96 overflow-y-auto p-6 space-y-4 bg-cream">
+        @if($hasMoreMessages)
+            <div class="text-center">
+                <button wire:click="loadMoreMessages" wire:loading.attr="disabled" wire:target="loadMoreMessages"
+                        class="text-sm font-semibold text-terracotta-700 hover:text-terracotta-800 underline disabled:opacity-50">
+                    Charger les messages précédents
+                </button>
+            </div>
+        @endif
         @forelse($messages as $message)
             @php
                 $isMine = $message->sender_id === Auth::id();
