@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Order;
+use App\Notifications\OrderAutoValidated;
 use Illuminate\Console\Command;
 
 class ValidateExpiredOrders extends Command
@@ -27,6 +28,13 @@ class ValidateExpiredOrders extends Command
 
         foreach ($orders as $order) {
             $order->releasePayment(autoValidated: true);
+
+            // Ni le client ni le prestataire n'étaient prévenus dans ce cas (contrairement à
+            // une validation manuelle, cf. OrderController::validate()) : le prestataire
+            // découvrait le paiement crédité sans explication, et le client apprenait sa
+            // commande close seulement en rouvrant la page lui-même.
+            $order->client->notify(new OrderAutoValidated($order, forClient: true));
+            $order->prestataire->notify(new OrderAutoValidated($order, forClient: false));
 
             $count++;
             $this->line("  Commande #{$order->order_number} auto-validée.");
