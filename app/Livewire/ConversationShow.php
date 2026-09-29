@@ -146,6 +146,7 @@ class ConversationShow extends Component
             'delivery_days' => $validated['offerDeliveryDays'],
             'revisions_included' => $validated['offerRevisions'],
             'status' => 'pending',
+            'expires_at' => now()->addDays(7),
         ]);
 
         $msg = $this->conversation->messages()->create([

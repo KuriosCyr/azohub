@@ -74,6 +74,9 @@ class ServiceRequestCreate extends Component
             'address' => $validated['address'] !== '' ? $validated['address'] : null,
             'attachments' => !empty($uploadedAttachments) ? $uploadedAttachments : null,
             'status' => 'open',
+            // La colonne existait déjà (formulaire admin, jamais renseignée nulle part ailleurs)
+            // sans qu'aucune demande n'expire jamais réellement en pratique.
+            'expires_at' => now()->addDays(14),
         ]);
 
         return redirect()->route('service-requests.show', $serviceRequest)

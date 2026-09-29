@@ -20,13 +20,20 @@ class CustomOffer extends Model
         'delivery_days',
         'revisions_included',
         'status',
+        'expires_at',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'delivery_days' => 'integer',
         'revisions_included' => 'integer',
+        'expires_at' => 'datetime',
     ];
+
+    public function isExpired(): bool
+    {
+        return $this->status === 'pending' && $this->expires_at && $this->expires_at->isPast();
+    }
 
     public function conversation()
     {
@@ -56,5 +63,10 @@ class CustomOffer extends Model
     public function decline()
     {
         $this->update(['status' => 'declined']);
+    }
+
+    public function expire()
+    {
+        $this->update(['status' => 'expired']);
     }
 }

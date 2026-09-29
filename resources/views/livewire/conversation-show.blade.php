@@ -59,9 +59,16 @@
                                     <div class="flex items-center gap-2 mb-2">
                                         <x-app-icon name="clipboard" class="w-4 h-4 text-terracotta-600" />
                                         <span class="text-xs font-bold uppercase text-terracotta-700">Offre personnalisée</span>
-                                        <span class="ml-auto text-xs font-semibold px-2 py-1 rounded-full
-                                            {{ $offer->status === 'pending' ? 'bg-ochre-100 text-ochre-700' : ($offer->status === 'accepted' ? 'bg-forest-600/10 text-forest-700' : 'bg-ink-100 text-ink-500') }}">
-                                            {{ $offer->status === 'pending' ? 'En attente' : ($offer->status === 'accepted' ? 'Acceptée' : 'Déclinée') }}
+                                        @php
+                                            $offerBadge = match(true) {
+                                                $offer->status === 'expired', $offer->isExpired() => ['bg-ink-100 text-ink-500', 'Expirée'],
+                                                $offer->status === 'accepted' => ['bg-forest-600/10 text-forest-700', 'Acceptée'],
+                                                $offer->status === 'pending' => ['bg-ochre-100 text-ochre-700', 'En attente'],
+                                                default => ['bg-ink-100 text-ink-500', 'Déclinée'],
+                                            };
+                                        @endphp
+                                        <span class="ml-auto text-xs font-semibold px-2 py-1 rounded-full {{ $offerBadge[0] }}">
+                                            {{ $offerBadge[1] }}
                                         </span>
                                     </div>
                                     <p class="font-bold text-ink-900 mb-1">{{ $offer->title }}</p>
@@ -71,7 +78,7 @@
                                         <span class="font-bold text-ink-900 text-lg">{{ number_format($offer->price, 0, ',', ' ') }} FCFA</span>
                                     </div>
 
-                                    @if($offer->status === 'pending' && Auth::id() === $conversation->client_id)
+                                    @if($offer->status === 'pending' && !$offer->isExpired() && Auth::id() === $conversation->client_id)
                                         <div class="flex gap-3">
                                             <a href="{{ route('custom-offers.accept', $offer) }}"
                                                class="flex-1 text-center bg-ink-900 hover:bg-ink-700 text-cream-50 font-bold py-2.5 rounded-lg transition text-sm">

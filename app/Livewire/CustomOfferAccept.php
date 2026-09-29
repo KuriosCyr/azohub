@@ -18,6 +18,7 @@ class CustomOfferAccept extends Component
     {
         abort_unless($offer->client_id === Auth::id(), 403);
         abort_unless($offer->status === 'pending', 403, 'Cette offre ne peut plus être acceptée.');
+        abort_if($offer->isExpired(), 403, 'Cette offre a expiré.');
 
         $this->offer = $offer->load('prestataire', 'service');
     }
@@ -34,7 +35,7 @@ class CustomOfferAccept extends Component
         $order = DB::transaction(function () {
             $offer = CustomOffer::whereKey($this->offer->id)->lockForUpdate()->first();
 
-            if (!$offer || $offer->status !== 'pending') {
+            if (!$offer || $offer->status !== 'pending' || $offer->isExpired()) {
                 abort(403, 'Cette offre ne peut plus être acceptée.');
             }
 

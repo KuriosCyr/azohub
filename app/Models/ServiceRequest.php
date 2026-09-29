@@ -23,6 +23,7 @@ class ServiceRequest extends Model
         'status',
         'proposals_count',
         'expires_at',
+        'stale_reminded_at',
     ];
 
     protected $casts = [
@@ -31,7 +32,13 @@ class ServiceRequest extends Model
         'attachments' => 'array',
         'proposals_count' => 'integer',
         'expires_at' => 'datetime',
+        'stale_reminded_at' => 'datetime',
     ];
+
+    public function expire(): void
+    {
+        $this->update(['status' => 'expired']);
+    }
 
     // Relations
     public function client()

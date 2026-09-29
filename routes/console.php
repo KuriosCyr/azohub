@@ -15,3 +15,8 @@ Schedule::command('orders:notify-overdue')->everyFifteenMinutes();
 // Abonnements : rappel avant expiration, puis passage au statut "expiré"
 Schedule::command('subscriptions:remind-expiring')->daily();
 Schedule::command('subscriptions:expire')->hourly();
+
+// Offres personnalisées et demandes de service restées sans réponse
+Schedule::command('offers:expire-stale')->hourly();
+Schedule::command('requests:expire-stale')->hourly();
+Schedule::command('requests:remind-stale')->daily();
