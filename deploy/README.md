@@ -7,18 +7,26 @@ après un changement.
 
 ## Crontab du serveur (référence — pas versionné, ni déployé automatiquement)
 
+Deux crontabs distinctes, sur deux utilisateurs différents :
+
 ```
+# crontab -u ubuntu (sauvegarde de la base seulement)
 0 3 * * * /home/ubuntu/backup-db.sh
+
+# crontab -u www-data (déclenche le planificateur Laravel)
 * * * * * cd /var/www/azohub && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-La seconde ligne manquait (découvert le 29/09/2026) : sans elle, **aucune** des tâches
-planifiées dans `routes/console.php` (auto-validation des commandes, rappels d'échéance,
-expiration des abonnements/offres/demandes...) ne s'exécutait jamais, malgré tout le code
-en place — `Schedule::command(...)` ne fait qu'enregistrer une tâche dans le planificateur
-Laravel, encore faut-il qu'un cron système appelle `php artisan schedule:run` régulièrement
-pour qu'il la déclenche. Toujours vérifier `crontab -l` après une intervention serveur qui y
-touche, et `php artisan schedule:list` pour voir ce qui est enregistré côté application.
+**Piège vécu le 29/09/2026** : en cherchant pourquoi les tâches planifiées (auto-validation
+des commandes, rappels d'échéance, expiration des offres/demandes...) semblaient ne jamais
+tourner, `crontab -l` (qui n'affiche que la crontab de l'utilisateur SSH connecté, ici
+`ubuntu`) ne montrait que la sauvegarde nocturne — l'entrée `schedule:run` existait bel et
+bien, mais sous `www-data` (`sudo crontab -u www-data -l`). Conclusion prématurée que rien
+n'était planifié → une entrée en double a été ajoutée sous `ubuntu` avant de s'en rendre
+compte, faisant tourner `schedule:run` deux fois par minute — retirée aussitôt. **Toujours
+vérifier la crontab de `www-data` en plus de celle de l'utilisateur SSH avant de conclure
+qu'un cron manque**, et `php artisan schedule:list` pour voir ce qui est enregistré côté
+application.
 
 ## API Payout FedaPay : non autorisée sur ce compte (au 29/09/2026)
 
