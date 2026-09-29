@@ -18,8 +18,16 @@
                         <p class="text-ink-500">Créée le {{ $order->created_at->format('d/m/Y à H:i') }}</p>
                     </div>
 
-                    {{-- Status Badge --}}
-                    <div>
+                    <div class="flex items-center gap-3">
+                        @if($order->payment_status !== 'pending')
+                            <a href="{{ route('orders.invoice', $order) }}"
+                               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-ink-200 text-ink-700 hover:bg-ink-100/40 transition text-sm font-semibold">
+                                <x-app-icon name="document" class="w-4 h-4" />
+                                {{ $userRole === 'client' ? 'Télécharger le reçu' : 'Télécharger la facture' }}
+                            </a>
+                        @endif
+
+                        {{-- Status Badge --}}
                         <span class="px-6 py-3 rounded-full text-lg font-bold {{ $order->status_badge_class }}">
                             {{ $order->status_label }}
                         </span>

@@ -187,6 +187,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Actions communes
         Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('cancel');
+        Route::get('/{order}/invoice', [\App\Http\Controllers\InvoiceController::class, 'download'])->name('invoice');
         Route::get('/{order}/deliverable/{index}', [OrderController::class, 'downloadDeliverable'])->name('deliverable.download');
         Route::get('/{order}/piece-jointe/{index}', \App\Http\Controllers\OrderAttachmentController::class)->name('attachment.download');
         Route::post('/{order}/dispute', [DisputeController::class, 'store'])->name('dispute.store');
