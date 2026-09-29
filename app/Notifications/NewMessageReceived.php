@@ -4,11 +4,12 @@ namespace App\Notifications;
 
 use App\Models\Message;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Str;
 
-class NewMessageReceived extends Notification
+class NewMessageReceived extends Notification implements ShouldQueue
 {
     use Queueable;
 

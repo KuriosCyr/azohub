@@ -4,12 +4,13 @@ namespace App\Notifications;
 
 use App\Models\Order;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
 // Envoyée au CLIENT dès que le paiement d'une commande est confirmé (le reçu FedaPay
 // n'est pas sous notre contrôle et ne rassure pas sur la suite — celle-ci le fait).
-class OrderConfirmed extends Notification
+class OrderConfirmed extends Notification implements ShouldQueue
 {
     use Queueable;
 

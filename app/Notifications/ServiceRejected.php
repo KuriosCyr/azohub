@@ -4,10 +4,11 @@ namespace App\Notifications;
 
 use App\Models\Service;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ServiceRejected extends Notification
+class ServiceRejected extends Notification implements ShouldQueue
 {
     use Queueable;
 

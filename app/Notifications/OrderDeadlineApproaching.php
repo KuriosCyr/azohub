@@ -4,12 +4,13 @@ namespace App\Notifications;
 
 use App\Models\Order;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
 // Envoyée au PRESTATAIRE avant l'échéance de livraison d'une commande (12h puis 1h avant),
 // tant qu'elle n'a pas encore été livrée. Voir RemindOrderDeadlines.
-class OrderDeadlineApproaching extends Notification
+class OrderDeadlineApproaching extends Notification implements ShouldQueue
 {
     use Queueable;
 

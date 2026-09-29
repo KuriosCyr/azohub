@@ -4,10 +4,11 @@ namespace App\Notifications;
 
 use App\Models\Review;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 // Notification cloche uniquement : pas besoin d'un e-mail pour ça.
-class ReviewResponseAdded extends Notification
+class ReviewResponseAdded extends Notification implements ShouldQueue
 {
     use Queueable;
 

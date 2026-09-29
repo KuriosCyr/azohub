@@ -40,7 +40,12 @@ return [
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
             'retry_after' => env('DB_QUEUE_RETRY_AFTER', 90),
-            'after_commit' => false,
+            // true : un job (ex. une notification) mis en file DANS une transaction (ex. le
+            // webhook FedaPay dans PaymentService::processTransactionUpdate) attend que cette
+            // transaction soit bien commitée avant de partir sur la file. Sans ça, le worker
+            // pourrait attraper le job et lire la commande/le paiement avant même que le commit
+            // n'ait eu lieu (ou pas du tout, si la transaction est annulée en cours de route).
+            'after_commit' => true,
         ],
 
         'beanstalkd' => [

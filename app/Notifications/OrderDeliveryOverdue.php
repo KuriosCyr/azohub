@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Order;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
@@ -11,7 +12,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 // RemindOrderDeliveryOverdue). Contrairement à OrderDeadlineApproaching (avant l'échéance,
 // prestataire seulement), rien n'était envoyé après coup : le client n'avait aucun moyen de
 // savoir que sa commande était en retard sans penser à ouvrir la page lui-même.
-class OrderDeliveryOverdue extends Notification
+class OrderDeliveryOverdue extends Notification implements ShouldQueue
 {
     use Queueable;
 

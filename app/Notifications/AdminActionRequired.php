@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -11,7 +12,7 @@ use Illuminate\Notifications\Notification;
 // Canal 'mail' uniquement : le canal 'database' de Laravel écrirait dans `notifications` un
 // format différent de celui que la cloche Filament attend — voir AdminNotifier, qui envoie
 // séparément une Filament\Notifications\Notification (canal database) au bon format.
-class AdminActionRequired extends Notification
+class AdminActionRequired extends Notification implements ShouldQueue
 {
     use Queueable;
 
