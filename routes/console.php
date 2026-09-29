@@ -20,3 +20,7 @@ Schedule::command('subscriptions:expire')->hourly();
 Schedule::command('offers:expire-stale')->hourly();
 Schedule::command('requests:expire-stale')->hourly();
 Schedule::command('requests:remind-stale')->daily();
+
+// Commandes jamais payées et tentatives d'abonnement jamais confirmées, abandonnées depuis
+// plus de 24h (voir ExpireStalePendingPayments).
+Schedule::command('payments:expire-stale-pending')->hourly();

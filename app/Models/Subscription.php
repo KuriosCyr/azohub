@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Subscription extends Model
 {
@@ -99,6 +100,34 @@ class Subscription extends Model
         $this->status = 'cancelled';
         $this->auto_renew = false;
         $this->save();
+    }
+
+    // Tentative de paiement abandonnée avant confirmation — page FedaPay jamais terminée,
+    // paiement explicitement marqué échoué (Payment::markAsFailed()), ou trop ancienne pour
+    // espérer une confirmation tardive (voir la commande planifiée ExpireStalePendingPayments).
+    // Restitue le crédit de parrainage éventuellement consommé (Subscription::
+    // applyReferralCredit()) : sans ça, il disparaissait pour toujours alors qu'aucun argent n'a
+    // jamais été réellement débité pour cette tentative (audit externe).
+    public function cancelAbandoned(): void
+    {
+        DB::transaction(function () {
+            $subscription = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if (!$subscription || $subscription->status !== 'pending') {
+                return;
+            }
+
+            if ((float) $subscription->referral_credit_applied > 0) {
+                $subscription->user->refundReferralCredit((float) $subscription->referral_credit_applied);
+            }
+
+            $subscription->update([
+                'status' => 'cancelled',
+                'referral_credit_applied' => 0,
+            ]);
+        });
+
+        $this->refresh();
     }
 
     // "Renouvellement automatique" : FedaPay ne permet pas de prélèvement silencieux

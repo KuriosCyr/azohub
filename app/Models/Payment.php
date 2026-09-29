@@ -217,5 +217,12 @@ class Payment extends Model
             $this->gateway_response = $gatewayResponse;
         }
         $this->save();
+
+        // Un abonnement encore 'pending' rattaché à ce paiement n'a plus aucune chance d'être
+        // activé : sans ça, un crédit de parrainage éventuellement consommé dessus restait perdu
+        // pour toujours (audit externe — voir Subscription::cancelAbandoned()).
+        if ($this->subscription && $this->subscription->status === 'pending') {
+            $this->subscription->cancelAbandoned();
+        }
     }
 }
