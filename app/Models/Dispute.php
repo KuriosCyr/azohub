@@ -80,12 +80,12 @@ class Dispute extends Model
                     (float) $refundAmount,
                     'Litige résolu : remboursement partiel'
                 ),
-                'pay_prestataire' => $dispute->order->releasePayment(),
+                // allowFromDisputed : seul cas légitime où releasePayment() doit accepter une
+                // commande encore 'disputed' (voir Order::releasePayment()).
+                'pay_prestataire' => $dispute->order->releasePayment(allowFromDisputed: true),
                 // "no_action" : la commande n'était pas réellement bloquée (litige
                 // non fondé) — elle redevient utilisable normalement.
-                default => $dispute->order->update([
-                    'status' => $dispute->order->delivered_at ? 'delivered' : 'in_progress',
-                ]),
+                default => $dispute->order->reopenAfterDispute(),
             };
         });
 

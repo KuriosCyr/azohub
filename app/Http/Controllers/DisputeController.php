@@ -8,6 +8,7 @@ use App\Notifications\DisputeOpened;
 use App\Services\AdminNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class DisputeController extends Controller
@@ -54,17 +55,38 @@ class DisputeController extends Controller
             }
         }
 
-        $dispute = Dispute::create([
-            'order_id' => $order->id,
-            'opened_by' => Auth::id(),
-            'reason' => $validated['reason'],
-            'description' => $validated['description'],
-            'evidences' => !empty($evidences) ? $evidences : null,
-            'status' => 'open',
-        ]);
+        // Verrouillée + revérifiée sous verrou (audit externe) : sans ça, un litige pouvait
+        // s'ouvrir juste après qu'une validation client ou l'auto-validation ait déjà libéré le
+        // paiement sur cette même commande — laissant la commande 'disputed' alors que le
+        // prestataire avait déjà été payé.
+        $dispute = DB::transaction(function () use ($order, $validated, $evidences) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
 
-        $order->update(['status' => 'disputed']);
+            if (!$locked || !$locked->canOpenDispute()) {
+                return null;
+            }
 
+            $dispute = Dispute::create([
+                'order_id' => $locked->id,
+                'opened_by' => Auth::id(),
+                'reason' => $validated['reason'],
+                'description' => $validated['description'],
+                'evidences' => !empty($evidences) ? $evidences : null,
+                'status' => 'open',
+            ]);
+
+            $locked->update(['status' => 'disputed']);
+
+            return $dispute;
+        });
+
+        if (!$dispute) {
+            return redirect()
+                ->back()
+                ->with('error', 'Un litige ne peut plus être ouvert sur cette commande.');
+        }
+
+        $order->refresh();
         $otherParty = $order->client_id === Auth::id() ? $order->prestataire : $order->client;
         $otherParty->notify(new DisputeOpened($dispute));
 

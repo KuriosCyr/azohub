@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Notifications\AdminActionRequired;
 use App\Notifications\OrderConfirmed;
@@ -137,5 +139,65 @@ class PaymentMarkAsPaidTest extends TestCase
         $payment->markAsPaid('{"status":"approved"}');
 
         $this->assertSame('success', $payment->fresh()->status);
+    }
+
+    // Corrigé suite à un audit externe : un paiement d'abonnement confirmé tardivement, alors
+    // qu'un abonnement plus récent est déjà actif, ne faisait qu'un Log::warning() — l'argent
+    // restait "success" sans que rien ne le signale. Doit maintenant suivre le même traitement
+    // que l'argent orphelin côté commande : marqué à rembourser, admin alerté.
+    public function test_late_subscription_confirmation_superseded_by_a_newer_one_is_flagged(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+        $plan = SubscriptionPlan::create([
+            'name' => 'Pro',
+            'slug' => 'pro-' . uniqid(),
+            'price' => 3000,
+            'max_services' => 10,
+            'commission_rate' => 10,
+            'is_active' => true,
+        ]);
+
+        $abandonedSubscription = Subscription::create([
+            'user_id' => $prestataire->id,
+            'subscription_plan_id' => $plan->id,
+            'starts_at' => now(),
+            'ends_at' => now(),
+            'status' => 'pending',
+            'billing_period' => 'monthly',
+            'auto_renew' => true,
+        ]);
+
+        // Un abonnement plus récent, actif, choisi entre-temps par le prestataire. created_at
+        // forcé plus tard : deux créations dans le même test tombent facilement à la même
+        // seconde (granularité de la colonne), ce qui ferait échouer la comparaison "> created_at".
+        $newerSubscription = Subscription::create([
+            'user_id' => $prestataire->id,
+            'subscription_plan_id' => $plan->id,
+            'starts_at' => now(),
+            'ends_at' => now()->addMonth(),
+            'status' => 'active',
+            'billing_period' => 'monthly',
+            'auto_renew' => true,
+        ]);
+        $newerSubscription->created_at = now()->addMinute();
+        $newerSubscription->save();
+
+        $payment = Payment::create([
+            'subscription_id' => $abandonedSubscription->id,
+            'user_id' => $prestataire->id,
+            'transaction_id' => 'TXN-' . uniqid(),
+            'payment_method' => 'mtn_momo',
+            'amount' => 3000,
+            'status' => 'pending',
+            'type' => 'subscription',
+        ]);
+
+        $payment->markAsPaid('{"status":"approved"}');
+
+        $this->assertSame('refund_pending', $payment->fresh()->status);
+        Notification::assertSentTo($admin, AdminActionRequired::class);
     }
 }

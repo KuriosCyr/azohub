@@ -121,7 +121,8 @@ class OrderController extends Controller
             abort(403);
         }
 
-        // Vérifier le statut
+        // Vérifier le statut — reverrouillé dans la transaction ci-dessous contre une action
+        // simultanée sur la même commande (ex. le client valide au même instant).
         if ($order->status !== 'paid') {
             return redirect()
                 ->back()
@@ -132,8 +133,25 @@ class OrderController extends Controller
             'refusal_reason' => 'nullable|string|max:500',
         ]);
 
-        $order->refund($validated['refusal_reason'] ?? 'Refusé par le prestataire');
+        $refused = DB::transaction(function () use ($order, $validated) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
 
+            if (!$locked || $locked->status !== 'paid') {
+                return false;
+            }
+
+            $locked->refund($validated['refusal_reason'] ?? 'Refusé par le prestataire');
+
+            return true;
+        });
+
+        if (!$refused) {
+            return redirect()
+                ->back()
+                ->with('error', 'Cette commande ne peut plus être refusée.');
+        }
+
+        $order->refresh();
         $order->client->notify(new OrderRefused($order));
 
         return redirect()

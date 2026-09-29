@@ -142,6 +142,60 @@ class DisputeResolutionTest extends TestCase
         $this->assertSame('delivered', $order->status);
     }
 
+    // Corrigé suite à un audit externe : "no_action" remettait la commande en 'delivered' sans
+    // toucher à validation_deadline, qui restait sur son ancienne valeur (déjà expirée ou
+    // presque, le litige ayant pris du temps à traiter) — l'auto-validation pouvait alors se
+    // déclencher dans l'heure suivante au lieu de laisser au client le temps normal de vérifier.
+    public function test_no_action_resets_the_validation_deadline_when_returning_to_delivered(): void
+    {
+        $order = $this->makeDisputedOrder([
+            'delivered_at' => now()->subHours(70),
+            'validation_deadline' => now()->subHour(), // déjà expiré
+        ]);
+        $dispute = $order->dispute;
+
+        $dispute->resolve('no_action', $this->adminUser->id);
+
+        $order->refresh();
+        $this->assertSame('delivered', $order->status);
+        $this->assertTrue($order->validation_deadline->isFuture());
+    }
+
+    // Corrigé suite à un audit externe : une résolution "rembourser le client" pouvait s'exécuter
+    // après qu'une libération de paiement concurrente ait déjà payé le prestataire, écrasant
+    // silencieusement payment_status='released' en 'refund_pending' — payant les deux parties.
+    public function test_refund_client_does_not_touch_an_order_already_released(): void
+    {
+        $order = $this->makeDisputedOrder();
+        $dispute = $order->dispute;
+
+        // Simule la course : le paiement a déjà été libéré au prestataire juste avant que la
+        // résolution du litige ne s'exécute.
+        $order->update(['payment_status' => 'released']);
+
+        $dispute->resolve('refund_client', $this->adminUser->id);
+
+        $order->refresh();
+        $this->assertSame('released', $order->payment_status, 'Ne doit jamais écraser released en refund_pending.');
+        $this->assertNotSame('cancelled', $order->status);
+    }
+
+    // Corrigé suite à un audit externe : releasePayment() ne vérifiait que payment_status, pas
+    // le statut 'disputed' — une validation client ou l'auto-validation pouvait donc libérer le
+    // paiement d'une commande qui venait de passer en litige.
+    public function test_release_payment_is_blocked_on_a_disputed_order_by_default(): void
+    {
+        $order = $this->makeDisputedOrder();
+        $prestataire = $order->prestataire;
+
+        $order->releasePayment();
+
+        $order->refresh();
+        $prestataire->refresh();
+        $this->assertSame('held', $order->payment_status);
+        $this->assertEquals(0, $prestataire->wallet_balance);
+    }
+
     public function test_resolving_an_already_resolved_dispute_is_a_no_op(): void
     {
         $order = $this->makeDisputedOrder();

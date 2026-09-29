@@ -9,6 +9,7 @@ use App\Notifications\SubscriptionActivated;
 use App\Services\AdminNotifier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Payment extends Model
 {
@@ -58,34 +59,49 @@ class Payment extends Model
             $this->gateway_response = $gatewayResponse;
         }
 
-        // Le client a ouvert la page FedaPay, puis annulé la commande sur Azohub (ou une autre
-        // proposition/offre a été choisie entre-temps, cf. ProposalAccept), mais a quand même
-        // terminé le paiement dans l'autre onglet — ou un double paiement (deux onglets, deux
-        // transactions réussies sur la même commande) confirme un deuxième paiement alors que le
-        // premier a déjà financé la commande. Dans les deux cas, FedaPay a bel et bien encaissé
-        // l'argent : on ne le laisse jamais "success" sans suite (ce qui le rendrait invisible
-        // côté Azohub, sans remboursement prévu), on le marque à rembourser manuellement et on
-        // alerte l'admin. On ne touche pas à la commande elle-même : son statut actuel est déjà
-        // ce qu'il doit être (annulée, ou déjà financée par un autre paiement) — le resurrectir
-        // ici serait pire que ne rien faire.
-        if ($this->order && $this->order->status !== 'pending_payment') {
-            $this->status = 'refund_pending';
+        if ($this->order_id) {
+            // Verrouille la commande pour TOUTE la décision (vérifier son statut ET l'activer) :
+            // sans ça, une annulation concurrente (OrderController::cancel(), elle-même
+            // verrouillée) peut s'intercaler entre la simple lecture du statut et l'activation,
+            // "ressuscitant" en 'paid' une commande tout juste annulée (audit externe — fenêtre
+            // de quelques millisecondes, mais avec un vrai impact financier si elle se produit).
+            DB::transaction(function () {
+                $order = Order::whereKey($this->order_id)->lockForUpdate()->first();
+
+                // Le client a ouvert la page FedaPay, puis annulé la commande sur Azohub (ou une
+                // autre proposition/offre a été choisie entre-temps, cf. ProposalAccept), mais a
+                // quand même terminé le paiement dans l'autre onglet — ou un double paiement
+                // (deux onglets, deux transactions réussies sur la même commande) confirme un
+                // deuxième paiement alors que le premier a déjà financé la commande. Dans les
+                // deux cas, FedaPay a bel et bien encaissé l'argent : on ne le laisse jamais
+                // "success" sans suite (ce qui le rendrait invisible côté Azohub, sans
+                // remboursement prévu), on le marque à rembourser manuellement et on alerte
+                // l'admin. On ne touche pas à la commande elle-même : son statut actuel est déjà
+                // ce qu'il doit être (annulée, ou déjà financée par un autre paiement) — la
+                // ressusciter ici serait pire que ne rien faire.
+                if (!$order || $order->status !== 'pending_payment') {
+                    $this->status = 'refund_pending';
+                    $this->save();
+
+                    if ($order) {
+                        AdminNotifier::actionRequired(
+                            'Paiement reçu sur une commande non payable',
+                            "Le paiement de {$this->amount} FCFA (transaction {$this->transaction_id}) pour la commande {$order->order_number} a été confirmé par FedaPay, mais la commande n'est plus en attente de paiement (statut actuel : {$order->status}). Remboursement à traiter manuellement.",
+                            route('filament.admin.resources.orders.edit', $order),
+                        );
+                    }
+
+                    return;
+                }
+
+                $this->status = 'success';
+                $this->save();
+
+                $this->activatePaidOrder($order);
+            });
+        } else {
+            $this->status = 'success';
             $this->save();
-
-            AdminNotifier::actionRequired(
-                'Paiement reçu sur une commande non payable',
-                "Le paiement de {$this->amount} FCFA (transaction {$this->transaction_id}) pour la commande {$this->order->order_number} a été confirmé par FedaPay, mais la commande n'est plus en attente de paiement (statut actuel : {$this->order->status}). Remboursement à traiter manuellement.",
-                route('filament.admin.resources.orders.edit', $this->order),
-            );
-
-            return;
-        }
-
-        $this->status = 'success';
-        $this->save();
-
-        if ($this->order && $this->order->status === 'pending_payment') {
-            $this->activatePaidOrder($this->order);
         }
 
         if ($this->subscription && $this->subscription->status === 'pending') {
@@ -132,10 +148,16 @@ class Payment extends Model
             ->exists();
 
         if ($supersededByNewerActive) {
-            \Illuminate\Support\Facades\Log::warning(
-                "Paiement #{$this->id} confirmé tardivement pour l'abonnement #{$subscription->id}, " .
-                "mais un abonnement plus récent est déjà actif pour cet utilisateur — ignoré pour ne pas " .
-                "écraser l'abonnement actif actuel avec un choix abandonné entre-temps."
+            // Un simple Log::warning() ne suffisait pas (audit externe) : FedaPay a bel et bien
+            // encaissé cet argent pour un abonnement qui ne sera jamais activé — même traitement
+            // que l'argent orphelin côté commande (voir plus haut dans markAsPaid()) : marqué à
+            // rembourser manuellement, et l'admin est alerté au lieu de ne rien voir du tout.
+            $this->update(['status' => 'refund_pending']);
+
+            AdminNotifier::actionRequired(
+                'Paiement d\'abonnement reçu en retard, abonnement déjà remplacé',
+                "Le paiement de {$this->amount} FCFA (transaction {$this->transaction_id}) pour l'abonnement #{$subscription->id} de {$subscription->user->name} a été confirmé par FedaPay, mais un abonnement plus récent est déjà actif pour cet utilisateur. Remboursement à traiter manuellement.",
+                route('filament.admin.resources.subscriptions.edit', $subscription),
             );
 
             return;

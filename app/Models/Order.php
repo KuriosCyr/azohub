@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AdminNotifier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -385,44 +386,71 @@ class Order extends Model
     // Order::confirmRefund().
     public function refund(?string $reason = null)
     {
-        $successfulPayment = $this->payments()->where('status', 'success')->latest()->first();
+        DB::transaction(function () use ($reason) {
+            // Verrouillée + revérifiée sous verrou (audit externe) : sans ça, un remboursement
+            // demandé au même instant qu'une libération de paiement concurrente (releasePayment())
+            // pouvait s'exécuter quand même après coup, écrasant payment_status='released' en
+            // 'refund_pending' sans que rien ne signale que le prestataire avait déjà été payé —
+            // les deux parties se retrouvaient payées sur la même commande.
+            $order = static::whereKey($this->id)->lockForUpdate()->first();
 
-        // Un paiement réussi a déjà réellement débité le client pour le montant réduit : le
-        // crédit consommé a bien servi à payer cette commande (remboursée séparément comme le
-        // reste du paiement, cf. confirmRefund()). Seule une commande jamais payée restitue son
-        // crédit — sans ça, l'argent-crédit disparaîtrait sans avoir payé quoi que ce soit.
-        // (float) plutôt qu'une comparaison directe : Order::create() ne relit pas la ligne
-        // insérée, donc une commande créée sans ce champ explicite garde `null` en mémoire même
-        // si la colonne vaut bien 0 en base — un `null` brut réécrit ensuite ferait échouer la
-        // contrainte NOT NULL.
-        $creditToRestore = (!$successfulPayment && (float) $this->referral_credit_applied > 0)
-            ? (float) $this->referral_credit_applied
-            : 0;
+            if (!$order) {
+                return;
+            }
 
-        // Même principe que le crédit de parrainage : un code promo consommé par une commande
-        // jamais payée n'a servi à rien, on le rend disponible (pour ce même client comme pour
-        // le plafond global) en supprimant sa trace d'utilisation.
-        $releasePromoCode = !$successfulPayment && $this->promo_code_id;
+            if (in_array($order->payment_status, ['released', 'refund_pending', 'refunded'], true)) {
+                if ($order->payment_status === 'released') {
+                    AdminNotifier::actionRequired(
+                        'Remboursement demandé sur une commande déjà payée au prestataire',
+                        "La commande {$order->order_number} devait être remboursée au client, mais le prestataire a déjà été payé (payment_status=released). Décision manuelle nécessaire.",
+                        route('filament.admin.resources.orders.edit', $order),
+                    );
+                }
 
-        $this->update([
-            'status' => 'cancelled',
-            'payment_status' => $successfulPayment ? 'refund_pending' : $this->payment_status,
-            'cancelled_at' => $this->cancelled_at ?? now(),
-            'cancellation_reason' => $reason ?? $this->cancellation_reason,
-            'referral_credit_applied' => $creditToRestore > 0 ? 0 : (float) $this->referral_credit_applied,
-            'promo_code_id' => $releasePromoCode ? null : $this->promo_code_id,
-            'promo_discount_applied' => $releasePromoCode ? 0 : (float) $this->promo_discount_applied,
-        ]);
+                return;
+            }
 
-        if ($creditToRestore > 0) {
-            $this->client->refundReferralCredit($creditToRestore);
-        }
+            $successfulPayment = $order->payments()->where('status', 'success')->latest()->first();
 
-        if ($releasePromoCode) {
-            PromoCodeRedemption::where('order_id', $this->id)->delete();
-        }
+            // Un paiement réussi a déjà réellement débité le client pour le montant réduit : le
+            // crédit consommé a bien servi à payer cette commande (remboursée séparément comme
+            // le reste du paiement, cf. confirmRefund()). Seule une commande jamais payée
+            // restitue son crédit — sans ça, l'argent-crédit disparaîtrait sans avoir payé quoi
+            // que ce soit. (float) plutôt qu'une comparaison directe : Order::create() ne relit
+            // pas la ligne insérée, donc une commande créée sans ce champ explicite garde `null`
+            // en mémoire même si la colonne vaut bien 0 en base — un `null` brut réécrit ensuite
+            // ferait échouer la contrainte NOT NULL.
+            $creditToRestore = (!$successfulPayment && (float) $order->referral_credit_applied > 0)
+                ? (float) $order->referral_credit_applied
+                : 0;
 
-        $successfulPayment?->update(['status' => 'refund_pending']);
+            // Même principe que le crédit de parrainage : un code promo consommé par une
+            // commande jamais payée n'a servi à rien, on le rend disponible (pour ce même client
+            // comme pour le plafond global) en supprimant sa trace d'utilisation.
+            $releasePromoCode = !$successfulPayment && $order->promo_code_id;
+
+            $order->update([
+                'status' => 'cancelled',
+                'payment_status' => $successfulPayment ? 'refund_pending' : $order->payment_status,
+                'cancelled_at' => $order->cancelled_at ?? now(),
+                'cancellation_reason' => $reason ?? $order->cancellation_reason,
+                'referral_credit_applied' => $creditToRestore > 0 ? 0 : (float) $order->referral_credit_applied,
+                'promo_code_id' => $releasePromoCode ? null : $order->promo_code_id,
+                'promo_discount_applied' => $releasePromoCode ? 0 : (float) $order->promo_discount_applied,
+            ]);
+
+            if ($creditToRestore > 0) {
+                $order->client->refundReferralCredit($creditToRestore);
+            }
+
+            if ($releasePromoCode) {
+                PromoCodeRedemption::where('order_id', $order->id)->delete();
+            }
+
+            $successfulPayment?->update(['status' => 'refund_pending']);
+        });
+
+        $this->refresh();
     }
 
     // Confirme qu'un remboursement en attente a bien été traité manuellement
@@ -432,6 +460,29 @@ class Order extends Model
         $this->update(['payment_status' => 'refunded']);
 
         $this->payments()->where('status', 'refund_pending')->update(['status' => 'refunded']);
+    }
+
+    // Litige tranché "aucune action" (non fondé) : la commande retourne à l'état qu'elle avait
+    // avant l'ouverture du litige. Redonne un délai de validation complet si elle retourne en
+    // 'delivered' — sans ça, l'ancien délai (déjà expiré ou presque, le litige ayant pris du
+    // temps à traiter) laissait l'auto-validation se déclencher dans l'heure suivante au lieu de
+    // laisser au client le temps normal de vérifier la livraison (audit externe).
+    public function reopenAfterDispute(): void
+    {
+        DB::transaction(function () {
+            $order = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if (!$order) {
+                return;
+            }
+
+            $order->update([
+                'status' => $order->delivered_at ? 'delivered' : 'in_progress',
+                'validation_deadline' => $order->delivered_at ? now()->addHours(72) : $order->validation_deadline,
+            ]);
+        });
+
+        $this->refresh();
     }
 
     // Litige tranché "à moitié" : le client récupère $clientRefundAmount (à traiter
@@ -482,12 +533,28 @@ class Order extends Model
     // délai, ou litige tranché en sa faveur). Verrouillée en transaction et gardée
     // par un contrôle de payment_status pour éviter un double crédit du portefeuille
     // si deux déclencheurs (client + cron d'auto-validation) se chevauchent.
-    public function releasePayment(bool $autoValidated = false)
+    // $allowFromDisputed : réservé à Dispute::resolve() ('pay_prestataire') — seul cas légitime
+    // où la commande est encore 'disputed' au moment de l'appel.
+    public function releasePayment(bool $autoValidated = false, bool $allowFromDisputed = false)
     {
-        DB::transaction(function () use ($autoValidated) {
+        DB::transaction(function () use ($autoValidated, $allowFromDisputed) {
             $order = static::whereKey($this->id)->lockForUpdate()->first();
 
-            if (!$order || $order->payment_status === 'released') {
+            // Une commande déjà libérée, déjà en attente de remboursement ou déjà remboursée ne
+            // doit plus jamais repasser par ici (audit externe : releasePayment() ne bloquait
+            // que 'released', ce qui pouvait payer le prestataire sur une commande déjà marquée
+            // à rembourser au client — un litige tranché en cours de traitement, par exemple).
+            if (!$order || in_array($order->payment_status, ['released', 'refund_pending', 'refunded'], true)) {
+                return;
+            }
+
+            // Un litige ouvert entre-temps (DisputeController::store(), verrouillée comme ici)
+            // ne doit jamais être court-circuité par une validation client ou l'auto-validation
+            // qui aurait démarré juste avant — seule une résolution de litige explicite peut
+            // libérer le paiement d'une commande encore 'disputed' (audit externe : sans ce
+            // garde-fou, une commande pouvait finir 'disputed' ET payment_status='released' en
+            // même temps).
+            if (!$allowFromDisputed && $order->status === 'disputed') {
                 return;
             }
 

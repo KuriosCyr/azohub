@@ -105,4 +105,61 @@ class OrderStatusTransitionsTest extends TestCase
         $response->assertSessionHas('error');
         $this->assertSame('paid', $order->fresh()->status);
     }
+
+    // refuse() ne verrouillait pas la commande avant d'appeler refund() (audit externe) —
+    // corrigé pour suivre le même verrouillage que accept()/cancel()/deliver().
+    public function test_prestataire_can_refuse_a_paid_order(): void
+    {
+        Notification::fake();
+        $order = $this->makeOrder();
+
+        $response = $this->actingAs($order->prestataire)
+            ->post(route('orders.refuse', $order), ['refusal_reason' => 'Trop de travail en cours.']);
+
+        $response->assertRedirect();
+        $this->assertSame('cancelled', $order->fresh()->status);
+    }
+
+    public function test_refusing_an_order_that_is_no_longer_paid_is_rejected(): void
+    {
+        $order = $this->makeOrder(['status' => 'in_progress']);
+
+        $response = $this->actingAs($order->prestataire)
+            ->post(route('orders.refuse', $order), ['refusal_reason' => 'Trop tard.']);
+
+        $response->assertSessionHas('error');
+        $this->assertSame('in_progress', $order->fresh()->status);
+    }
+
+    // DisputeController::store() ne verrouillait pas la commande avant de créer le litige
+    // (audit externe) — une commande qui vient d'être validée/complétée ne doit plus pouvoir
+    // passer en 'disputed' après coup.
+    public function test_opening_a_dispute_on_a_completed_order_is_rejected(): void
+    {
+        $order = $this->makeOrder(['status' => 'completed', 'payment_status' => 'released']);
+
+        $response = $this->actingAs($order->client)->post(route('orders.dispute.store', $order), [
+            'reason' => 'work_not_delivered',
+            'description' => str_repeat('Le travail n\'a jamais été livré. ', 2),
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertSame('completed', $order->fresh()->status);
+        $this->assertNull($order->fresh()->dispute);
+    }
+
+    public function test_opening_a_dispute_on_an_in_progress_order_succeeds(): void
+    {
+        Notification::fake();
+        $order = $this->makeOrder(['status' => 'in_progress']);
+
+        $response = $this->actingAs($order->client)->post(route('orders.dispute.store', $order), [
+            'reason' => 'work_not_delivered',
+            'description' => str_repeat('Le travail n\'a jamais été livré. ', 2),
+        ]);
+
+        $response->assertRedirect();
+        $this->assertSame('disputed', $order->fresh()->status);
+        $this->assertNotNull($order->fresh()->dispute);
+    }
 }
