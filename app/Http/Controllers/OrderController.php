@@ -11,6 +11,7 @@ use App\Notifications\PaymentReleased;
 use App\Notifications\RevisionRequested;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class OrderController extends Controller
@@ -66,23 +67,42 @@ class OrderController extends Controller
             abort(403);
         }
 
-        // Vérifier le statut
+        // Vérifier le statut — reverrouillé dans la transaction ci-dessous contre une annulation
+        // client simultanée (ex. cancel() sur l'autre onglet du client au même instant).
         if ($order->status !== 'paid') {
             return redirect()
                 ->back()
                 ->with('error', 'Cette commande ne peut pas être acceptée.');
         }
 
-        // Mettre à jour le statut. Pour une commande négociée, le compte à rebours de
-        // livraison n'a pas encore démarré (cf. Payment::markAsPaid()) : il démarre
-        // maintenant, au moment où le prestataire accepte formellement le travail.
-        $order->update([
-            'status' => 'in_progress',
-            'accepted_at' => now(),
-            'expected_delivery_at' => ($order->isNegotiated() && $order->delivery_time)
-                ? now()->addDays($order->delivery_time)
-                : $order->expected_delivery_at,
-        ]);
+        $accepted = DB::transaction(function () use ($order) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
+
+            if (!$locked || $locked->status !== 'paid') {
+                return false;
+            }
+
+            // Pour une commande négociée, le compte à rebours de livraison n'a pas encore
+            // démarré (cf. Payment::markAsPaid()) : il démarre maintenant, au moment où le
+            // prestataire accepte formellement le travail.
+            $locked->update([
+                'status' => 'in_progress',
+                'accepted_at' => now(),
+                'expected_delivery_at' => ($locked->isNegotiated() && $locked->delivery_time)
+                    ? now()->addDays($locked->delivery_time)
+                    : $locked->expected_delivery_at,
+            ]);
+
+            return true;
+        });
+
+        if (!$accepted) {
+            return redirect()
+                ->back()
+                ->with('error', 'Cette commande ne peut plus être acceptée (elle a peut-être été annulée entre-temps).');
+        }
+
+        $order->refresh();
 
         $order->client->notify(new OrderAccepted($order));
 
@@ -157,23 +177,43 @@ class OrderController extends Controller
             }
         }
 
-        // Mettre à jour la commande
-        $order->update([
-            'status' => 'delivered',
-            'delivered_at' => now(),
-            // Renseigné une seule fois : sert de référence pour juger la ponctualité, une
-            // re-livraison après révision ne doit pas la faire passer "en retard" après coup.
-            'first_delivered_at' => $order->first_delivered_at ?? now(),
-            'delivery_note' => $validated['delivery_notes'] ?? null,
-            // Re-livraison après une révision sans nouveau fichier : on garde les fichiers déjà livrés.
-            'deliverables' => !empty($deliverables) ? array_merge($order->deliverables ?? [], $deliverables) : ($order->deliverables ?: null),
-            'validation_deadline' => now()->addHours(72),
-            // Sans ce reset, une commande sur laquelle une révision a un jour été demandée
-            // continuait à apparaître dans le "À faire" du dashboard prestataire indéfiniment —
-            // y compris après cette re-livraison, sa validation par le client, voire une fois
-            // la commande "completed" : ce champ n'était jamais remis à false nulle part.
-            'revision_requested' => false,
-        ]);
+        // Verrouillée : un double-clic sur "Livrer" (ou deux onglets) ne doit pas fusionner deux
+        // fois le même lot de fichiers dans "deliverables", ni réinitialiser deux fois le délai
+        // de validation de 72h.
+        $delivered = DB::transaction(function () use ($order, $validated, $deliverables) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
+
+            if (!$locked || $locked->status !== 'in_progress') {
+                return false;
+            }
+
+            $locked->update([
+                'status' => 'delivered',
+                'delivered_at' => now(),
+                // Renseigné une seule fois : sert de référence pour juger la ponctualité, une
+                // re-livraison après révision ne doit pas la faire passer "en retard" après coup.
+                'first_delivered_at' => $locked->first_delivered_at ?? now(),
+                'delivery_note' => $validated['delivery_notes'] ?? null,
+                // Re-livraison après une révision sans nouveau fichier : on garde les fichiers déjà livrés.
+                'deliverables' => !empty($deliverables) ? array_merge($locked->deliverables ?? [], $deliverables) : ($locked->deliverables ?: null),
+                'validation_deadline' => now()->addHours(72),
+                // Sans ce reset, une commande sur laquelle une révision a un jour été demandée
+                // continuait à apparaître dans le "À faire" du dashboard prestataire indéfiniment —
+                // y compris après cette re-livraison, sa validation par le client, voire une fois
+                // la commande "completed" : ce champ n'était jamais remis à false nulle part.
+                'revision_requested' => false,
+            ]);
+
+            return true;
+        });
+
+        if (!$delivered) {
+            return redirect()
+                ->back()
+                ->with('error', 'Cette commande ne peut plus être marquée comme livrée.');
+        }
+
+        $order->refresh();
 
         // Recalculé dès la livraison (pas seulement à la validation finale par le client, qui
         // peut arriver des jours plus tard) : first_delivered_at vient d'être fixé, la
@@ -245,14 +285,32 @@ class OrderController extends Controller
             'revision_notes' => 'required|string|max:1000',
         ]);
 
-        // Remettre en cours
-        $order->update([
-            'status' => 'in_progress',
-            'revision_requested' => true,
-            'revision_notes' => $validated['revision_notes'],
-            'revisions_used' => $order->revisions_used + 1,
-        ]);
+        // Verrouillée : un double-clic ne doit pas consommer deux révisions du quota pour une
+        // seule vraie demande.
+        $requested = DB::transaction(function () use ($order, $validated) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
 
+            if (!$locked || !$locked->canRequestRevision()) {
+                return false;
+            }
+
+            $locked->update([
+                'status' => 'in_progress',
+                'revision_requested' => true,
+                'revision_notes' => $validated['revision_notes'],
+                'revisions_used' => $locked->revisions_used + 1,
+            ]);
+
+            return true;
+        });
+
+        if (!$requested) {
+            return redirect()
+                ->back()
+                ->with('error', "Vous avez déjà utilisé les {$order->revisions_included} révision(s) incluse(s) pour cette commande. Si le travail livré n'est vraiment pas conforme, ouvrez un litige.");
+        }
+
+        $order->refresh();
         $order->prestataire->notify(new RevisionRequested($order));
 
         return redirect()
@@ -281,7 +339,28 @@ class OrderController extends Controller
             'cancellation_reason' => 'required|string|max:500',
         ]);
 
-        $order->refund($validated['cancellation_reason']);
+        // Verrouillée : sans ça, une annulation client et une acceptation prestataire
+        // simultanées pourraient toutes deux passer leur vérification de statut avant que
+        // l'autre n'écrive, laissant la commande dans un état contradictoire.
+        $cancelled = DB::transaction(function () use ($order, $validated) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
+
+            if (!$locked || !in_array($locked->status, ['pending_payment', 'paid'])) {
+                return false;
+            }
+
+            $locked->refund($validated['cancellation_reason']);
+
+            return true;
+        });
+
+        if (!$cancelled) {
+            return redirect()
+                ->back()
+                ->with('error', 'Cette commande ne peut plus être annulée.');
+        }
+
+        $order->refresh();
 
         $cancelledByRole = $order->client_id === Auth::id() ? 'client' : 'prestataire';
         $recipient = $cancelledByRole === 'client' ? $order->prestataire : $order->client;

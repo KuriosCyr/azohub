@@ -42,27 +42,39 @@ class OrderForm
                 Textarea::make('requirements')
                     ->label('Besoins du client')
                     ->columnSpanFull(),
+                // Montants et statuts verrouillés (même traitement que wallet_balance sur
+                // UserForm et l'ensemble de PaymentForm) : un changement à la main ici ne
+                // déclenche AUCUNE des actions réelles qui s'y rattachent normalement (webhook
+                // FedaPay, escrow, notifications, crédit du portefeuille) — et prestataire_amount
+                // en particulier est relu tel quel au moment d'un futur releasePayment()/
+                // partialRefund(), donc une modification après coup fausserait un paiement réel
+                // à venir. Les changements légitimes passent par les actions dédiées de la liste
+                // (accepter, annuler, livrer, résoudre un litige, confirmer un remboursement...).
                 TextInput::make('amount')
                     ->label('Montant')
                     ->required()
                     ->numeric()
-                    ->suffix('FCFA'),
+                    ->suffix('FCFA')
+                    ->disabled(),
                 TextInput::make('client_fee')
                     ->label('Frais de service client')
                     ->numeric()
                     ->default(0)
-                    ->suffix('FCFA'),
+                    ->suffix('FCFA')
+                    ->disabled(),
                 TextInput::make('commission')
                     ->label('Commission prestataire')
                     ->required()
                     ->numeric()
                     ->default(0)
-                    ->suffix('FCFA'),
+                    ->suffix('FCFA')
+                    ->disabled(),
                 TextInput::make('prestataire_amount')
                     ->label('Net prestataire')
                     ->required()
                     ->numeric()
-                    ->suffix('FCFA'),
+                    ->suffix('FCFA')
+                    ->disabled(),
                 TextInput::make('delivery_time')
                     ->label('Délai de livraison')
                     ->required()
@@ -76,12 +88,14 @@ class OrderForm
                     ->label('Statut')
                     ->options(OrdersTable::STATUSES)
                     ->default('pending_payment')
-                    ->required(),
+                    ->required()
+                    ->disabled(),
                 Select::make('payment_status')
                     ->label('Paiement')
                     ->options(OrdersTable::PAYMENT_STATUSES)
                     ->default('pending')
-                    ->required(),
+                    ->required()
+                    ->disabled(),
                 Textarea::make('delivery_note')
                     ->label('Note de livraison')
                     ->columnSpanFull(),
