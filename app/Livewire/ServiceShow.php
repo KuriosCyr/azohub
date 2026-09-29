@@ -56,6 +56,18 @@ class ServiceShow extends Component
         $this->selectedPackage = $package;
     }
 
+    // Formule actuellement affichée dans la sidebar (prix/délai/révisions), si le service en
+    // propose — sinon null et la sidebar retombe sur le prix unique du service.
+    public function getCurrentPackageProperty()
+    {
+        if (!$this->service->hasPackages()) {
+            return null;
+        }
+
+        return $this->service->packages->firstWhere('tier', $this->selectedPackage)
+            ?? $this->service->packages->first();
+    }
+
     // Seuls les clients peuvent mettre un service en favori (un prestataire ne "commande" pas).
     public function toggleFavorite()
     {

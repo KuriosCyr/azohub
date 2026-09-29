@@ -83,6 +83,19 @@ class Service extends Model
         return $this->hasMany(Order::class);
     }
 
+    // Formules Basique/Standard/Premium, optionnelles — un service qui n'en propose pas
+    // continue d'utiliser son propre price/delivery_time/revisions_included (voir
+    // hasPackages()), aucune migration de données requise pour les services existants.
+    public function packages()
+    {
+        return $this->hasMany(ServicePackage::class)->orderByRaw("FIELD(tier, 'basic', 'standard', 'premium')");
+    }
+
+    public function hasPackages(): bool
+    {
+        return $this->packages->isNotEmpty();
+    }
+
     public function reviews()
     {
         return $this->hasMany(Review::class);

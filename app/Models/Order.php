@@ -16,6 +16,7 @@ class Order extends Model
         'client_id',
         'prestataire_id',
         'service_id',
+        'service_package_id',
         'service_request_id',
         'proposal_id',
         'custom_offer_id',
@@ -177,6 +178,11 @@ class Order extends Model
     public function service()
     {
         return $this->belongsTo(Service::class);
+    }
+
+    public function servicePackage()
+    {
+        return $this->belongsTo(ServicePackage::class);
     }
 
     public function serviceRequest()

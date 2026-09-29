@@ -239,14 +239,37 @@
             {{-- Sidebar (Prix et commande) --}}
             <div class="lg:col-span-1">
                 <div class="bg-cream-50 rounded-xl p-6 border border-ink-100 sticky top-24">
-                    <div class="mb-6">
-                        <p class="text-ink-500 text-sm mb-2">À partir de</p>
-                        <p class="text-5xl font-serif font-medium text-ink-900 mb-1">
-                            {{ number_format($service->price, 0, ',', ' ') }}
-                            <span class="text-2xl text-ink-500">FCFA</span>
-                        </p>
-                        <p class="text-sm text-ink-400">Livraison en {{ $service->delivery_time }} jour(s)</p>
-                    </div>
+                    @if($service->hasPackages())
+                        {{-- Sélecteur de formule --}}
+                        <div class="grid grid-cols-3 gap-2 mb-6">
+                            @foreach($service->packages as $pkg)
+                                <button type="button" wire:click="selectPackage('{{ $pkg->tier }}')"
+                                        class="px-2 py-2 rounded-lg text-xs font-bold border-2 transition {{ $selectedPackage === $pkg->tier ? 'border-ink-900 bg-ink-900 text-cream-50' : 'border-ink-200 text-ink-600 hover:border-ink-400' }}">
+                                    {{ $pkg->tier_label }}
+                                </button>
+                            @endforeach
+                        </div>
+
+                        <div class="mb-6">
+                            <p class="text-5xl font-serif font-medium text-ink-900 mb-1">
+                                {{ number_format($this->currentPackage->price, 0, ',', ' ') }}
+                                <span class="text-2xl text-ink-500">FCFA</span>
+                            </p>
+                            <p class="text-sm text-ink-400">Livraison en {{ $this->currentPackage->delivery_time }} jour(s) · {{ $this->currentPackage->revisions_included }} révision(s) incluse(s)</p>
+                            @if($this->currentPackage->description)
+                                <p class="text-sm text-ink-600 mt-3 whitespace-pre-line">{{ $this->currentPackage->description }}</p>
+                            @endif
+                        </div>
+                    @else
+                        <div class="mb-6">
+                            <p class="text-ink-500 text-sm mb-2">À partir de</p>
+                            <p class="text-5xl font-serif font-medium text-ink-900 mb-1">
+                                {{ number_format($service->price, 0, ',', ' ') }}
+                                <span class="text-2xl text-ink-500">FCFA</span>
+                            </p>
+                            <p class="text-sm text-ink-400">Livraison en {{ $service->delivery_time }} jour(s)</p>
+                        </div>
+                    @endif
 
                     @if(session('error'))
                     <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">

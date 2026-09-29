@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Service;
+use App\Models\ServicePackage;
 use App\Models\Category;
 use App\Services\AdminNotifier;
 use Illuminate\Http\Request;
@@ -76,6 +77,7 @@ class ServiceController extends Controller
             'portfolio.*' => 'nullable|image|max:5120',
             'tags' => 'nullable|string',
             ...$this->areaRules($request),
+            ...$this->packageRules($request),
         ], [
             'category_id.required' => 'La catégorie est obligatoire.',
             'title.required' => 'Le titre est obligatoire.',
@@ -120,6 +122,8 @@ class ServiceController extends Controller
                 ]);
             }
         }
+
+        $this->syncPackages($service, $request, $validated);
 
         AdminNotifier::actionRequired(
             'Nouveau service à modérer',
@@ -186,6 +190,7 @@ class ServiceController extends Controller
             'tags' => 'nullable|string',
             'is_active' => 'boolean',
             ...$this->areaRules($request),
+            ...$this->packageRules($request),
         ], $this->areaMessages());
 
         // Tags (le champ vide efface les tags : isset() les laissait inchangés)
@@ -196,7 +201,7 @@ class ServiceController extends Controller
         // ne doit pas laisser d'images orphelines sur le disque.
         $newCover = $request->hasFile('cover_image');
         $newPortfolio = $request->hasFile('portfolio');
-        $service->fill(collect($validated)->except('cover_image')->all());
+        $service->fill(collect($validated)->except(['cover_image', 'has_packages', 'packages'])->all());
 
         // Toute modification du contenu (texte, prix, catégorie, images) repasse par la modération :
         // le service est retiré de la vitrine jusqu'à sa nouvelle validation. Activer/désactiver
@@ -220,6 +225,8 @@ class ServiceController extends Controller
             }
             $service->cover_image = $request->file('cover_image')->store('services/covers', 'public');
         }
+
+        $this->syncPackages($service, $request, $validated);
 
         // Upload nouvelles images portfolio si fournies
         if ($newPortfolio) {
@@ -350,6 +357,49 @@ class ServiceController extends Controller
             'service_areas' => [\Illuminate\Validation\Rule::requiredIf(fn () => !$request->boolean('serves_nationwide')), 'nullable', 'array', 'max:80'],
             'service_areas.*' => ['string', \Illuminate\Validation\Rule::in(Service::communes())],
         ];
+    }
+
+    // Formules Basique/Standard/Premium, optionnelles (has_packages coché). Les 3 tiers sont
+    // requis ensemble ou absents ensemble — pas de formule "à moitié remplie".
+    private function packageRules(Request $request): array
+    {
+        if (!$request->boolean('has_packages')) {
+            return ['has_packages' => 'boolean'];
+        }
+
+        $rules = ['has_packages' => 'boolean'];
+
+        foreach (array_keys(ServicePackage::TIERS) as $tier) {
+            $rules["packages.{$tier}.price"] = 'required|numeric|min:100|max:100000000';
+            $rules["packages.{$tier}.delivery_time"] = 'required|integer|min:1|max:365';
+            $rules["packages.{$tier}.revisions_included"] = 'required|integer|min:0|max:20';
+            $rules["packages.{$tier}.description"] = 'nullable|string|max:1000';
+        }
+
+        return $rules;
+    }
+
+    // Crée/met à jour/supprime les 3 lignes ServicePackage selon has_packages — jamais un
+    // sous-ensemble : soit les 3 tiers existent, soit aucun (Service::hasPackages() sert de
+    // bascule simple entre le mode "prix unique" et le mode "3 formules" côté affichage).
+    private function syncPackages(Service $service, Request $request, array $validated): void
+    {
+        if (!$request->boolean('has_packages')) {
+            $service->packages()->delete();
+            return;
+        }
+
+        foreach ($validated['packages'] as $tier => $data) {
+            $service->packages()->updateOrCreate(
+                ['tier' => $tier],
+                [
+                    'price' => $data['price'],
+                    'delivery_time' => $data['delivery_time'],
+                    'revisions_included' => $data['revisions_included'],
+                    'description' => $data['description'] ?? null,
+                ]
+            );
+        }
     }
 
     private function areaMessages(): array

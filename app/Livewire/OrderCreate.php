@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Order;
 use App\Models\Service;
+use App\Models\ServicePackage;
 use App\Services\PaymentService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -18,13 +19,26 @@ class OrderCreate extends Component
     public string $paymentMethod = 'mtn_momo';
     public $attachments = [];
 
+    // La formule choisie sur la page du service (?package=), résolue une seule fois : si le
+    // service ne propose pas de formules, ou si le tier demandé n'existe pas/plus, retombe sur
+    // le prix unique du service (jamais d'erreur pour l'utilisateur dans ce cas).
+    public function getResolvedPackageProperty(): ?ServicePackage
+    {
+        if (!$this->service->hasPackages()) {
+            return null;
+        }
+
+        return $this->service->packages->firstWhere('tier', $this->package)
+            ?? $this->service->packages->first();
+    }
+
     public function mount()
     {
         $serviceId = request()->query('service');
 
         abort_if(!$serviceId, 404);
 
-        $this->service = Service::with(['prestataire', 'category'])->findOrFail($serviceId);
+        $this->service = Service::with(['prestataire', 'category', 'packages'])->findOrFail($serviceId);
         $this->package = request()->query('package', 'basic');
 
         // Vérifier que le service est encore commandable
@@ -68,21 +82,27 @@ class OrderCreate extends Component
             ];
         }
 
-        $commission = round($this->service->price * $this->service->prestataire->commissionRate(), 2);
-        $clientFee = round($this->service->price * Order::CLIENT_FEE_RATE, 2);
+        $pkg = $this->resolvedPackage;
+        $price = $pkg?->price ?? $this->service->price;
+        $deliveryTime = $pkg?->delivery_time ?? $this->service->delivery_time;
+        $revisionsIncluded = $pkg?->revisions_included ?? $this->service->revisions_included;
+
+        $commission = round($price * $this->service->prestataire->commissionRate(), 2);
+        $clientFee = round($price * Order::CLIENT_FEE_RATE, 2);
 
         $order = Order::create([
             'client_id'        => auth()->id(),
             'prestataire_id'   => $this->service->user_id,
             'service_id'       => $this->service->id,
+            'service_package_id' => $pkg?->id,
             'requirements'     => $this->requirements,
             'attachments'      => !empty($uploadedAttachments) ? $uploadedAttachments : null,
-            'amount'           => $this->service->price,
+            'amount'           => $price,
             'commission'       => $commission,
             'client_fee'       => $clientFee,
-            'prestataire_amount' => $this->service->price - $commission,
-            'delivery_time'    => $this->service->delivery_time,
-            'revisions_included' => $this->service->revisions_included,
+            'prestataire_amount' => $price - $commission,
+            'delivery_time'    => $deliveryTime,
+            'revisions_included' => $revisionsIncluded,
             'status'           => 'pending_payment',
             'payment_status'   => 'pending',
         ]);

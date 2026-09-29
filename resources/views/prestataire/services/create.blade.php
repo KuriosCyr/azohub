@@ -168,6 +168,49 @@
                     </div>
                 </div>
 
+                {{-- Formules (optionnel) --}}
+                <div class="bg-cream-50 rounded-xl p-8 border border-ink-100" x-data="{ hasPackages: {{ old('has_packages') ? 'true' : 'false' }} }">
+                    <label class="flex items-start gap-3 cursor-pointer mb-2">
+                        <input type="checkbox" name="has_packages" value="1" x-model="hasPackages"
+                               class="mt-1 rounded border-ink-300 text-terracotta-600 focus:ring-terracotta-600">
+                        <span>
+                            <span class="block text-lg font-serif font-medium text-ink-900">Proposer plusieurs formules</span>
+                            <span class="block text-sm text-ink-400">Basique / Standard / Premium — remplace le prix unique ci-dessus par 3 offres au choix du client.</span>
+                        </span>
+                    </label>
+
+                    <div x-show="hasPackages" x-transition class="mt-6 space-y-6">
+                        @foreach(\App\Models\ServicePackage::TIERS as $tier => $label)
+                            <div class="border-2 border-ink-100 rounded-xl p-5">
+                                <p class="font-bold text-ink-900 mb-4">{{ $label }}</p>
+                                <div class="grid md:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-ink-600 mb-1">Prix (FCFA)</label>
+                                        <input type="number" name="packages[{{ $tier }}][price]" value="{{ old("packages.$tier.price") }}" min="100" step="500"
+                                               class="w-full px-3 py-2 border-2 border-ink-200 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
+                                        <x-input-error :messages="$errors->get(\"packages.$tier.price\")" class="mt-1" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-ink-600 mb-1">Délai (jours)</label>
+                                        <input type="number" name="packages[{{ $tier }}][delivery_time]" value="{{ old("packages.$tier.delivery_time") }}" min="1" max="365"
+                                               class="w-full px-3 py-2 border-2 border-ink-200 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
+                                        <x-input-error :messages="$errors->get(\"packages.$tier.delivery_time\")" class="mt-1" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-ink-600 mb-1">Révisions incluses</label>
+                                        <input type="number" name="packages[{{ $tier }}][revisions_included]" value="{{ old(\"packages.$tier.revisions_included\", 2) }}" min="0" max="20"
+                                               class="w-full px-3 py-2 border-2 border-ink-200 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
+                                        <x-input-error :messages="$errors->get(\"packages.$tier.revisions_included\")" class="mt-1" />
+                                    </div>
+                                </div>
+                                <label class="block text-xs font-bold text-ink-600 mb-1">Ce qui est inclus (optionnel)</label>
+                                <textarea name="packages[{{ $tier }}][description]" rows="2"
+                                          class="w-full px-3 py-2 border-2 border-ink-200 rounded-lg focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">{{ old("packages.$tier.description") }}</textarea>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
                 {{-- Images --}}
                 <div class="bg-cream-50 rounded-xl p-8 border border-ink-100">
                     <h2 class="text-2xl font-serif font-medium text-ink-900 mb-6"><x-app-icon name="camera" class="w-6 h-6 inline-block" /> Images</h2>

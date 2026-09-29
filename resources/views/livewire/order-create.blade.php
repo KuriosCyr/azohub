@@ -25,7 +25,10 @@
                         <div class="flex-1 min-w-0">
                             <p class="font-bold text-ink-900 line-clamp-2">{{ $service->title }}</p>
                             <p class="text-sm text-ink-500 mt-1">Par {{ $service->prestataire->name }}</p>
-                            <p class="text-sm text-terracotta-700 font-semibold mt-1">Livraison en {{ $service->delivery_time }} jour(s)</p>
+                            @if($this->resolvedPackage)
+                                <p class="text-xs font-bold uppercase text-terracotta-700 mt-1">Formule {{ $this->resolvedPackage->tier_label }}</p>
+                            @endif
+                            <p class="text-sm text-terracotta-700 font-semibold mt-1">Livraison en {{ $this->resolvedPackage->delivery_time ?? $service->delivery_time }} jour(s)</p>
                         </div>
                     </div>
 
@@ -90,12 +93,13 @@
                     <h2 class="text-lg font-bold text-ink-900 mb-6">Récapitulatif</h2>
 
                     @php
-                        $clientFee = $service->price * \App\Models\Order::CLIENT_FEE_RATE;
+                        $displayPrice = $this->resolvedPackage->price ?? $service->price;
+                        $clientFee = $displayPrice * \App\Models\Order::CLIENT_FEE_RATE;
                     @endphp
                     <div class="space-y-3 mb-6">
                         <div class="flex justify-between text-sm">
                             <span class="text-ink-500">Prix du service</span>
-                            <span class="font-semibold">{{ number_format($service->price, 0, ',', ' ') }} FCFA</span>
+                            <span class="font-semibold">{{ number_format($displayPrice, 0, ',', ' ') }} FCFA</span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0, ',', ' ') }}%)</span>
@@ -103,7 +107,7 @@
                         </div>
                         <div class="border-t border-ink-100 pt-3 flex justify-between font-bold text-lg">
                             <span>Total</span>
-                            <span class="text-ink-900">{{ number_format($service->price + $clientFee, 0, ',', ' ') }} FCFA</span>
+                            <span class="text-ink-900">{{ number_format($displayPrice + $clientFee, 0, ',', ' ') }} FCFA</span>
                         </div>
                     </div>
 
