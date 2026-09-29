@@ -33,15 +33,18 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Attempt to authenticate the request's credentials.
+     * Vérifie les identifiants SANS ouvrir de session (Auth::once() authentifie pour la durée de
+     * cette seule requête, sans rien persister) — la double authentification (voir
+     * TwoFactorChallengeController) doit valider le code avant qu'une vraie session ne soit
+     * créée. Retourne l'utilisateur si les identifiants sont corrects.
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function authenticate(): void
+    public function authenticate(): \App\Models\User
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        if (! Auth::once($this->only('email', 'password'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -49,15 +52,17 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        if (Auth::user()->is_active === false) {
-            Auth::logout();
+        $user = Auth::user();
 
+        if ($user->is_active === false) {
             throw ValidationException::withMessages([
                 'email' => 'Ce compte a été désactivé. Contactez le support si vous pensez qu\'il s\'agit d\'une erreur.',
             ]);
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        return $user;
     }
 
     /**

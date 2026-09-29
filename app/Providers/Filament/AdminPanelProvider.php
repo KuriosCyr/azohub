@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use Filament\Auth\MultiFactor\Email\EmailAuthentication;
 use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -32,6 +33,13 @@ class AdminPanelProvider extends PanelProvider
             ->passwordReset() // "Mot de passe oublié" sur la page de connexion admin — absent par défaut chez Filament tant qu'on ne l'active pas explicitement.
             ->profile() // Page "Modifier le profil" (nom, e-mail, mot de passe) accessible depuis le menu utilisateur.
             ->databaseNotifications() // Cloche de notifications dans la topbar — voir App\Services\AdminNotifier.
+            // Double authentification par email, obligatoire (isRequired: true) : au premier
+            // login sans configuration existante, Filament redirige automatiquement vers un
+            // écran de configuration avant de laisser entrer dans le panel — pas de compte admin
+            // qui passe entre les mailles.
+            ->multiFactorAuthentication([
+                EmailAuthentication::make(),
+            ], isRequired: true)
 
             // Palette de couleurs Azohub
             ->colors([

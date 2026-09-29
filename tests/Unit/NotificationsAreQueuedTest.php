@@ -11,6 +11,13 @@ use Tests\TestCase;
 // un paiement. Ce test empêche qu'une future notification oublie ShouldQueue par mégarde.
 class NotificationsAreQueuedTest extends TestCase
 {
+    // TwoFactorCode : seule exception délibérée, documentée sur la classe elle-même —
+    // l'utilisateur attend ce code en direct sur l'écran de connexion ; l'authentification ne
+    // doit pas dépendre de la disponibilité du worker de file d'attente.
+    private const EXEMPT = [
+        \App\Notifications\TwoFactorCode::class,
+    ];
+
     public function test_every_notification_class_implements_should_queue(): void
     {
         $files = glob(app_path('Notifications/*.php'));
@@ -22,6 +29,10 @@ class NotificationsAreQueuedTest extends TestCase
             $class = 'App\\Notifications\\' . basename($file, '.php');
 
             if (!is_subclass_of($class, \Illuminate\Notifications\Notification::class)) {
+                continue;
+            }
+
+            if (in_array($class, self::EXEMPT, true)) {
                 continue;
             }
 

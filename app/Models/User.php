@@ -11,12 +11,17 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Filament\Auth\MultiFactor\Email\Concerns\InteractsWithEmailAuthentication;
+use Filament\Auth\MultiFactor\Email\Contracts\HasEmailAuthentication;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 
-class User extends Authenticatable implements FilamentUser, MustVerifyEmail
+// HasEmailAuthentication : double authentification par email du panel admin (Filament,
+// mécanisme officiel — voir AdminPanelProvider::multiFactorAuthentication()), rendue
+// obligatoire pour tous les comptes admin.
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail, HasEmailAuthentication
 {
-    use HasFactory, Notifiable, SoftDeletes, MustVerifyEmailTrait;
+    use HasFactory, Notifiable, SoftDeletes, MustVerifyEmailTrait, InteractsWithEmailAuthentication;
 
     protected static function boot()
     {
