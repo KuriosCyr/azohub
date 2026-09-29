@@ -5,6 +5,21 @@ configuration réellement en place sur le VPS OVH (`/etc/nginx/sites-available/a
 `/var/www/azohub/deploy.sh`), gardée ici pour ne pas avoir à la reconstruire de mémoire
 après un changement.
 
+## Crontab du serveur (référence — pas versionné, ni déployé automatiquement)
+
+```
+0 3 * * * /home/ubuntu/backup-db.sh
+* * * * * cd /var/www/azohub && php artisan schedule:run >> /dev/null 2>&1
+```
+
+La seconde ligne manquait (découvert le 29/09/2026) : sans elle, **aucune** des tâches
+planifiées dans `routes/console.php` (auto-validation des commandes, rappels d'échéance,
+expiration des abonnements/offres/demandes...) ne s'exécutait jamais, malgré tout le code
+en place — `Schedule::command(...)` ne fait qu'enregistrer une tâche dans le planificateur
+Laravel, encore faut-il qu'un cron système appelle `php artisan schedule:run` régulièrement
+pour qu'il la déclenche. Toujours vérifier `crontab -l` après une intervention serveur qui y
+touche, et `php artisan schedule:list` pour voir ce qui est enregistré côté application.
+
 ## API Payout FedaPay : non autorisée sur ce compte (au 29/09/2026)
 
 `PaymentService::initiatePayout()` (retraits automatisés, voir son propre commit) est
