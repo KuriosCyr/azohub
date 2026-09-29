@@ -64,7 +64,7 @@ class FaqSeeder extends Seeder
             [
                 'category' => 'prestataire',
                 'question' => 'Comment gérer les révisions demandées par les clients ?',
-                'answer' => 'Lorsqu\'un client demande une révision, vous recevez une notification avec les détails. Effectuez les modifications demandées et marquez à nouveau le travail comme livré.',
+                'answer' => 'Lorsqu\'un client demande une révision, vous recevez une notification avec les détails. Effectuez les modifications demandées et marquez à nouveau le travail comme livré. Le nombre de révisions gratuites incluses est celui que vous avez défini sur votre service (ou votre offre personnalisée) : au-delà, le client ne peut plus en redemander via le bouton dédié — s\'il estime le travail non conforme, la suite passe par un litige.',
                 'order' => 5,
             ],
 
@@ -84,14 +84,20 @@ class FaqSeeder extends Seeder
             [
                 'category' => 'client',
                 'question' => 'Que se passe-t-il si je ne suis pas satisfait du travail ?',
-                'answer' => 'Vous pouvez demander des révisions gratuites selon les conditions du service. Si le problème persiste, vous pouvez ouvrir un litige et notre équipe examinera le cas pour trouver une solution équitable.',
+                'answer' => 'Vous pouvez demander des révisions gratuites, dans la limite du nombre indiqué sur le service (généralement 2, visible avant de commander). Si le problème persiste au-delà de ce nombre, ou si le travail livré n\'est vraiment pas conforme, vous pouvez ouvrir un litige et notre équipe examinera le dossier pour trouver une solution équitable.',
                 'order' => 3,
+            ],
+            [
+                'category' => 'client',
+                'question' => 'Comment sont tranchés les litiges ?',
+                'answer' => 'Notre équipe examine les éléments fournis par les deux parties (description, pièces jointes, historique des échanges) avant de trancher. Quatre issues sont possibles selon le cas : remboursement complet du client, paiement complet du prestataire, remboursement partagé entre les deux selon la part du travail réellement livrée, ou aucune action si le litige n\'est pas fondé. La décision est motivée et communiquée aux deux parties ; elle est finale pour rester rapide et éviter les blocages.',
+                'order' => 4,
             ],
             [
                 'category' => 'client',
                 'question' => 'Comment contacter le prestataire ?',
                 'answer' => 'Une fois la commande passée, vous avez accès à une messagerie directe avec le prestataire depuis la page de votre commande. Vous pouvez échanger des messages et partager des fichiers.',
-                'order' => 4,
+                'order' => 5,
             ],
 
             // PAIEMENTS
@@ -116,7 +122,7 @@ class FaqSeeder extends Seeder
             [
                 'category' => 'paiement',
                 'question' => 'Puis-je être remboursé ?',
-                'answer' => 'Oui, en cas d\'annulation par le prestataire ou de litige résolu en votre faveur, vous serez intégralement remboursé. Le remboursement est effectué dans un délai de 3-7 jours ouvrés.',
+                'answer' => 'Oui. Vous êtes intégralement remboursé si le prestataire refuse votre commande ou l\'annule après acceptation. En cas de litige, notre équipe décide après examen du dossier : le remboursement peut être total, partagé avec le prestataire selon la part du travail réellement livrée, ou nul si le litige n\'est pas fondé. Une fois la décision prise, le remboursement est effectué sous 3-7 jours ouvrés.',
                 'order' => 4,
             ],
 

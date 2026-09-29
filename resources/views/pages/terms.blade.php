@@ -113,7 +113,7 @@
         <h3>5.3 Remboursements</h3>
         <ul>
             <li>Remboursement complet si le prestataire refuse la commande</li>
-            <li>Remboursement en cas de litige résolu en faveur du client</li>
+            <li>En cas de litige résolu en faveur du client, le remboursement peut être total ou partiel selon la décision d'Azohub (voir 7.4)</li>
             <li>Les remboursements sont traités sous 3-7 jours ouvrés</li>
         </ul>
     </x-legal-section>
@@ -141,11 +141,30 @@
             <li>Remboursement automatique du client en cas d'annulation</li>
         </ul>
 
-        <h3>7.3 Gestion des litiges</h3>
+        <h3>7.3 Révisions incluses</h3>
+        <p>
+            Chaque service précise, avant la commande, un nombre de révisions gratuites incluses
+            (fixé par le prestataire). Le client peut demander une modification du travail livré
+            dans cette limite. Au-delà, ou si le désaccord persiste malgré les révisions
+            effectuées, la voie à suivre est l'ouverture d'un litige (voir 7.4).
+        </p>
+
+        <h3>7.4 Gestion des litiges</h3>
         <ul>
             <li>En cas de désaccord, contactez d'abord le support Azohub</li>
-            <li>Notre équipe de médiation examinera le cas</li>
-            <li>La décision d'Azohub est finale</li>
+            <li>
+                Notre équipe examine le dossier (description de la commande, pièces jointes,
+                historique des échanges entre le client et le prestataire) et tranche selon
+                l'une des quatre issues suivantes :
+                <ul>
+                    <li>remboursement complet du client (le travail livré ne correspond pas à la commande) ;</li>
+                    <li>paiement complet du prestataire (le travail livré correspond à la commande) ;</li>
+                    <li>remboursement partagé entre le client et le prestataire, proportionnellement à la part du travail réellement livrée ;</li>
+                    <li>aucune action si le litige n'est pas fondé (la commande reprend son cours normal).</li>
+                </ul>
+            </li>
+            <li>La décision est motivée et communiquée aux deux parties</li>
+            <li>Elle est finale, afin de garantir un traitement rapide et d'éviter les blocages indéfinis</li>
         </ul>
     </x-legal-section>
 
