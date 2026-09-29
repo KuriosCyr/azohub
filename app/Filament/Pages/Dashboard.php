@@ -14,6 +14,7 @@ class Dashboard extends BaseDashboard
     {
         return [
             \App\Filament\Widgets\StatsOverview::class,
+            \App\Filament\Widgets\FinancialOverview::class,
             \App\Filament\Widgets\PendingApprovals::class,
             \App\Filament\Widgets\OrdersChart::class,
             \App\Filament\Widgets\LatestOrders::class,
