@@ -441,11 +441,26 @@
                                 </button>
                             </form>
 
-                            <button onclick="document.getElementById('revision-modal').classList.remove('hidden')"
-                                class="flex-1 bg-ochre-600 hover:bg-ochre-500 text-white font-bold px-6 py-4 rounded-lg transition">
-                                Demander une révision
-                            </button>
+                            @if($order->canRequestRevision())
+                                <button onclick="document.getElementById('revision-modal').classList.remove('hidden')"
+                                    class="flex-1 bg-ochre-600 hover:bg-ochre-500 text-white font-bold px-6 py-4 rounded-lg transition">
+                                    Demander une révision
+                                </button>
+                            @else
+                                <button type="button" disabled title="Toutes les révisions incluses ont été utilisées"
+                                    class="flex-1 bg-ink-200 text-ink-400 font-bold px-6 py-4 rounded-lg cursor-not-allowed">
+                                    Révisions épuisées
+                                </button>
+                            @endif
                         </div>
+
+                        <p class="text-xs text-ink-400 mt-3">
+                            @if($order->canRequestRevision())
+                                {{ $order->revisions_included - $order->revisions_used }} révision(s) restante(s) sur {{ $order->revisions_included }} incluse(s) dans cette commande.
+                            @else
+                                Les {{ $order->revisions_included }} révision(s) incluse(s) dans cette commande ont toutes été utilisées. Si le travail livré n'est vraiment pas conforme, signalez un litige ci-dessous.
+                            @endif
+                        </p>
                     </div>
                     @endif
 

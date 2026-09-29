@@ -231,6 +231,16 @@ class OrderController extends Controller
                 ->with('error', 'Vous ne pouvez pas demander de révision pour cette commande.');
         }
 
+        // Quota de révisions incluses (fixé sur la commande à sa création) : au-delà, un
+        // client de mauvaise foi pourrait bloquer indéfiniment le paiement du prestataire en
+        // enchaînant les demandes. Le litige reste l'issue si le travail n'est vraiment pas
+        // conforme une fois le quota épuisé.
+        if (!$order->canRequestRevision()) {
+            return redirect()
+                ->back()
+                ->with('error', "Vous avez déjà utilisé les {$order->revisions_included} révision(s) incluse(s) pour cette commande. Si le travail livré n'est vraiment pas conforme, ouvrez un litige.");
+        }
+
         $validated = $request->validate([
             'revision_notes' => 'required|string|max:1000',
         ]);
@@ -240,6 +250,7 @@ class OrderController extends Controller
             'status' => 'in_progress',
             'revision_requested' => true,
             'revision_notes' => $validated['revision_notes'],
+            'revisions_used' => $order->revisions_used + 1,
         ]);
 
         $order->prestataire->notify(new RevisionRequested($order));

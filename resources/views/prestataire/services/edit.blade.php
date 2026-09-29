@@ -147,6 +147,17 @@
                             <x-input-error :messages="$errors->get('delivery_time')" class="mt-2" />
                         </div>
 
+                        {{-- Révisions incluses --}}
+                        <div>
+                            <label for="revisions_included" class="block text-sm font-bold text-ink-700 mb-2">
+                                Révisions incluses <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" name="revisions_included" id="revisions_included" value="{{ old('revisions_included', $service->revisions_included) }}" required min="0" max="20"
+                                   class="w-full px-4 py-3 border-2 border-ink-200 rounded-xl focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
+                            <p class="text-xs text-ink-400 mt-1">Nombre de fois où un client peut demander une modification avant validation</p>
+                            <x-input-error :messages="$errors->get('revisions_included')" class="mt-2" />
+                        </div>
+
                         {{-- Statut actif --}}
                         <div>
                             <label class="block text-sm font-bold text-ink-700 mb-2">

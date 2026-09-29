@@ -67,6 +67,7 @@ class ServiceController extends Controller
             'price' => 'required|numeric|min:0',
             'price_type' => 'required|in:fixe,a_partir_de',
             'delivery_time' => 'required|integer|min:1|max:365',
+            'revisions_included' => 'required|integer|min:0|max:20',
             'cover_image' => 'required|image|max:5120', // 5MB
             'portfolio.*' => 'nullable|image|max:5120',
             'tags' => 'nullable|string',
@@ -96,6 +97,7 @@ class ServiceController extends Controller
             'price' => $validated['price'],
             'price_type' => $validated['price_type'],
             'delivery_time' => $validated['delivery_time'],
+            'revisions_included' => $validated['revisions_included'],
             'city' => Auth::user()->city,
             ...$this->areaAttributes($request, $validated),
             'cover_image' => $coverImagePath,
@@ -174,6 +176,7 @@ class ServiceController extends Controller
             'price' => 'required|numeric|min:0',
             'price_type' => 'required|in:fixe,a_partir_de',
             'delivery_time' => 'required|integer|min:1|max:365',
+            'revisions_included' => 'required|integer|min:0|max:20',
             'cover_image' => 'nullable|image|max:5120',
             'portfolio.*' => 'nullable|image|max:5120',
             'tags' => 'nullable|string',

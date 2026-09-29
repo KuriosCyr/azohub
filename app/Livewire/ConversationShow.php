@@ -31,6 +31,7 @@ class ConversationShow extends Component
     public string $offerDescription = '';
     public $offerPrice = '';
     public $offerDeliveryDays = '';
+    public $offerRevisions = 2;
 
     public function mount(Conversation $conversation)
     {
@@ -104,11 +105,13 @@ class ConversationShow extends Component
             'offerDescription' => 'required|string|max:2000',
             'offerPrice' => 'required|numeric|min:100|max:100000000',
             'offerDeliveryDays' => 'required|integer|min:1|max:365',
+            'offerRevisions' => 'required|integer|min:0|max:20',
         ], [
             'offerTitle.required' => 'Veuillez indiquer un titre pour cette offre.',
             'offerDescription.required' => 'Veuillez décrire ce que couvre cette offre.',
             'offerPrice.required' => 'Veuillez indiquer un prix.',
             'offerDeliveryDays.required' => 'Veuillez indiquer un délai de livraison.',
+            'offerRevisions.required' => 'Veuillez indiquer le nombre de révisions incluses.',
         ]);
 
         $offer = CustomOffer::create([
@@ -120,6 +123,7 @@ class ConversationShow extends Component
             'description' => $validated['offerDescription'],
             'price' => $validated['offerPrice'],
             'delivery_days' => $validated['offerDeliveryDays'],
+            'revisions_included' => $validated['offerRevisions'],
             'status' => 'pending',
         ]);
 
@@ -132,7 +136,7 @@ class ConversationShow extends Component
 
         $this->conversation->client->notify(new CustomOfferReceived($offer));
 
-        $this->reset(['offerTitle', 'offerDescription', 'offerPrice', 'offerDeliveryDays', 'showOfferForm']);
+        $this->reset(['offerTitle', 'offerDescription', 'offerPrice', 'offerDeliveryDays', 'offerRevisions', 'showOfferForm']);
         $this->conversation->refresh();
     }
 

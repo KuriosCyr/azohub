@@ -82,6 +82,7 @@ class OrderCreate extends Component
             'client_fee'       => $clientFee,
             'prestataire_amount' => $this->service->price - $commission,
             'delivery_time'    => $this->service->delivery_time,
+            'revisions_included' => $this->service->revisions_included,
             'status'           => 'pending_payment',
             'payment_status'   => 'pending',
         ]);

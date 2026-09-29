@@ -44,6 +44,8 @@ class Order extends Model
         'cancellation_reason',
         'revision_requested',
         'revision_notes',
+        'revisions_included',
+        'revisions_used',
     ];
 
     protected $casts = [
@@ -66,11 +68,24 @@ class Order extends Model
         'validation_deadline' => 'datetime',
         'accepted_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'revisions_included' => 'integer',
+        'revisions_used' => 'integer',
     ];
 
     // Taux fixe des frais de service prélevés sur le CLIENT, en plus du prix.
     // Contrairement à la commission prestataire, ce taux ne dépend pas du niveau.
     public const CLIENT_FEE_RATE = 0.05;
+
+    // Nombre de révisions par défaut quand la commande ne vient pas d'un service (proposition
+    // sur une demande client ouverte) ou d'une offre personnalisée sans valeur explicite.
+    public const DEFAULT_REVISIONS_INCLUDED = 2;
+
+    // Le client peut encore demander une révision : la commande est livrée, et le quota fixé
+    // à la création de la commande n'est pas épuisé.
+    public function canRequestRevision(): bool
+    {
+        return $this->status === 'delivered' && $this->revisions_used < $this->revisions_included;
+    }
 
     // Les URLs utilisent le numéro de commande plutôt que l'ID brut de la table.
     public function getRouteKeyName(): string

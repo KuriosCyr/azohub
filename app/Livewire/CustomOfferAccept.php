@@ -58,6 +58,7 @@ class CustomOfferAccept extends Component
                 'client_fee' => $clientFee,
                 'prestataire_amount' => $amount - $commission,
                 'delivery_time' => $offer->delivery_days,
+                'revisions_included' => $offer->revisions_included ?? Order::DEFAULT_REVISIONS_INCLUDED,
                 'status' => 'pending_payment',
                 'payment_status' => 'pending',
             ]);

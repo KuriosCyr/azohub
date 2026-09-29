@@ -79,6 +79,9 @@ class ProposalAccept extends Component
                 'client_fee' => $clientFee,
                 'prestataire_amount' => $amount - $commission,
                 'delivery_time' => $proposal->delivery_time,
+                // Une proposition répond à une demande ouverte du client, sans service existant
+                // à qui emprunter un nombre de révisions : on retombe sur le défaut de la plateforme.
+                'revisions_included' => Order::DEFAULT_REVISIONS_INCLUDED,
                 'status' => 'pending_payment',
                 'payment_status' => 'pending',
             ]);

@@ -23,6 +23,7 @@ class Service extends Model
         'price',
         'price_type',
         'delivery_time',
+        'revisions_included',
         'city',
         'service_areas',
         'serves_nationwide',
@@ -42,6 +43,7 @@ class Service extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'delivery_time' => 'integer',
+        'revisions_included' => 'integer',
         'rating' => 'decimal:2',
         'total_reviews' => 'integer',
         'total_orders' => 'integer',

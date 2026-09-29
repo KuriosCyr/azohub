@@ -56,6 +56,13 @@ class ServiceForm
                     ->required()
                     ->numeric()
                     ->suffix('jours'),
+                TextInput::make('revisions_included')
+                    ->label('Révisions incluses')
+                    ->required()
+                    ->numeric()
+                    ->default(2)
+                    ->minValue(0)
+                    ->maxValue(20),
                 TextInput::make('city')
                     ->label('Ville'),
                 Toggle::make('serves_nationwide')

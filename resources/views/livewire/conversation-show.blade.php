@@ -129,7 +129,7 @@
                               class="w-full px-4 py-2.5 rounded-lg border border-ink-200 text-sm focus:ring-2 focus:ring-terracotta-600 focus:border-transparent"></textarea>
                     @error('offerDescription') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-3 gap-3">
                         <div>
                             <input type="number" wire:model="offerPrice" placeholder="Prix (FCFA)"
                                    class="w-full px-4 py-2.5 rounded-lg border border-ink-200 text-sm focus:ring-2 focus:ring-terracotta-600 focus:border-transparent">
@@ -139,6 +139,11 @@
                             <input type="number" wire:model="offerDeliveryDays" placeholder="Délai (jours)"
                                    class="w-full px-4 py-2.5 rounded-lg border border-ink-200 text-sm focus:ring-2 focus:ring-terracotta-600 focus:border-transparent">
                             @error('offerDeliveryDays') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <input type="number" wire:model="offerRevisions" min="0" max="20" placeholder="Révisions"
+                                   class="w-full px-4 py-2.5 rounded-lg border border-ink-200 text-sm focus:ring-2 focus:ring-terracotta-600 focus:border-transparent">
+                            @error('offerRevisions') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
                         </div>
                     </div>
 

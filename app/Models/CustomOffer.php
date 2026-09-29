@@ -18,12 +18,14 @@ class CustomOffer extends Model
         'description',
         'price',
         'delivery_days',
+        'revisions_included',
         'status',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'delivery_days' => 'integer',
+        'revisions_included' => 'integer',
     ];
 
     public function conversation()
