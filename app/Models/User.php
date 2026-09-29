@@ -107,6 +107,43 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         $this->refresh();
     }
 
+    // Consomme jusqu'à $amount de crédit de parrainage (jamais plus que ce qui est réellement
+    // disponible) et retourne le montant effectivement déduit — utilisé par PaymentService::
+    // initiateForOrder() pour réduire ce que le client paie réellement. Séparé de creditWallet()/
+    // debitWallet() comme le reste du crédit de parrainage : ce n'est pas un mouvement du wallet
+    // réel (voir maybeRewardReferrer()).
+    public function redeemReferralCredit(float $amount): float
+    {
+        if ($amount <= 0) {
+            return 0.0;
+        }
+
+        return DB::transaction(function () use ($amount) {
+            $user = static::whereKey($this->id)->lockForUpdate()->first();
+            $redeemed = round(min($amount, (float) $user->referral_credit_balance), 2);
+
+            if ($redeemed > 0) {
+                $user->decrement('referral_credit_balance', $redeemed);
+            }
+
+            return $redeemed;
+        });
+    }
+
+    // Restitue un crédit consommé par une commande finalement annulée avant tout paiement
+    // réussi (voir Order::refund() et l'abandon des commandes concurrentes dans ProposalAccept).
+    public function refundReferralCredit(float $amount): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($amount) {
+            static::whereKey($this->id)->lockForUpdate()->first()
+                ?->increment('referral_credit_balance', round($amount, 2));
+        });
+    }
+
     // Génère un slug unique (ex: "yves-adjovi", puis "yves-adjovi-2" en cas de collision).
     public static function generateUniqueSlug(string $name): string
     {

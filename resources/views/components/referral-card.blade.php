@@ -52,6 +52,6 @@
     </div>
 
     <p class="text-xs text-ink-400 mt-3">
-        Ce crédit n'est pas retirable. Son utilisation en réduction sur une commande arrive très bientôt.
+        Ce crédit n'est pas retirable. Cochez « Utiliser mon crédit de parrainage » au moment de payer une commande pour l'appliquer en réduction.
     </p>
 </div>

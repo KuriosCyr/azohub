@@ -26,8 +26,10 @@ class PaymentService
      * Crée une transaction FedaPay pour une commande et renvoie l'URL de paiement
      * vers laquelle rediriger le client.
      */
-    public function initiateForOrder(Order $order, string $paymentMethod): string
+    public function initiateForOrder(Order $order, string $paymentMethod, bool $useReferralCredit = false): string
     {
+        $order->applyReferralCredit($useReferralCredit);
+
         $payer = $order->client;
 
         $transaction = Transaction::create([

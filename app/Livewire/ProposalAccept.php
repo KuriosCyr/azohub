@@ -16,6 +16,7 @@ class ProposalAccept extends Component
     public ServiceRequest $serviceRequest;
     public Proposal $proposal;
     public string $paymentMethod = 'mtn_momo';
+    public bool $useReferralCredit = false;
 
     public function mount(ServiceRequest $serviceRequest, Proposal $proposal)
     {
@@ -58,11 +59,20 @@ class ProposalAccept extends Component
             Order::where('service_request_id', $serviceRequest->id)
                 ->where('status', 'pending_payment')
                 ->get()
-                ->each(fn (Order $o) => $o->update([
-                    'status' => 'cancelled',
-                    'cancelled_at' => now(),
-                    'cancellation_reason' => 'Une autre proposition a été choisie pour cette demande.',
-                ]));
+                ->each(function (Order $o) {
+                    // Restitue un éventuel crédit de parrainage déjà consommé sur cette tentative
+                    // abandonnée — sinon il disparaîtrait sans avoir payé quoi que ce soit.
+                    if ($o->referral_credit_applied > 0) {
+                        $o->client->refundReferralCredit((float) $o->referral_credit_applied);
+                    }
+
+                    $o->update([
+                        'status' => 'cancelled',
+                        'cancelled_at' => now(),
+                        'cancellation_reason' => 'Une autre proposition a été choisie pour cette demande.',
+                        'referral_credit_applied' => 0,
+                    ]);
+                });
 
             $amount = (float) $proposal->proposed_price;
             $commission = round($amount * $proposal->prestataire->commissionRate(), 2);
@@ -88,7 +98,7 @@ class ProposalAccept extends Component
         });
 
         try {
-            $url = $payments->initiateForOrder($order, $this->paymentMethod);
+            $url = $payments->initiateForOrder($order, $this->paymentMethod, $this->useReferralCredit);
         } catch (\Throwable $e) {
             report($e);
 

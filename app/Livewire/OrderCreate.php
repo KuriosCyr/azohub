@@ -17,6 +17,7 @@ class OrderCreate extends Component
     public string $package = 'basic';
     public string $requirements = '';
     public string $paymentMethod = 'mtn_momo';
+    public bool $useReferralCredit = false;
     public $attachments = [];
 
     // La formule choisie sur la page du service (?package=), résolue une seule fois : si le
@@ -108,7 +109,7 @@ class OrderCreate extends Component
         ]);
 
         try {
-            $url = $payments->initiateForOrder($order, $this->paymentMethod);
+            $url = $payments->initiateForOrder($order, $this->paymentMethod, $this->useReferralCredit);
         } catch (\Throwable $e) {
             report($e);
 

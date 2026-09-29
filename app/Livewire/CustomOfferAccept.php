@@ -13,6 +13,7 @@ class CustomOfferAccept extends Component
 {
     public CustomOffer $offer;
     public string $paymentMethod = 'mtn_momo';
+    public bool $useReferralCredit = false;
 
     public function mount(CustomOffer $offer)
     {
@@ -66,7 +67,7 @@ class CustomOfferAccept extends Component
         });
 
         try {
-            $url = $payments->initiateForOrder($order, $this->paymentMethod);
+            $url = $payments->initiateForOrder($order, $this->paymentMethod, $this->useReferralCredit);
         } catch (\Throwable $e) {
             report($e);
 

@@ -26,6 +26,7 @@ class Order extends Model
         'amount',
         'commission',
         'client_fee',
+        'referral_credit_applied',
         'prestataire_amount',
         'delivery_time',
         'expected_delivery_at',
@@ -54,6 +55,7 @@ class Order extends Model
         'amount' => 'decimal:2',
         'commission' => 'decimal:2',
         'client_fee' => 'decimal:2',
+        'referral_credit_applied' => 'decimal:2',
         'prestataire_amount' => 'decimal:2',
         'delivery_time' => 'integer',
         'deliverables' => 'array',
@@ -110,10 +112,34 @@ class Order extends Model
             ?? $this->serviceRequest?->category?->name;
     }
 
-    // Montant total réellement débité au client (prix + frais de service client).
+    // Montant total réellement débité au client (prix + frais de service client, réduit du
+    // crédit de parrainage éventuellement appliqué — voir applyReferralCredit()).
     public function getTotalChargedAttribute()
     {
-        return round((float) $this->amount + (float) $this->client_fee, 2);
+        return round((float) $this->amount + (float) $this->client_fee - (float) $this->referral_credit_applied, 2);
+    }
+
+    // Consomme le crédit de parrainage du client sur cette commande, si demandé et pas déjà
+    // fait (idempotent : une commande "pending_payment" reprise après un paiement abandonné ne
+    // consomme le crédit qu'à la première tentative). Toujours appelé avant de construire la
+    // transaction FedaPay dans PaymentService::initiateForOrder() — un montant nul ou négatif
+    // y serait rejeté, donc au moins 1 FCFA reste toujours à payer même si le crédit disponible
+    // suffirait à tout couvrir. Retourne le montant effectivement appliqué.
+    public function applyReferralCredit(bool $useReferralCredit): float
+    {
+        if (!$useReferralCredit || (float) $this->referral_credit_applied > 0) {
+            return (float) $this->referral_credit_applied;
+        }
+
+        $redeemableCap = max(0, (float) $this->total_charged - 1);
+        $redeemed = $this->client->redeemReferralCredit($redeemableCap);
+
+        if ($redeemed > 0) {
+            $this->update(['referral_credit_applied' => $redeemed]);
+            $this->refresh();
+        }
+
+        return $redeemed;
     }
 
     // Auto-générer le numéro de commande
@@ -283,12 +309,29 @@ class Order extends Model
     {
         $successfulPayment = $this->payments()->where('status', 'success')->latest()->first();
 
+        // Un paiement réussi a déjà réellement débité le client pour le montant réduit : le
+        // crédit consommé a bien servi à payer cette commande (remboursée séparément comme le
+        // reste du paiement, cf. confirmRefund()). Seule une commande jamais payée restitue son
+        // crédit — sans ça, l'argent-crédit disparaîtrait sans avoir payé quoi que ce soit.
+        // (float) plutôt qu'une comparaison directe : Order::create() ne relit pas la ligne
+        // insérée, donc une commande créée sans ce champ explicite garde `null` en mémoire même
+        // si la colonne vaut bien 0 en base — un `null` brut réécrit ensuite ferait échouer la
+        // contrainte NOT NULL.
+        $creditToRestore = (!$successfulPayment && (float) $this->referral_credit_applied > 0)
+            ? (float) $this->referral_credit_applied
+            : 0;
+
         $this->update([
             'status' => 'cancelled',
             'payment_status' => $successfulPayment ? 'refund_pending' : $this->payment_status,
             'cancelled_at' => $this->cancelled_at ?? now(),
             'cancellation_reason' => $reason ?? $this->cancellation_reason,
+            'referral_credit_applied' => $creditToRestore > 0 ? 0 : (float) $this->referral_credit_applied,
         ]);
+
+        if ($creditToRestore > 0) {
+            $this->client->refundReferralCredit($creditToRestore);
+        }
 
         $successfulPayment?->update(['status' => 'refund_pending']);
     }

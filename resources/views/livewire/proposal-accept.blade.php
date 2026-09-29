@@ -51,6 +51,8 @@
 
                     @php
                         $clientFee = $proposal->proposed_price * \App\Models\Order::CLIENT_FEE_RATE;
+                        $referralBalance = (float) Auth::user()->referral_credit_balance;
+                        $creditApplied = $useReferralCredit ? min($referralBalance, max(0, $proposal->proposed_price + $clientFee - 1)) : 0;
                     @endphp
                     <div class="space-y-3 mb-6">
                         <div class="flex justify-between text-sm">
@@ -61,9 +63,21 @@
                             <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0, ',', ' ') }}%)</span>
                             <span class="font-semibold">{{ number_format($clientFee, 0, ',', ' ') }} FCFA</span>
                         </div>
+                        @if($referralBalance > 0)
+                            <label class="flex items-start gap-2 text-sm bg-terracotta-50 rounded-lg p-3 cursor-pointer">
+                                <input type="checkbox" wire:model.live="useReferralCredit" class="mt-0.5 rounded border-ink-200 text-terracotta-600 focus:ring-terracotta-600">
+                                <span>Utiliser mon crédit de parrainage <span class="font-bold">({{ number_format($referralBalance, 0, ',', ' ') }} FCFA disponible)</span></span>
+                            </label>
+                        @endif
+                        @if($creditApplied > 0)
+                            <div class="flex justify-between text-sm text-terracotta-700">
+                                <span>Crédit de parrainage appliqué</span>
+                                <span class="font-semibold">- {{ number_format($creditApplied, 0, ',', ' ') }} FCFA</span>
+                            </div>
+                        @endif
                         <div class="border-t border-ink-100 pt-3 flex justify-between font-bold text-lg">
                             <span>Total</span>
-                            <span class="text-ink-900">{{ number_format($proposal->proposed_price + $clientFee, 0, ',', ' ') }} FCFA</span>
+                            <span class="text-ink-900">{{ number_format($proposal->proposed_price + $clientFee - $creditApplied, 0, ',', ' ') }} FCFA</span>
                         </div>
                     </div>
 
