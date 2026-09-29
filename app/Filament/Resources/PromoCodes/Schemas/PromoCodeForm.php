@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PromoCodes\Schemas;
 
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -42,6 +43,16 @@ class PromoCodeForm
                     ->minValue(1)
                     ->nullable()
                     ->helperText('Laisser vide pour un usage illimité (toujours limité à une fois par client).'),
+                DateTimePicker::make('expires_at')
+                    ->label("Date d'expiration")
+                    ->nullable()
+                    ->helperText('Laisser vide pour un code sans date limite.'),
+                TextInput::make('min_order_amount')
+                    ->label('Montant minimum de commande (FCFA)')
+                    ->numeric()
+                    ->minValue(0)
+                    ->nullable()
+                    ->helperText('Laisser vide pour appliquer le code sans montant minimum.'),
                 Toggle::make('is_active')
                     ->label('Actif')
                     ->default(true)

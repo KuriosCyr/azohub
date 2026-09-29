@@ -61,16 +61,56 @@ class PromoCodeRedemptionTest extends TestCase
         $this->assertEquals(9450, $order->fresh()->total_charged);
     }
 
-    public function test_discount_never_brings_the_total_to_zero(): void
+    // Corrigé suite à un audit externe : une remise de 100% était auparavant plafonnée
+    // seulement pour laisser 1 FCFA à payer (FedaPay), sans jamais vérifier que la réduction ne
+    // dépasse pas la marge d'Azohub (commission + frais client = 1000 + 500 = 1500 ici) —
+    // prestataire_amount restant fixé sur le prix plein, Azohub payait la différence de sa poche.
+    public function test_discount_is_capped_to_azohubs_margin_not_just_1_fcfa(): void
     {
-        // Une remise de 100% laisse quand même 1 FCFA à payer (FedaPay refuse un montant nul).
         PromoCode::create(['code' => 'GRATUIT', 'type' => 'percentage', 'value' => 100]);
         $client = User::factory()->create(['role' => 'client']);
         $order = $this->makeOrder($client);
 
         $order->applyPromoCode('GRATUIT');
 
-        $this->assertEquals(1, $order->fresh()->total_charged);
+        // Réduction plafonnée à 1500 (la marge), pas aux 10499 que "100% - 1 FCFA" aurait permis.
+        $this->assertEquals(1500, $order->fresh()->promo_discount_applied);
+        $this->assertEquals(9000, $order->fresh()->total_charged);
+    }
+
+    public function test_a_large_fixed_discount_is_also_capped_to_the_margin(): void
+    {
+        PromoCode::create(['code' => 'ENORME', 'type' => 'fixed', 'value' => 8000]);
+        $client = User::factory()->create(['role' => 'client']);
+        $order = $this->makeOrder($client);
+
+        $order->applyPromoCode('ENORME');
+
+        $this->assertEquals(1500, $order->fresh()->promo_discount_applied);
+    }
+
+    public function test_an_expired_code_is_rejected(): void
+    {
+        PromoCode::create(['code' => 'PERIME2', 'type' => 'fixed', 'value' => 500, 'expires_at' => now()->subDay()]);
+        $client = User::factory()->create(['role' => 'client']);
+        $order = $this->makeOrder($client);
+
+        $error = $order->applyPromoCode('PERIME2');
+
+        $this->assertNotNull($error);
+        $this->assertEquals(0, $order->fresh()->promo_discount_applied);
+    }
+
+    public function test_a_code_below_its_minimum_order_amount_is_rejected(): void
+    {
+        PromoCode::create(['code' => 'GROSSE', 'type' => 'fixed', 'value' => 500, 'min_order_amount' => 50000]);
+        $client = User::factory()->create(['role' => 'client']);
+        $order = $this->makeOrder($client); // total_charged = 10500, sous le minimum de 50000
+
+        $error = $order->applyPromoCode('GROSSE');
+
+        $this->assertNotNull($error);
+        $this->assertEquals(0, $order->fresh()->promo_discount_applied);
     }
 
     public function test_an_unknown_code_is_rejected_without_touching_the_order(): void

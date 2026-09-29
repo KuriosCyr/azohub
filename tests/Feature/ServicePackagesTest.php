@@ -96,6 +96,100 @@ class ServicePackagesTest extends TestCase
         ]);
 
         $this->assertSame(0, $service->packages()->count());
+        // Corrigé suite à un audit externe : désactiver les formules contournait la
+        // modération — le service publié restait "active" alors que son contenu venait de
+        // changer.
+        $this->assertSame('pending', $service->fresh()->status);
+    }
+
+    // Corrigé suite à un audit externe : ServiceController ne comparait que les champs du
+    // service lui-même (titre, prix, description...) pour décider de repasser en modération —
+    // les formules (prix, délai, description libre non modérée) pouvaient être modifiées
+    // librement sur un service déjà publié, sans jamais repasser par un contrôle admin.
+    public function test_changing_a_package_price_sends_the_service_back_to_moderation(): void
+    {
+        Storage::fake('public');
+
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+        $category = Category::create(['name' => 'Test', 'slug' => 'test-cat-' . uniqid(), 'is_active' => true]);
+
+        $service = Service::create([
+            'user_id' => $prestataire->id,
+            'category_id' => $category->id,
+            'title' => 'Service test',
+            'slug' => 'service-test-' . uniqid(),
+            'description' => str_repeat('Description de test suffisamment longue. ', 2),
+            'price' => 5000,
+            'price_type' => 'fixe',
+            'delivery_time' => 3,
+            'revisions_included' => 2,
+            'status' => 'active',
+            'is_active' => true,
+        ]);
+
+        ServicePackage::create(['service_id' => $service->id, 'tier' => 'basic', 'price' => 5000, 'delivery_time' => 2, 'revisions_included' => 1]);
+        ServicePackage::create(['service_id' => $service->id, 'tier' => 'standard', 'price' => 10000, 'delivery_time' => 4, 'revisions_included' => 2]);
+        ServicePackage::create(['service_id' => $service->id, 'tier' => 'premium', 'price' => 20000, 'delivery_time' => 7, 'revisions_included' => 5]);
+
+        $payload = $this->makePackagePayload();
+        $payload['premium']['price'] = 99000; // seule différence avec les valeurs existantes
+
+        $this->actingAs($prestataire)->put(route('prestataire.services.update', $service), [
+            'category_id' => $category->id,
+            'title' => $service->title,
+            'description' => $service->description,
+            'price' => 5000,
+            'price_type' => 'fixe',
+            'delivery_time' => 3,
+            'revisions_included' => 2,
+            'serves_nationwide' => true,
+            'is_active' => true,
+            'has_packages' => '1',
+            'packages' => $payload,
+        ]);
+
+        $this->assertSame('pending', $service->fresh()->status);
+        $this->assertEquals(99000, $service->packages()->where('tier', 'premium')->first()->price);
+    }
+
+    // Teste directement ServiceController::packagesChanged() (privée) par réflexion : isoler
+    // cette méthode évite les faux positifs d'un test HTTP bout en bout, où d'autres champs
+    // (ex. "tags" : parseTags() ne renvoie jamais null, contrairement à la valeur par défaut en
+    // base) déclenchent leur propre isDirty() sans rapport avec les formules.
+    public function test_packages_changed_detects_no_change_when_data_is_identical(): void
+    {
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+        $category = Category::create(['name' => 'Test', 'slug' => 'test-cat-' . uniqid(), 'is_active' => true]);
+
+        $service = Service::create([
+            'user_id' => $prestataire->id,
+            'category_id' => $category->id,
+            'title' => 'Service test',
+            'slug' => 'service-test-' . uniqid(),
+            'description' => str_repeat('Description de test suffisamment longue. ', 2),
+            'price' => 5000,
+            'price_type' => 'fixe',
+            'delivery_time' => 3,
+            'revisions_included' => 2,
+            'status' => 'active',
+            'is_active' => true,
+        ]);
+
+        $payload = $this->makePackagePayload();
+        foreach ($payload as $tier => $data) {
+            ServicePackage::create(array_merge(['service_id' => $service->id, 'tier' => $tier], $data));
+        }
+
+        $request = \Illuminate\Http\Request::create('/', 'PUT', ['has_packages' => '1']);
+        $controller = new \App\Http\Controllers\ServiceController();
+        $method = new \ReflectionMethod($controller, 'packagesChanged');
+        $method->setAccessible(true);
+
+        $this->assertFalse($method->invoke($controller, $service, $request, ['packages' => $payload]));
+
+        $changedPayload = $payload;
+        $changedPayload['premium']['price'] = 99000;
+        $this->assertTrue($method->invoke($controller, $service, $request, ['packages' => $changedPayload]));
     }
 
     public function test_selecting_a_package_on_the_service_page_carries_through_to_the_order(): void

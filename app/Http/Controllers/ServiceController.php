@@ -203,11 +203,15 @@ class ServiceController extends Controller
         $newPortfolio = $request->hasFile('portfolio');
         $service->fill(collect($validated)->except(['cover_image', 'has_packages', 'packages'])->all());
 
-        // Toute modification du contenu (texte, prix, catégorie, images) repasse par la modération :
-        // le service est retiré de la vitrine jusqu'à sa nouvelle validation. Activer/désactiver
-        // seul ne change pas le contenu et n'y est donc pas soumis.
+        // Toute modification du contenu (texte, prix, catégorie, images, formules) repasse par
+        // la modération : le service est retiré de la vitrine jusqu'à sa nouvelle validation.
+        // Activer/désactiver seul ne change pas le contenu et n'y est donc pas soumis.
+        // packagesChanged() calculé AVANT syncPackages() (audit externe : sans ça, changer le
+        // prix, le délai ou la description d'une formule — texte libre non modéré — contournait
+        // complètement la modération, puisque ces champs ne sont pas sur $service lui-même).
         $contentChanged = $newCover || $newPortfolio
-            || $service->isDirty(['category_id', 'title', 'description', 'what_included', 'price', 'price_type', 'delivery_time', 'tags']);
+            || $service->isDirty(['category_id', 'title', 'description', 'what_included', 'price', 'price_type', 'delivery_time', 'tags'])
+            || $this->packagesChanged($service, $request, $validated);
 
         // Un service refusé n'occupe pas de place : le soumettre à nouveau en demande une.
         if ($contentChanged && $service->status === 'rejected' && !Auth::user()->hasFreeServiceSlot()) {
@@ -377,6 +381,45 @@ class ServiceController extends Controller
         }
 
         return $rules;
+    }
+
+    // Compare les formules soumises à celles déjà enregistrées AVANT toute écriture (voir
+    // syncPackages() juste après) : activer/désactiver les formules, ou changer le prix, le
+    // délai, les révisions ou la description de l'une d'elles, doit repasser le service en
+    // modération — exactement comme les autres champs de contenu.
+    private function packagesChanged(Service $service, Request $request, array $validated): bool
+    {
+        $hasPackagesNow = $request->boolean('has_packages');
+        $hadPackagesBefore = $service->hasPackages();
+
+        if ($hasPackagesNow !== $hadPackagesBefore) {
+            return true;
+        }
+
+        if (!$hasPackagesNow) {
+            return false;
+        }
+
+        $existing = $service->packages()->get()->keyBy('tier');
+
+        foreach ($validated['packages'] as $tier => $data) {
+            $current = $existing->get($tier);
+
+            if (!$current) {
+                return true;
+            }
+
+            if (
+                (float) $current->price !== (float) $data['price']
+                || (int) $current->delivery_time !== (int) $data['delivery_time']
+                || (int) $current->revisions_included !== (int) $data['revisions_included']
+                || (string) ($current->description ?? '') !== (string) ($data['description'] ?? '')
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // Crée/met à jour/supprime les 3 lignes ServicePackage selon has_packages — jamais un

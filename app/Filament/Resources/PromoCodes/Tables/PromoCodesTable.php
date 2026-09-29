@@ -2,13 +2,14 @@
 
 namespace App\Filament\Resources\PromoCodes\Tables;
 
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
+// Pas de DeleteBulkAction (audit externe) : supprimer un code promo effacerait en cascade son
+// historique d'utilisation. Désactiver (is_active) est la seule façon de rendre un code
+// inutilisable — protégé aussi au niveau base de données.
 class PromoCodesTable
 {
     public static function configure(Table $table): Table
@@ -34,6 +35,16 @@ class PromoCodesTable
                     ->formatStateUsing(fn ($state, $record) => $record->max_uses
                         ? "{$state} / {$record->max_uses}"
                         : (string) $state),
+                TextColumn::make('min_order_amount')
+                    ->label('Minimum')
+                    ->placeholder('—')
+                    ->formatStateUsing(fn ($state) => $state ? number_format($state, 0, ',', ' ') . ' FCFA' : null)
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('expires_at')
+                    ->label('Expire le')
+                    ->dateTime('d/m/Y H:i')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_active')
                     ->label('Actif')
                     ->boolean(),
@@ -46,11 +57,6 @@ class PromoCodesTable
             ->defaultSort('created_at', 'desc')
             ->recordActions([
                 EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 }

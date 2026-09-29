@@ -189,6 +189,10 @@ class Order extends Model
                 return "Ce code promo n'existe pas ou n'est plus actif.";
             }
 
+            if ($code->isExpired()) {
+                return 'Ce code promo a expiré.';
+            }
+
             if ($code->hasReachedMaxUses()) {
                 return "Ce code promo a atteint son nombre maximum d'utilisations.";
             }
@@ -197,7 +201,17 @@ class Order extends Model
                 return 'Vous avez déjà utilisé ce code promo.';
             }
 
-            $discount = $code->discountFor((float) $this->total_charged);
+            if (!$code->meetsMinimumOrder((float) $this->total_charged)) {
+                return "Cette commande n'atteint pas le montant minimum requis pour ce code promo.";
+            }
+
+            // Plafonne la réduction à la marge d'Azohub sur cette commande (commission + frais
+            // client) : elle ne peut jamais dépasser ce qu'Azohub a réellement encaissé, pour ne
+            // jamais faire perdre d'argent à la plateforme sur une commande (audit externe).
+            $discount = $code->discountFor(
+                (float) $this->total_charged,
+                (float) $this->commission + (float) $this->client_fee
+            );
 
             if ($discount <= 0) {
                 return "Ce code promo ne peut pas s'appliquer à cette commande.";
