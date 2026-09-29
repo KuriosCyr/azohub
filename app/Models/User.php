@@ -73,6 +73,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         'identity_verification_status',
         'identity_rejection_reason',
         'wallet_balance',
+        'fedapay_customer_id',
         'is_active',
         'last_seen_at',
     ];

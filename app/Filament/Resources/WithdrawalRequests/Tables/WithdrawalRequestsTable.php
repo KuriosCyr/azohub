@@ -5,6 +5,7 @@ namespace App\Filament\Resources\WithdrawalRequests\Tables;
 use App\Models\WithdrawalRequest;
 use App\Notifications\WithdrawalRequestPaid;
 use App\Notifications\WithdrawalRequestRejected;
+use App\Services\PaymentService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -54,6 +55,23 @@ class WithdrawalRequestsTable
                         'rejected' => 'danger',
                         default => 'gray',
                     }),
+                TextColumn::make('fedapay_status')
+                    ->label('FedaPay')
+                    ->badge()
+                    ->placeholder('—')
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'pending' => 'Virement en cours',
+                        'sent' => 'Envoyé',
+                        'failed' => 'Échoué',
+                        default => '—',
+                    })
+                    ->color(fn (?string $state): string => match ($state) {
+                        'sent' => 'success',
+                        'pending' => 'warning',
+                        'failed' => 'danger',
+                        default => 'gray',
+                    })
+                    ->toggleable(),
                 TextColumn::make('created_at')
                     ->label('Demandé le')
                     ->dateTime('d/m/Y H:i')
@@ -69,11 +87,38 @@ class WithdrawalRequestsTable
                     ->default('pending'),
             ])
             ->recordActions([
+                Action::make('pay_via_fedapay')
+                    ->label('Payer via FedaPay')
+                    ->icon('heroicon-o-bolt')
+                    ->color('primary')
+                    ->visible(fn (WithdrawalRequest $record) => $record->canRetryFedapayPayout())
+                    ->requiresConfirmation()
+                    ->modalDescription('Déclenche un virement Mobile Money réel via l\'API FedaPay. La demande ne sera marquée "payée" qu\'une fois FedaPay confirmé (peut prendre quelques instants) — vous pouvez fermer cette page entre-temps.')
+                    ->action(function (WithdrawalRequest $record) {
+                        try {
+                            app(PaymentService::class)->initiatePayout($record);
+
+                            Notification::make()
+                                ->title('Virement FedaPay déclenché pour ' . $record->prestataire->name)
+                                ->body('En attente de confirmation FedaPay.')
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            report($e);
+
+                            Notification::make()
+                                ->title('Échec du déclenchement FedaPay')
+                                ->body('Rien n\'a été débité côté FedaPay. Vous pouvez réessayer, ou traiter manuellement ("Marquer comme payé").')
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
                 Action::make('mark_paid')
                     ->label('Marquer comme payé')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->visible(fn (WithdrawalRequest $record) => $record->status === 'pending')
+                    ->visible(fn (WithdrawalRequest $record) => $record->status === 'pending' && $record->fedapay_payout_id === null)
                     ->requiresConfirmation()
                     ->modalDescription('Confirmez-vous avoir envoyé les fonds via mobile money à ce prestataire ?')
                     ->action(function (WithdrawalRequest $record, $livewire) {
@@ -95,7 +140,7 @@ class WithdrawalRequestsTable
                     ->label('Rejeter')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn (WithdrawalRequest $record) => $record->status === 'pending')
+                    ->visible(fn (WithdrawalRequest $record) => $record->status === 'pending' && $record->fedapay_payout_id === null)
                     ->form([
                         Textarea::make('reason')
                             ->label('Motif du refus')

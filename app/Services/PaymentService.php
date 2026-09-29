@@ -5,7 +5,11 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Subscription;
+use App\Models\User;
+use App\Models\WithdrawalRequest;
+use FedaPay\Customer;
 use FedaPay\FedaPay;
+use FedaPay\Payout;
 use FedaPay\Transaction;
 use FedaPay\Webhook;
 use Illuminate\Support\Facades\DB;
@@ -119,7 +123,19 @@ class PaymentService
             (string) config('services.fedapay.webhook_secret')
         );
 
-        if (($event->entity ?? null) !== 'transaction' || !($event->object_id ?? null)) {
+        if (!($event->object_id ?? null)) {
+            return;
+        }
+
+        if (($event->entity ?? null) === 'payout') {
+            $payout = Payout::retrieve((string) $event->object_id);
+
+            $this->processPayoutUpdate((string) $payout->id, (string) $payout->status, $payout->last_error_message ?? null);
+
+            return;
+        }
+
+        if (($event->entity ?? null) !== 'transaction') {
             return;
         }
 
@@ -158,6 +174,89 @@ class PaymentService
     protected function fetchTransaction(string $id)
     {
         return Transaction::retrieve($id);
+    }
+
+    // Déclenche un virement FedaPay réel pour un retrait déjà approuvé (le solde a été débité à
+    // la demande, cf. PrestataireWallet::requestWithdrawal). Lève une exception au moindre souci
+    // — à l'appelant de s'assurer que rien n'est marqué payé si ça échoue, et que le bouton
+    // manuel existant reste la solution de repli. Ne marque JAMAIS le retrait "payé" elle-même :
+    // seule la confirmation FedaPay (webhook, cf. processPayoutUpdate()) le fait, un envoi
+    // accepté par l'API n'étant pas une garantie que l'argent est bien arrivé.
+    public function initiatePayout(WithdrawalRequest $withdrawal): void
+    {
+        if (!$withdrawal->canRetryFedapayPayout()) {
+            throw new \RuntimeException('Un virement FedaPay est déjà en cours pour cette demande.');
+        }
+
+        $prestataire = $withdrawal->prestataire;
+        $customerId = $this->resolveFedapayCustomerId($prestataire);
+
+        $payout = Payout::create([
+            'customer' => ['id' => $customerId],
+            'currency' => ['iso' => 'XOF'],
+            'amount' => (int) round((float) $withdrawal->amount),
+        ]);
+
+        $phone = preg_replace('/\D/', '', (string) $withdrawal->phone_number);
+
+        $payout->sendNow([
+            'phone_number' => [
+                'number' => $phone,
+                'country' => 'bj',
+            ],
+        ]);
+
+        $withdrawal->markFedapayPayoutSent((string) $payout->id);
+    }
+
+    // Un prestataire n'a qu'un seul client FedaPay, créé au premier virement automatisé et
+    // réutilisé ensuite (évite d'en créer un nouveau à chaque retrait).
+    protected function resolveFedapayCustomerId(User $prestataire): string
+    {
+        if ($prestataire->fedapay_customer_id) {
+            return $prestataire->fedapay_customer_id;
+        }
+
+        $nameParts = explode(' ', trim($prestataire->name), 2);
+
+        $customer = Customer::create([
+            'firstname' => $nameParts[0] ?: $prestataire->name,
+            'lastname' => $nameParts[1] ?? $nameParts[0],
+            'email' => $prestataire->email,
+            'phone_number' => [
+                'number' => preg_replace('/\D/', '', (string) $prestataire->phone),
+                'country' => 'bj',
+            ],
+        ]);
+
+        $prestataire->update(['fedapay_customer_id' => (string) $customer->id]);
+
+        return (string) $customer->id;
+    }
+
+    // Traite la confirmation (ou l'échec) d'un virement, via webhook. $lastErrorMessage vient de
+    // FedaPay (last_error_message) quand disponible ; à défaut, message générique.
+    public function processPayoutUpdate(string $payoutId, string $status, ?string $lastErrorMessage): void
+    {
+        $withdrawal = WithdrawalRequest::where('fedapay_payout_id', $payoutId)->first();
+
+        if (!$withdrawal) {
+            return;
+        }
+
+        if ($status === 'sent') {
+            $withdrawal->confirmFedapayPayout();
+
+            return;
+        }
+
+        // Volontairement strict : seul 'sent' est traité comme un succès, seul 'failed' comme un
+        // échec confirmé. Un statut encore intermédiaire (pending...) ne déclenche rien — mieux
+        // vaut attendre une confirmation nette qu'agir sur un état encore incertain, l'argent
+        // restant de toute façon débité côté FedaPay tant qu'aucun webhook net n'est arrivé.
+        if ($status === 'failed') {
+            $withdrawal->failFedapayPayout($lastErrorMessage ?? 'Raison non précisée par FedaPay.');
+        }
     }
 
     // Verrouillé + gardé par le statut : FedaPay peut livrer le même événement
