@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -577,21 +579,64 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         }
     }
 
-    // Créditer le portefeuille (increment() = requête atomique côté DB, pas de
-    // perte d'écriture si deux crédits arrivent en même temps sur le même compte).
-    public function creditWallet(float $amount)
+    // Créditer le portefeuille et journaliser le mouvement (wallet_transactions) — seul point
+    // d'écriture du solde en crédit dans toute l'app, pour que ce journal reste exhaustif.
+    // Verrouillée : sans ça, deux crédits simultanés sur le même compte (ex. deux commandes
+    // validées au même instant) pourraient journaliser le même balance_after, rendant
+    // l'historique inexploitable pour reconstituer un écart.
+    public function creditWallet(float $amount, ?string $reason = null, ?Model $source = null): void
     {
-        $this->increment('wallet_balance', $amount);
+        DB::transaction(function () use ($amount, $reason, $source) {
+            $user = static::whereKey($this->id)->lockForUpdate()->first();
+
+            $user->increment('wallet_balance', $amount);
+            $user->refresh();
+
+            $user->walletTransactions()->create([
+                'type' => 'credit',
+                'amount' => $amount,
+                'balance_after' => $user->wallet_balance,
+                'reason' => $reason ?? 'Crédit du portefeuille',
+                'source_type' => $source ? $source::class : null,
+                'source_id' => $source?->id,
+            ]);
+        });
+
+        $this->refresh();
     }
 
-    // Débiter le portefeuille
-    public function debitWallet(float $amount)
+    // Débiter le portefeuille (retrait demandé) — false si le solde est insuffisant.
+    public function debitWallet(float $amount, ?string $reason = null, ?Model $source = null): bool
     {
-        if ($this->wallet_balance >= $amount) {
-            $this->wallet_balance -= $amount;
-            $this->save();
+        $debited = DB::transaction(function () use ($amount, $reason, $source) {
+            $user = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if ($user->wallet_balance < $amount) {
+                return false;
+            }
+
+            $user->decrement('wallet_balance', $amount);
+            $user->refresh();
+
+            $user->walletTransactions()->create([
+                'type' => 'debit',
+                'amount' => $amount,
+                'balance_after' => $user->wallet_balance,
+                'reason' => $reason ?? 'Débit du portefeuille',
+                'source_type' => $source ? $source::class : null,
+                'source_id' => $source?->id,
+            ]);
+
             return true;
-        }
-        return false;
+        });
+
+        $this->refresh();
+
+        return $debited;
+    }
+
+    public function walletTransactions()
+    {
+        return $this->hasMany(WalletTransaction::class)->latest();
     }
 }

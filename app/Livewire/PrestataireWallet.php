@@ -69,17 +69,26 @@ class PrestataireWallet extends Component
         $withdrawal = DB::transaction(function () use ($amount) {
             $user = User::where('id', Auth::id())->lockForUpdate()->first();
 
-            if (!$user->debitWallet($amount)) {
+            // Revérifié sous verrou (la validation ci-dessus a pu lire un solde périmé en cas de
+            // course) AVANT de créer la demande : rien n'est écrit du tout si le solde est
+            // insuffisant, pas besoin d'annuler une création déjà faite.
+            if ($user->wallet_balance < $amount) {
                 return null;
             }
 
-            return WithdrawalRequest::create([
+            // Créée avant le débit pour servir de référence (source) au mouvement dans le
+            // journal du portefeuille.
+            $withdrawal = WithdrawalRequest::create([
                 'prestataire_id' => $user->id,
                 'amount' => $amount,
                 'payment_method' => $this->paymentMethod,
                 'phone_number' => $this->phoneNumber,
                 'status' => 'pending',
             ]);
+
+            $user->debitWallet($amount, 'Retrait demandé', $withdrawal);
+
+            return $withdrawal;
         });
 
         if (!$withdrawal) {

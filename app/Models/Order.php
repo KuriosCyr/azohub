@@ -339,7 +339,11 @@ class Order extends Model
             ]);
 
             if ($order->prestataire && $prestatairePayout > 0) {
-                $order->prestataire->increment('wallet_balance', $prestatairePayout);
+                $order->prestataire->creditWallet(
+                    $prestatairePayout,
+                    'Litige résolu (remboursement partiel) — commande ' . $order->order_number,
+                    $order
+                );
             }
 
             $successfulPayment = $order->payments()->where('status', 'success')->latest()->first();
@@ -379,7 +383,11 @@ class Order extends Model
             $order->update($updateData);
 
             if ($order->prestataire) {
-                $order->prestataire->increment('wallet_balance', $order->prestataire_amount);
+                $order->prestataire->creditWallet(
+                    (float) $order->prestataire_amount,
+                    'Paiement libéré — commande ' . $order->order_number,
+                    $order
+                );
                 $order->prestataire->increment('completed_orders');
                 $order->prestataire->refresh()->updateLevel();
             }

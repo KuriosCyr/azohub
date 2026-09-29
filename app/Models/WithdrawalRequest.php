@@ -69,7 +69,11 @@ class WithdrawalRequest extends Model
                 return;
             }
 
-            $record->prestataire->creditWallet((float) $record->amount);
+            $record->prestataire->creditWallet(
+                (float) $record->amount,
+                'Retrait rejeté : ' . $reason,
+                $record
+            );
 
             $record->update([
                 'status' => 'rejected',
