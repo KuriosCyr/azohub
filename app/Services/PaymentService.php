@@ -195,6 +195,16 @@ class PaymentService
             'customer' => ['id' => $customerId],
             'currency' => ['iso' => 'XOF'],
             'amount' => (int) round((float) $withdrawal->amount),
+            // 'mtn' confirmé en sandbox (change une 500 muette en réponse propre) ; 'moov'/
+            // 'celtiis' suivent la même convention que payment_method mais n'ont pas pu être
+            // vérifiés (API Payout non autorisée sur ce compte au moment de l'écrire — voir
+            // README). À revérifier dès l'activation par FedaPay.
+            'mode' => match ($withdrawal->payment_method) {
+                'mtn_momo' => 'mtn',
+                'moov_money' => 'moov',
+                'celtiis_cash' => 'celtiis',
+                default => 'mtn',
+            },
         ]);
 
         $phone = preg_replace('/\D/', '', (string) $withdrawal->phone_number);

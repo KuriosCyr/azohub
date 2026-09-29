@@ -5,6 +5,24 @@ configuration réellement en place sur le VPS OVH (`/etc/nginx/sites-available/a
 `/var/www/azohub/deploy.sh`), gardée ici pour ne pas avoir à la reconstruire de mémoire
 après un changement.
 
+## API Payout FedaPay : non autorisée sur ce compte (au 29/09/2026)
+
+`PaymentService::initiatePayout()` (retraits automatisés, voir son propre commit) est
+codée et testée (logique métier) mais **ne peut pas encore être utilisée en pratique** :
+vérifié en sandbox, même un simple `GET /v1/payouts` renvoie `403 {"message":"Opération
+non autorisée"}` sur ce compte FedaPay — l'API Transaction (paiements entrants) fonctionne
+normalement, mais l'API Payout (virements sortants) est une fonctionnalité à part, que
+FedaPay doit activer séparément (souvent après une vérification KYC/compliance
+supplémentaire, les virements sortants étant plus sensibles). Le bouton manuel ("Marquer
+comme payé") reste donc la seule voie fonctionnelle tant que ce n'est pas activé.
+
+**Pour débloquer** : contacter le support FedaPay (ou l'interlocuteur commercial du
+compte) et demander explicitement l'activation de l'API Payout. Une fois activé, revérifier
+en sandbox avant de passer en environnement `live` (`FEDAPAY_ENVIRONMENT` dans `.env`) — et
+vérifier au passage le champ `mode` de `Payout::create()` (`mtn` confirmé fonctionnel côté
+validation, `moov`/`celtiis` devinés par analogie avec `payment_method` mais jamais
+vérifiés faute d'accès à l'API à ce moment-là).
+
 ## Piège récurrent : les blocs `location` statiques doivent retomber sur PHP
 
 Deux bugs de production distincts sont venus du même oubli dans ce fichier : un bloc
