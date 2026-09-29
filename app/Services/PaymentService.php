@@ -219,19 +219,68 @@ class PaymentService
 
         $nameParts = explode(' ', trim($prestataire->name), 2);
 
-        $customer = Customer::create([
-            'firstname' => $nameParts[0] ?: $prestataire->name,
-            'lastname' => $nameParts[1] ?? $nameParts[0],
-            'email' => $prestataire->email,
-            'phone_number' => [
-                'number' => preg_replace('/\D/', '', (string) $prestataire->phone),
-                'country' => 'bj',
-            ],
-        ]);
+        try {
+            $customer = Customer::create([
+                'firstname' => $nameParts[0] ?: $prestataire->name,
+                'lastname' => $nameParts[1] ?? $nameParts[0],
+                'email' => $prestataire->email,
+                'phone_number' => [
+                    'number' => preg_replace('/\D/', '', (string) $prestataire->phone),
+                    'country' => 'bj',
+                ],
+            ]);
+        } catch (\FedaPay\Error\Base $e) {
+            // Confirmé en sandbox : FedaPay refuse un email déjà utilisé par un client existant
+            // côté FedaPay (ex. le prestataire a déjà un compte FedaPay pour une autre raison).
+            // Cette erreur n'a rien à voir avec un problème réseau malgré le nom de la classe
+            // ("ApiConnection") — la réponse HTTP (400) et son corps JSON le confirment. Dans ce
+            // cas, on retrouve et réutilise le client existant au lieu d'échouer.
+            $errors = $e->getJsonBody()['errors'] ?? [];
+
+            if (!isset($errors['email'])) {
+                throw $e;
+            }
+
+            $existingId = $this->findFedapayCustomerIdByEmail($prestataire->email);
+
+            if ($existingId === null) {
+                throw $e;
+            }
+
+            $prestataire->update(['fedapay_customer_id' => $existingId]);
+
+            return $existingId;
+        }
 
         $prestataire->update(['fedapay_customer_id' => (string) $customer->id]);
 
         return (string) $customer->id;
+    }
+
+    // Le paramètre 'email' de Customer::all() ne filtre pas côté serveur (vérifié en sandbox :
+    // renvoie tous les clients quel que soit le filtre) — comparaison manuelle sur les pages
+    // renvoyées, plafonnée pour ne jamais tourner indéfiniment sur un très gros historique.
+    protected function findFedapayCustomerIdByEmail(string $email): ?string
+    {
+        $page = 1;
+
+        while ($page <= 20) {
+            $result = Customer::all(['per_page' => 100, 'page' => $page]);
+
+            foreach ($result->customers ?? [] as $customer) {
+                if (strcasecmp((string) $customer->email, $email) === 0) {
+                    return (string) $customer->id;
+                }
+            }
+
+            if (empty($result->meta->next_page ?? null)) {
+                break;
+            }
+
+            $page++;
+        }
+
+        return null;
     }
 
     // Traite la confirmation (ou l'échec) d'un virement, via webhook. $lastErrorMessage vient de
