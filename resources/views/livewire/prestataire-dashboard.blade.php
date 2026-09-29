@@ -152,6 +152,9 @@
             </div>
         </div>
 
+        {{-- Parrainage --}}
+        <x-referral-card />
+
         {{-- MON ACTIVITE --}}
         <div class="bg-cream-50 rounded-xl border border-ink-100 shadow-sm overflow-hidden">
             @php

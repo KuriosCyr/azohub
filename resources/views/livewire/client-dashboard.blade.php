@@ -78,6 +78,11 @@
             </div>
         </div>
 
+        {{-- Parrainage --}}
+        <div class="mb-8">
+            <x-referral-card />
+        </div>
+
         {{-- Actions requises --}}
         @if($stats['awaiting_validation'] > 0)
             <div class="bg-ochre-500/10 border border-ochre-500/30 rounded-lg p-5 mb-8">

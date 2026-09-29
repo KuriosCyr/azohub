@@ -49,6 +49,7 @@ class RegisteredUserController extends Controller
             // côté serveur : un compte pouvait être créé sans jamais avoir accepté les CGU ni
             // la politique de confidentialité.
             'terms' => ['accepted'],
+            'ref' => ['nullable', 'string', 'max:16'],
         ], [
             'phone.required' => 'Le numéro de téléphone est obligatoire.',
             'phone.regex' => 'Le numéro de téléphone n\'est pas valide.',
@@ -60,6 +61,13 @@ class RegisteredUserController extends Controller
         // test était toujours faux et tout le monde était inscrit comme client.
         $role = $request->role === 'prestataire' ? 'prestataire' : 'client';
 
+        // Code invalide ou déjà expiré (partagé puis désactivé, faute de frappe...) : on ignore
+        // silencieusement plutôt que de bloquer l'inscription, un mauvais lien de parrainage ne
+        // devant jamais empêcher quelqu'un de créer son compte.
+        $referrer = $request->filled('ref')
+            ? User::where('referral_code', $request->ref)->first()
+            : null;
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -67,6 +75,7 @@ class RegisteredUserController extends Controller
             'city' => $request->city,
             'role' => $role,
             'password' => Hash::make($request->password),
+            'referred_by' => $referrer?->id,
         ]);
 
         // En local, aucun service d'envoi d'email réel n'est configuré (MAIL_MAILER=log) :

@@ -14,6 +14,7 @@
             <div class="bg-cream-50 rounded-xl border border-ink-100 p-8">
                 <form method="POST" action="{{ route('register') }}" class="space-y-6">
                     @csrf
+                    <input type="hidden" name="ref" value="{{ old('ref', request('ref')) }}">
 
                     {{-- Choix du rôle --}}
                     <div>
