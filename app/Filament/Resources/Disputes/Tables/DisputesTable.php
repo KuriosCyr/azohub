@@ -4,8 +4,6 @@ namespace App\Filament\Resources\Disputes\Tables;
 
 use App\Models\Dispute;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -158,11 +156,9 @@ class DisputesTable
                         $livewire->dispatch('refresh-sidebar');
                     }),
             ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ])
+            // Pas de suppression, même en masse (audit externe) : un litige supprimé laisserait
+            // sa commande bloquée en 'disputed' pour toujours, l'argent restant gelé sans aucun
+            // moyen de le débloquer.
             ->defaultSort('created_at', 'desc');
     }
 }
