@@ -102,7 +102,7 @@
                                 Prix <span class="text-red-500">*</span>
                             </label>
                             <div class="relative">
-                                <input type="number" name="price" id="price" value="{{ old('price', $service->price) }}" required min="0" step="1000"
+                                <input type="number" name="price" id="price" value="{{ old('price', $service->price) }}" required min="100" step="1000"
                                        class="w-full px-4 py-3 pr-20 border-2 border-ink-200 rounded-xl focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
                                 <span class="absolute right-4 top-1/2 -translate-y-1/2 text-ink-400 font-bold">FCFA</span>
                             </div>

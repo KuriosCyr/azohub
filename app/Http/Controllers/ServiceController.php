@@ -64,7 +64,11 @@ class ServiceController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string|min:50|max:5000',
             'what_included' => 'nullable|string|max:3000',
-            'price' => 'required|numeric|min:0',
+            // FedaPay refuse de toute façon un montant nul ou dérisoire : autant le bloquer ici
+            // avec un message clair plutôt que laisser échouer le paiement à la commande, bien
+            // plus tard. 100 FCFA est déjà le plancher utilisé pour les offres personnalisées
+            // (cf. ConversationShow::sendOffer()) — on aligne le service sur la même limite.
+            'price' => 'required|numeric|min:100|max:100000000',
             'price_type' => 'required|in:fixe,a_partir_de',
             'delivery_time' => 'required|integer|min:1|max:365',
             'revisions_included' => 'required|integer|min:0|max:20',
@@ -173,7 +177,7 @@ class ServiceController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string|min:50|max:5000',
             'what_included' => 'nullable|string|max:3000',
-            'price' => 'required|numeric|min:0',
+            'price' => 'required|numeric|min:100|max:100000000',
             'price_type' => 'required|in:fixe,a_partir_de',
             'delivery_time' => 'required|integer|min:1|max:365',
             'revisions_included' => 'required|integer|min:0|max:20',
