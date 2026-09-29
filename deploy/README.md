@@ -48,3 +48,33 @@ visite en direct a fait recompiler entre-temps par PHP-FPM (utilisateur `www-dat
 `chown -R ubuntu:www-data storage bootstrap/cache` + `chmod -R ug+rwX` juste avant la mise en
 cache dans `deploy.sh` : elle remet tout au bon propriétaire/droits avant que le déploiement
 n'y touche.
+
+## En cas de déploiement raté : comment revenir en arrière
+
+`deploy.sh` n'a pas de rollback automatique (ni le code, ni les migrations), mais il pose
+deux filets avant de toucher à quoi que ce soit :
+
+1. **`php artisan down`** au tout début (site en maintenance le temps du déploiement), remis
+   automatiquement en ligne à la fin du script — même s'il échoue en cours de route (`trap ...
+   EXIT`). Si le site reste bloqué en maintenance malgré tout (ex. serveur coupé en plein
+   déploiement), `php artisan up` à la main suffit.
+2. **Une sauvegarde de la base** juste avant `migrate --force`, avec le même script que la
+   sauvegarde nocturne planifiée (`/home/ubuntu/backup-db.sh` → `/var/backups/azohub-db/`).
+
+**Pour revenir en arrière après un déploiement qui a mal tourné :**
+
+```bash
+# 1. Revenir au commit précédent
+cd /var/www/azohub
+git log --oneline -5              # repérer le commit d'avant
+git reset --hard <commit-d-avant>
+
+# 2. Si une migration a corrompu des données (pas seulement "cassé le code") : restaurer le
+#    dump pris juste avant cette migration plutôt que de compter sur `migrate:rollback`
+#    (les méthodes down() ne sont pas systématiquement tenues à jour) :
+ls -la /var/backups/azohub-db/    # repérer le fichier au bon horodatage
+gunzip < /var/backups/azohub-db/azohub_AAAAMMJJ_HHMMSS.sql.gz | mysql -u<user> -p azohub
+
+# 3. Redéployer l'ancien code (recompile assets, recache, relance le worker)
+bash deploy.sh
+```
