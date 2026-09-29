@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Order;
+use App\Models\User;
+use App\Models\WithdrawalRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -91,6 +94,13 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
+        $blockers = $this->accountDeletionBlockers($user);
+
+        if (!empty($blockers)) {
+            return Redirect::route('profile.edit')
+                ->with('error', 'Suppression impossible pour le moment : ' . implode(' ', $blockers));
+        }
+
         Auth::logout();
 
         $user->anonymizeAndDelete();
@@ -99,5 +109,34 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/')->with('success', 'Votre compte a été supprimé.');
+    }
+
+    // Raisons empêchant la suppression : un prestataire pourrait sinon disparaître avec un
+    // solde non retiré, un retrait déjà en cours de traitement, ou une commande en cours
+    // (client comme prestataire) — la commande resterait bloquée avec une partie devenue
+    // "Utilisateur supprimé" et injoignable, sans que personne ne puisse la faire avancer.
+    private function accountDeletionBlockers(User $user): array
+    {
+        $blockers = [];
+
+        if ((float) $user->wallet_balance > 0) {
+            $blockers[] = 'Vous avez un solde de ' . number_format((float) $user->wallet_balance, 0, ',', ' ') . ' FCFA non retiré : retirez-le d\'abord depuis votre portefeuille.';
+        }
+
+        if (WithdrawalRequest::where('prestataire_id', $user->id)->where('status', 'pending')->exists()) {
+            $blockers[] = 'Une demande de retrait est en cours de traitement.';
+        }
+
+        $activeStatuses = ['pending_payment', 'paid', 'in_progress', 'delivered', 'disputed'];
+
+        $hasActiveOrder = Order::whereIn('status', $activeStatuses)
+            ->where(fn ($query) => $query->where('client_id', $user->id)->orWhere('prestataire_id', $user->id))
+            ->exists();
+
+        if ($hasActiveOrder) {
+            $blockers[] = 'Vous avez au moins une commande en cours : attendez qu\'elle soit finalisée, validée ou annulée.';
+        }
+
+        return $blockers;
     }
 }
