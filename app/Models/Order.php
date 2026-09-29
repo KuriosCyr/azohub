@@ -379,6 +379,10 @@ class Order extends Model
                 );
                 $order->prestataire->increment('completed_orders');
                 $order->prestataire->refresh()->updateLevel();
+
+                // Sans effet si ce n'est pas sa toute première commande complétée, ou si
+                // personne ne l'a parrainé (voir User::maybeRewardReferrer()).
+                $order->prestataire->maybeRewardReferrer();
             }
 
             $order->service?->increment('total_orders');

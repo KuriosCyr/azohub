@@ -31,7 +31,80 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
             if (empty($user->slug)) {
                 $user->slug = static::generateUniqueSlug($user->name);
             }
+
+            if (empty($user->referral_code)) {
+                $user->referral_code = static::generateUniqueReferralCode();
+            }
         });
+    }
+
+    // 100 FCFA par filleul récompensé (client ou prestataire) — montant volontairement modeste,
+    // ajustable ici sans toucher au reste de la logique.
+    public const REFERRAL_REWARD_AMOUNT = 100;
+
+    // Au-delà, les filleuls suivants restent bien rattachés (referred_by, utile pour les
+    // statistiques) mais ne génèrent plus de récompense — limite anti-abus.
+    public const MAX_REWARDED_REFERRALS = 30;
+
+    public static function generateUniqueReferralCode(): string
+    {
+        do {
+            $code = strtoupper(Str::random(8));
+        } while (static::where('referral_code', $code)->exists());
+
+        return $code;
+    }
+
+    public function referrer()
+    {
+        return $this->belongsTo(User::class, 'referred_by');
+    }
+
+    public function referrals()
+    {
+        return $this->hasMany(User::class, 'referred_by');
+    }
+
+    // Appelée sur le FILLEUL (pas le parrain) au moment où sa toute première commande aboutit —
+    // paiement confirmé côté client (Payment::activatePaidOrder), paiement libéré côté
+    // prestataire (Order::releasePayment). Ne fait rien si ce filleul a déjà déclenché la
+    // récompense de son parrain une fois, si personne ne l'a parrainé, ou si son parrain a déjà
+    // atteint le plafond de filleuls récompensés.
+    public function maybeRewardReferrer(): void
+    {
+        if (!$this->referred_by || $this->referral_reward_granted) {
+            return;
+        }
+
+        DB::transaction(function () {
+            $referee = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if (!$referee || !$referee->referred_by || $referee->referral_reward_granted) {
+                return;
+            }
+
+            $referrer = static::whereKey($referee->referred_by)->lockForUpdate()->first();
+
+            if (!$referrer) {
+                return;
+            }
+
+            $rewardedCount = static::where('referred_by', $referrer->id)
+                ->where('referral_reward_granted', true)
+                ->count();
+
+            // Le filleul est marqué "récompense déclenchée" même au-delà du plafond : sans ça,
+            // il resterait indéfiniment éligible et compterait à chaque nouvelle commande.
+            $referee->update(['referral_reward_granted' => true]);
+
+            if ($rewardedCount >= self::MAX_REWARDED_REFERRALS) {
+                return;
+            }
+
+            $referrer->increment('referral_credit_balance', self::REFERRAL_REWARD_AMOUNT);
+        });
+
+        $this->refresh();
     }
 
     // Génère un slug unique (ex: "yves-adjovi", puis "yves-adjovi-2" en cas de collision).
@@ -74,6 +147,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         'identity_rejection_reason',
         'wallet_balance',
         'fedapay_customer_id',
+        'referred_by',
+        'referral_credit_balance',
+        'referral_reward_granted',
         'is_active',
         'last_seen_at',
     ];
@@ -93,6 +169,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         'on_time_delivery_rate' => 'decimal:2',
         'timed_deliveries_count' => 'integer',
         'wallet_balance' => 'decimal:2',
+        'referral_credit_balance' => 'decimal:2',
+        'referral_reward_granted' => 'boolean',
         'identity_verified' => 'boolean',
         'is_active' => 'boolean',
         'last_seen_at' => 'datetime',
