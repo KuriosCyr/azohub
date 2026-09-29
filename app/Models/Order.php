@@ -27,6 +27,8 @@ class Order extends Model
         'commission',
         'client_fee',
         'referral_credit_applied',
+        'promo_code_id',
+        'promo_discount_applied',
         'prestataire_amount',
         'delivery_time',
         'expected_delivery_at',
@@ -56,6 +58,7 @@ class Order extends Model
         'commission' => 'decimal:2',
         'client_fee' => 'decimal:2',
         'referral_credit_applied' => 'decimal:2',
+        'promo_discount_applied' => 'decimal:2',
         'prestataire_amount' => 'decimal:2',
         'delivery_time' => 'integer',
         'deliverables' => 'array',
@@ -112,22 +115,33 @@ class Order extends Model
             ?? $this->serviceRequest?->category?->name;
     }
 
+    public function promoCode()
+    {
+        return $this->belongsTo(PromoCode::class);
+    }
+
     // Montant total réellement débité au client (prix + frais de service client, réduit du
-    // crédit de parrainage éventuellement appliqué — voir applyReferralCredit()).
+    // crédit de parrainage ou du code promo éventuellement appliqué — les deux sont
+    // mutuellement exclusifs, voir applyReferralCredit()/applyPromoCode()).
     public function getTotalChargedAttribute()
     {
-        return round((float) $this->amount + (float) $this->client_fee - (float) $this->referral_credit_applied, 2);
+        return round(
+            (float) $this->amount + (float) $this->client_fee
+            - (float) $this->referral_credit_applied - (float) $this->promo_discount_applied,
+            2
+        );
     }
 
     // Consomme le crédit de parrainage du client sur cette commande, si demandé et pas déjà
     // fait (idempotent : une commande "pending_payment" reprise après un paiement abandonné ne
-    // consomme le crédit qu'à la première tentative). Toujours appelé avant de construire la
-    // transaction FedaPay dans PaymentService::initiateForOrder() — un montant nul ou négatif
-    // y serait rejeté, donc au moins 1 FCFA reste toujours à payer même si le crédit disponible
+    // consomme le crédit qu'à la première tentative), et jamais si un code promo est déjà
+    // appliqué (mutuellement exclusifs). Toujours appelé avant de construire la transaction
+    // FedaPay dans PaymentService::initiateForOrder() — un montant nul ou négatif y serait
+    // rejeté, donc au moins 1 FCFA reste toujours à payer même si le crédit disponible
     // suffirait à tout couvrir. Retourne le montant effectivement appliqué.
     public function applyReferralCredit(bool $useReferralCredit): float
     {
-        if (!$useReferralCredit || (float) $this->referral_credit_applied > 0) {
+        if (!$useReferralCredit || $this->promo_code_id || (float) $this->referral_credit_applied > 0) {
             return (float) $this->referral_credit_applied;
         }
 
@@ -140,6 +154,70 @@ class Order extends Model
         }
 
         return $redeemed;
+    }
+
+    // Applique un code promo à cette commande, si fourni et pas déjà fait (idempotent, comme
+    // applyReferralCredit() — voir OrderCreate/ProposalAccept/CustomOfferAccept::placeOrder()).
+    // Retourne un message d'erreur lisible si le code est invalide, épuisé, déjà utilisé par ce
+    // client, ou qu'un crédit de parrainage est déjà appliqué — null si tout s'est bien passé
+    // (ou si aucun code n'était fourni).
+    public function applyPromoCode(?string $rawCode): ?string
+    {
+        if (!$rawCode) {
+            return null;
+        }
+
+        if ($this->promo_code_id) {
+            return null;
+        }
+
+        if ((float) $this->referral_credit_applied > 0) {
+            return 'Le crédit de parrainage est déjà appliqué à cette commande.';
+        }
+
+        return DB::transaction(function () use ($rawCode) {
+            // Verrouille la ligne du code : deux tentatives concurrentes sur le dernier usage
+            // disponible d'un code à max_uses limité se sérialisent ici, la seconde ne comptant
+            // le nombre d'utilisations qu'une fois la première validée (voir maybeRewardReferrer()
+            // pour le même principe sur le plafond de parrainages récompensés).
+            $code = PromoCode::whereRaw('UPPER(code) = ?', [strtoupper(trim($rawCode))])
+                ->lockForUpdate()
+                ->first();
+
+            if (!$code || !$code->is_active) {
+                return "Ce code promo n'existe pas ou n'est plus actif.";
+            }
+
+            if ($code->hasReachedMaxUses()) {
+                return "Ce code promo a atteint son nombre maximum d'utilisations.";
+            }
+
+            if ($code->alreadyUsedBy($this->client_id)) {
+                return 'Vous avez déjà utilisé ce code promo.';
+            }
+
+            $discount = $code->discountFor((float) $this->total_charged);
+
+            if ($discount <= 0) {
+                return "Ce code promo ne peut pas s'appliquer à cette commande.";
+            }
+
+            $this->update([
+                'promo_code_id' => $code->id,
+                'promo_discount_applied' => $discount,
+            ]);
+
+            PromoCodeRedemption::create([
+                'promo_code_id' => $code->id,
+                'user_id' => $this->client_id,
+                'order_id' => $this->id,
+                'amount_applied' => $discount,
+            ]);
+
+            $this->refresh();
+
+            return null;
+        });
     }
 
     // Auto-générer le numéro de commande
@@ -321,16 +399,27 @@ class Order extends Model
             ? (float) $this->referral_credit_applied
             : 0;
 
+        // Même principe que le crédit de parrainage : un code promo consommé par une commande
+        // jamais payée n'a servi à rien, on le rend disponible (pour ce même client comme pour
+        // le plafond global) en supprimant sa trace d'utilisation.
+        $releasePromoCode = !$successfulPayment && $this->promo_code_id;
+
         $this->update([
             'status' => 'cancelled',
             'payment_status' => $successfulPayment ? 'refund_pending' : $this->payment_status,
             'cancelled_at' => $this->cancelled_at ?? now(),
             'cancellation_reason' => $reason ?? $this->cancellation_reason,
             'referral_credit_applied' => $creditToRestore > 0 ? 0 : (float) $this->referral_credit_applied,
+            'promo_code_id' => $releasePromoCode ? null : $this->promo_code_id,
+            'promo_discount_applied' => $releasePromoCode ? 0 : (float) $this->promo_discount_applied,
         ]);
 
         if ($creditToRestore > 0) {
             $this->client->refundReferralCredit($creditToRestore);
+        }
+
+        if ($releasePromoCode) {
+            PromoCodeRedemption::where('order_id', $this->id)->delete();
         }
 
         $successfulPayment?->update(['status' => 'refund_pending']);

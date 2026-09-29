@@ -17,6 +17,7 @@ class ProposalAccept extends Component
     public Proposal $proposal;
     public string $paymentMethod = 'mtn_momo';
     public bool $useReferralCredit = false;
+    public string $promoCode = '';
 
     public function mount(ServiceRequest $serviceRequest, Proposal $proposal)
     {
@@ -56,23 +57,12 @@ class ProposalAccept extends Component
             }
 
             // Une commande impayée d'une autre proposition de la même demande est abandonnée.
+            // refund() restitue au passage un éventuel crédit de parrainage ou code promo déjà
+            // consommé sur cette tentative — sinon il disparaîtrait sans avoir payé quoi que ce soit.
             Order::where('service_request_id', $serviceRequest->id)
                 ->where('status', 'pending_payment')
                 ->get()
-                ->each(function (Order $o) {
-                    // Restitue un éventuel crédit de parrainage déjà consommé sur cette tentative
-                    // abandonnée — sinon il disparaîtrait sans avoir payé quoi que ce soit.
-                    if ($o->referral_credit_applied > 0) {
-                        $o->client->refundReferralCredit((float) $o->referral_credit_applied);
-                    }
-
-                    $o->update([
-                        'status' => 'cancelled',
-                        'cancelled_at' => now(),
-                        'cancellation_reason' => 'Une autre proposition a été choisie pour cette demande.',
-                        'referral_credit_applied' => 0,
-                    ]);
-                });
+                ->each(fn (Order $o) => $o->refund('Une autre proposition a été choisie pour cette demande.'));
 
             $amount = (float) $proposal->proposed_price;
             $commission = round($amount * $proposal->prestataire->commissionRate(), 2);
@@ -96,6 +86,12 @@ class ProposalAccept extends Component
                 'payment_status' => 'pending',
             ]);
         });
+
+        if ($promoError = $order->applyPromoCode($this->promoCode)) {
+            $this->addError('promoCode', $promoError);
+
+            return;
+        }
 
         try {
             $url = $payments->initiateForOrder($order, $this->paymentMethod, $this->useReferralCredit);

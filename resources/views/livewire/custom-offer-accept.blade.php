@@ -60,11 +60,23 @@
                             <span class="text-ink-500">Frais de service ({{ number_format(\App\Models\Order::CLIENT_FEE_RATE * 100, 0, ',', ' ') }}%)</span>
                             <span class="font-semibold">{{ number_format($clientFee, 0, ',', ' ') }} FCFA</span>
                         </div>
-                        @if($referralBalance > 0)
+                        @if($referralBalance > 0 && !$promoCode)
                             <label class="flex items-start gap-2 text-sm bg-terracotta-50 rounded-lg p-3 cursor-pointer">
                                 <input type="checkbox" wire:model.live="useReferralCredit" class="mt-0.5 rounded border-ink-200 text-terracotta-600 focus:ring-terracotta-600">
                                 <span>Utiliser mon crédit de parrainage <span class="font-bold">({{ number_format($referralBalance, 0, ',', ' ') }} FCFA disponible)</span></span>
                             </label>
+                        @endif
+                        @if(!$useReferralCredit)
+                            <div>
+                                <label class="block text-xs font-bold text-ink-500 mb-1">Code promo <span class="font-normal text-ink-400">(optionnel)</span></label>
+                                <input type="text"
+                                       wire:model.live="promoCode"
+                                       placeholder="Ex: BIENVENUE10"
+                                       class="w-full px-3 py-2 border-2 border-ink-100 rounded-lg text-sm uppercase focus:border-terracotta-600 focus:ring-4 focus:ring-terracotta-50 transition">
+                                @error('promoCode')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
                         @endif
                         @if($creditApplied > 0)
                             <div class="flex justify-between text-sm text-terracotta-700">
