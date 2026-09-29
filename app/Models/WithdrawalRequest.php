@@ -102,7 +102,13 @@ class WithdrawalRequest extends Model
 
     public function canRetryFedapayPayout(): bool
     {
-        return $this->status === 'pending' && $this->fedapay_payout_id === null;
+        return $this->status === 'pending'
+            && $this->fedapay_payout_id === null
+            // 'initiating' : une tentative est en train d'être déclenchée par un autre clic /
+            // process, entre le verrouillage de la ligne et l'obtention de l'identifiant FedaPay
+            // (voir PaymentService::initiatePayout()) — bloque la fenêtre de course sans avoir
+            // encore d'identifiant à stocker.
+            && $this->fedapay_status !== 'initiating';
     }
 
     // Confirmation FedaPay (webhook) que le virement a bien été envoyé : même effet que
@@ -128,9 +134,13 @@ class WithdrawalRequest extends Model
         $this->refresh();
     }
 
-    // Échec confirmé par FedaPay (webhook) : recrédite le portefeuille (comme reject()) mais
-    // laisse la demande 'pending' — ni payée ni rejetée, l'admin peut réessayer via l'API ou
-    // traiter manuellement, sans avoir à en recréer une.
+    // Échec confirmé par FedaPay (webhook) : la demande reste 'pending' — ni payée ni rejetée,
+    // l'admin peut réessayer via l'API ou traiter manuellement, sans avoir à en recréer une.
+    // NE recrédite PAS le portefeuille : le solde a déjà été débité une seule fois à la création
+    // de la demande (PrestataireWallet::requestWithdrawal) et n'a jamais bougé depuis — cet essai
+    // raté n'a fait circuler aucun argent, rien à rendre. Un ancien code recréditait ici, ce qui
+    // permettait un double paiement (le solde recrédité restait acquis même si un essai suivant,
+    // ou "Marquer comme payé", ou "Rejeter" faisait ensuite sortir l'argent une seconde fois).
     public function failFedapayPayout(string $reason): void
     {
         DB::transaction(function () use ($reason) {
@@ -140,16 +150,34 @@ class WithdrawalRequest extends Model
                 return;
             }
 
-            $record->prestataire->creditWallet(
-                (float) $record->amount,
-                'Virement FedaPay échoué : ' . $reason,
-                $record
-            );
-
             $record->update([
                 'fedapay_status' => 'failed',
                 'fedapay_payout_id' => null,
                 'admin_note' => trim(($record->admin_note ?? '') . "\nÉchec FedaPay : {$reason}"),
+            ]);
+        });
+
+        $this->refresh();
+    }
+
+    // Cas ambigu seulement : PaymentService::initiatePayout() a obtenu un identifiant FedaPay
+    // mais n'a jamais pu confirmer si l'envoi a réellement eu lieu (ex. coupure réseau juste
+    // après). Tant que ni le webhook FedaPay ni cette action n'ont tranché, les 3 actions
+    // normales restent masquées (elles exigent toutes fedapay_payout_id === null) pour ne
+    // jamais risquer un double envoi. Un admin qui a VÉRIFIÉ manuellement sur le tableau de
+    // bord FedaPay que rien n'a été envoyé peut débloquer la demande avec cette méthode.
+    public function clearAmbiguousFedapayAttempt(): void
+    {
+        DB::transaction(function () {
+            $record = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if (!$record || $record->status !== 'pending' || $record->fedapay_payout_id === null) {
+                return;
+            }
+
+            $record->update([
+                'fedapay_payout_id' => null,
+                'fedapay_status' => null,
             ]);
         });
 

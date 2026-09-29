@@ -181,37 +181,66 @@ class PaymentService
     }
 
     // Déclenche un virement FedaPay réel pour un retrait déjà approuvé (le solde a été débité à
-    // la demande, cf. PrestataireWallet::requestWithdrawal). Lève une exception au moindre souci
-    // — à l'appelant de s'assurer que rien n'est marqué payé si ça échoue, et que le bouton
-    // manuel existant reste la solution de repli. Ne marque JAMAIS le retrait "payé" elle-même :
-    // seule la confirmation FedaPay (webhook, cf. processPayoutUpdate()) le fait, un envoi
-    // accepté par l'API n'étant pas une garantie que l'argent est bien arrivé.
+    // la demande, cf. PrestataireWallet::requestWithdrawal). Ne marque JAMAIS le retrait "payé"
+    // elle-même : seule la confirmation FedaPay (webhook, cf. processPayoutUpdate()) le fait, un
+    // envoi accepté par l'API n'étant pas une garantie que l'argent est bien arrivé.
     public function initiatePayout(WithdrawalRequest $withdrawal): void
     {
-        if (!$withdrawal->canRetryFedapayPayout()) {
+        // "Réclame" la demande AVANT le moindre appel réseau, sous verrou : deux clics
+        // rapprochés (ou deux admins) ne peuvent plus tous les deux passer canRetryFedapayPayout()
+        // et déclencher chacun un vrai virement FedaPay.
+        $claimed = DB::transaction(function () use ($withdrawal) {
+            $record = WithdrawalRequest::whereKey($withdrawal->id)->lockForUpdate()->first();
+
+            if (!$record || !$record->canRetryFedapayPayout()) {
+                return null;
+            }
+
+            $record->update(['fedapay_status' => 'initiating']);
+
+            return $record;
+        });
+
+        if (!$claimed) {
             throw new \RuntimeException('Un virement FedaPay est déjà en cours pour cette demande.');
         }
 
-        $prestataire = $withdrawal->prestataire;
-        $customerId = $this->resolveFedapayCustomerId($prestataire);
+        try {
+            $customerId = $this->resolveFedapayCustomerId($claimed->prestataire);
 
-        $payout = Payout::create([
-            'customer' => ['id' => $customerId],
-            'currency' => ['iso' => 'XOF'],
-            'amount' => (int) round((float) $withdrawal->amount),
-            // 'mtn' confirmé en sandbox (change une 500 muette en réponse propre) ; 'moov'/
-            // 'celtiis' suivent la même convention que payment_method mais n'ont pas pu être
-            // vérifiés (API Payout non autorisée sur ce compte au moment de l'écrire — voir
-            // README). À revérifier dès l'activation par FedaPay.
-            'mode' => match ($withdrawal->payment_method) {
-                'mtn_momo' => 'mtn',
-                'moov_money' => 'moov',
-                'celtiis_cash' => 'celtiis',
-                default => 'mtn',
-            },
-        ]);
+            $payout = Payout::create([
+                'customer' => ['id' => $customerId],
+                'currency' => ['iso' => 'XOF'],
+                'amount' => (int) round((float) $claimed->amount),
+                // 'mtn' confirmé en sandbox (change une 500 muette en réponse propre) ; 'moov'/
+                // 'celtiis' suivent la même convention que payment_method mais n'ont pas pu être
+                // vérifiés (API Payout non autorisée sur ce compte au moment de l'écrire — voir
+                // README). À revérifier dès l'activation par FedaPay.
+                'mode' => match ($claimed->payment_method) {
+                    'mtn_momo' => 'mtn',
+                    'moov_money' => 'moov',
+                    'celtiis_cash' => 'celtiis',
+                    default => 'mtn',
+                },
+            ]);
+        } catch (\Throwable $e) {
+            // Rien n'a été créé côté FedaPay (aucun identifiant obtenu) : on sait avec certitude
+            // qu'aucun argent n'a bougé, on peut donc réessayer sans risque.
+            $claimed->update(['fedapay_status' => null]);
 
-        $phone = preg_replace('/\D/', '', (string) $withdrawal->phone_number);
+            throw $e;
+        }
+
+        // Enregistré tout de suite, AVANT sendNow() — pas après : si l'envoi échoue ensuite
+        // (coupure réseau, délai dépassé...), l'identifiant reste en base et bloque toute
+        // nouvelle tentative automatique tant qu'on ne sait pas avec certitude si l'argent est
+        // parti. Seul le webhook FedaPay (confirmation ou échec) ou une vérification manuelle
+        // sur le tableau de bord FedaPay (WithdrawalRequest::clearAmbiguousFedapayAttempt())
+        // peut ensuite débloquer la demande — jamais un nouvel essai automatique, qui risquerait
+        // un double envoi si le premier avait en réalité réussi.
+        $claimed->markFedapayPayoutSent((string) $payout->id);
+
+        $phone = preg_replace('/\D/', '', (string) $claimed->phone_number);
 
         $payout->sendNow([
             'phone_number' => [
@@ -219,8 +248,6 @@ class PaymentService
                 'country' => 'bj',
             ],
         ]);
-
-        $withdrawal->markFedapayPayoutSent((string) $payout->id);
     }
 
     // Un prestataire n'a qu'un seul client FedaPay, créé au premier virement automatisé et

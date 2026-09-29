@@ -106,12 +106,33 @@ class WithdrawalRequestsTable
                         } catch (\Throwable $e) {
                             report($e);
 
+                            $record->refresh();
+
                             Notification::make()
                                 ->title('Échec du déclenchement FedaPay')
-                                ->body('Rien n\'a été débité côté FedaPay. Vous pouvez réessayer, ou traiter manuellement ("Marquer comme payé").')
+                                ->body($record->fedapay_payout_id === null
+                                    ? 'Rien n\'a été créé côté FedaPay. Vous pouvez réessayer, ou traiter manuellement ("Marquer comme payé").'
+                                    : 'Un virement a peut-être été envoyé malgré l\'erreur — vérifiez le tableau de bord FedaPay avant toute nouvelle action. La demande reste bloquée tant que ce n\'est pas vérifié (voir "Débloquer manuellement").')
                                 ->danger()
+                                ->persistent()
                                 ->send();
                         }
+                    }),
+
+                Action::make('clear_ambiguous_fedapay')
+                    ->label('Débloquer manuellement')
+                    ->icon('heroicon-o-lock-open')
+                    ->color('warning')
+                    ->visible(fn (WithdrawalRequest $record) => $record->status === 'pending' && $record->fedapay_payout_id !== null && $record->fedapay_status !== 'sent')
+                    ->requiresConfirmation()
+                    ->modalDescription('À utiliser UNIQUEMENT après avoir vérifié sur le tableau de bord FedaPay que ce virement n\'a PAS été envoyé. Débloquer sans vérifier risque un double paiement si l\'argent est en réalité déjà parti.')
+                    ->action(function (WithdrawalRequest $record) {
+                        $record->clearAmbiguousFedapayAttempt();
+
+                        Notification::make()
+                            ->title('Demande débloquée pour ' . $record->prestataire->name)
+                            ->success()
+                            ->send();
                     }),
 
                 Action::make('mark_paid')

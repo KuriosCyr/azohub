@@ -63,7 +63,12 @@ class FedapayPayoutTest extends TestCase
         $this->assertEquals(0, $withdrawal->prestataire->wallet_balance);
     }
 
-    public function test_a_failed_payout_credits_the_wallet_back_and_allows_a_retry(): void
+    // Bug corrigé suite à un audit externe : failFedapayPayout() recréditait le portefeuille,
+    // alors que le solde n'avait jamais bougé (débité une seule fois à la création de la demande,
+    // jamais touché par un essai FedaPay raté). Ce recrédit permettait un double paiement : soit
+    // en relançant "Payer via FedaPay" (le prestataire recevait l'argent en plus du recrédit),
+    // soit via "Rejeter" juste après (qui créditait une DEUXIÈME fois).
+    public function test_a_failed_payout_does_not_touch_the_wallet_and_allows_a_retry(): void
     {
         $withdrawal = $this->makePendingWithdrawal();
         $withdrawal->markFedapayPayoutSent('payout_123');
@@ -75,7 +80,59 @@ class FedapayPayoutTest extends TestCase
         $this->assertSame('failed', $withdrawal->fedapay_status);
         $this->assertNull($withdrawal->fedapay_payout_id);
         $this->assertTrue($withdrawal->canRetryFedapayPayout());
+        $this->assertEquals(0, $withdrawal->prestataire->fresh()->wallet_balance);
+    }
+
+    public function test_rejecting_after_a_failed_payout_credits_the_wallet_only_once(): void
+    {
+        $withdrawal = $this->makePendingWithdrawal();
+        $withdrawal->markFedapayPayoutSent('payout_123');
+        $withdrawal->failFedapayPayout('Numéro invalide');
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $withdrawal->reject($admin->id, 'Numéro toujours invalide après vérification.');
+
         $this->assertEquals(5000, $withdrawal->prestataire->fresh()->wallet_balance);
+        $this->assertSame('rejected', $withdrawal->fresh()->status);
+    }
+
+    // Fenêtre de course corrigée : PaymentService::initiatePayout() marque la demande
+    // 'initiating' (sous verrou) avant le moindre appel réseau, pour qu'un second clic pendant
+    // l'appel à FedaPay::Payout::create() ne puisse pas aussi déclencher un vrai virement.
+    public function test_an_initiating_payout_blocks_a_concurrent_retry(): void
+    {
+        $withdrawal = $this->makePendingWithdrawal();
+        $withdrawal->update(['fedapay_status' => 'initiating']);
+
+        $this->assertFalse($withdrawal->fresh()->canRetryFedapayPayout());
+    }
+
+    // Cas ambigu : l'identifiant FedaPay a été obtenu (donc persisté) mais l'envoi n'a jamais pu
+    // être confirmé par notre code — ni le webhook ni un admin n'ont encore tranché. Aucune des
+    // 3 actions normales ne doit être possible tant que ce n'est pas résolu (elles exigent toutes
+    // fedapay_payout_id === null), pour ne jamais risquer un double envoi.
+    public function test_an_ambiguous_payout_blocks_retry_until_manually_cleared(): void
+    {
+        $withdrawal = $this->makePendingWithdrawal();
+        $withdrawal->markFedapayPayoutSent('payout_ambigu');
+
+        $this->assertFalse($withdrawal->fresh()->canRetryFedapayPayout());
+
+        $withdrawal->clearAmbiguousFedapayAttempt();
+
+        $this->assertNull($withdrawal->fresh()->fedapay_payout_id);
+        $this->assertTrue($withdrawal->fresh()->canRetryFedapayPayout());
+    }
+
+    public function test_clearing_an_already_confirmed_payout_does_nothing(): void
+    {
+        $withdrawal = $this->makePendingWithdrawal();
+        $withdrawal->markFedapayPayoutSent('payout_123');
+        $withdrawal->confirmFedapayPayout();
+
+        $withdrawal->clearAmbiguousFedapayAttempt();
+
+        $this->assertSame('paid', $withdrawal->fresh()->status);
     }
 
     public function test_process_payout_update_routes_sent_and_failed_correctly(): void
