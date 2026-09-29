@@ -111,8 +111,25 @@
                             Disponible après le {{ $this->activeSubscription->ends_at->translatedFormat('d M Y') }}
                         </span>
                     @elseif($selectedPlanId === $plan->id)
+                        @php
+                            $referralBalance = (float) Auth::user()->referral_credit_balance;
+                            $creditApplied = ($useReferralCredit && (float) $plan->price > 0 && !$trialForPlan)
+                                ? min($referralBalance, max(0, $planPrice - 1))
+                                : 0;
+                        @endphp
                         <div class="space-y-3">
                             @if((float) $plan->price > 0 && !$trialForPlan)
+                                @if($referralBalance > 0)
+                                    <label class="flex items-start gap-2 text-xs bg-terracotta-50 rounded-lg p-2.5 cursor-pointer">
+                                        <input type="checkbox" wire:model.live="useReferralCredit" class="mt-0.5 rounded border-ink-200 text-terracotta-600 focus:ring-terracotta-600">
+                                        <span>Utiliser mon crédit de parrainage <span class="font-bold">({{ number_format($referralBalance, 0, ',', ' ') }} FCFA disponible)</span></span>
+                                    </label>
+                                @endif
+                                @if($creditApplied > 0)
+                                    <p class="text-xs text-terracotta-700 font-semibold">
+                                        Crédit appliqué : - {{ number_format($creditApplied, 0, ',', ' ') }} FCFA — reste {{ number_format($planPrice - $creditApplied, 0, ',', ' ') }} FCFA à payer
+                                    </p>
+                                @endif
                                 <x-payment-methods wire:model="paymentMethod" name="subscription_payment_method" compact />
                             @endif
                             <button wire:click="choosePlan({{ $plan->id }})" wire:loading.attr="disabled" wire:target="choosePlan({{ $plan->id }})"

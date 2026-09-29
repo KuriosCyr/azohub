@@ -19,6 +19,7 @@ class Subscription extends Model
         'ends_at',
         'auto_renew',
         'reminded_at',
+        'referral_credit_applied',
     ];
 
     protected $casts = [
@@ -27,6 +28,7 @@ class Subscription extends Model
         'auto_renew' => 'boolean',
         'is_trial' => 'boolean',
         'reminded_at' => 'datetime',
+        'referral_credit_applied' => 'decimal:2',
     ];
 
     // Relations
@@ -43,9 +45,38 @@ class Subscription extends Model
     // Vérifier si l'abonnement est actif
     public function isActive(): bool
     {
-        return $this->status === 'active' 
-            && $this->starts_at <= now() 
+        return $this->status === 'active'
+            && $this->starts_at <= now()
             && $this->ends_at >= now();
+    }
+
+    // Montant réellement débité au prestataire (prix du plan réduit du crédit de parrainage
+    // éventuellement appliqué — voir applyReferralCredit()).
+    public function getTotalChargedAttribute(): float
+    {
+        return round((float) $this->plan->priceFor($this->billing_period) - (float) $this->referral_credit_applied, 2);
+    }
+
+    // Consomme le crédit de parrainage du prestataire sur cet abonnement, si demandé et pas déjà
+    // fait (idempotent, même principe que Order::applyReferralCredit()). Toujours appelé avant
+    // de construire la transaction FedaPay — au moins 1 FCFA reste toujours à payer même si le
+    // crédit disponible suffirait à tout couvrir (ex. plafond de 3000 FCFA = un mois de plan Pro
+    // pile, mais FedaPay exige un montant strictement positif). Retourne le montant appliqué.
+    public function applyReferralCredit(bool $useReferralCredit): float
+    {
+        if (!$useReferralCredit || (float) $this->referral_credit_applied > 0) {
+            return (float) $this->referral_credit_applied;
+        }
+
+        $redeemableCap = max(0, (float) $this->total_charged - 1);
+        $redeemed = $this->user->redeemReferralCredit($redeemableCap);
+
+        if ($redeemed > 0) {
+            $this->update(['referral_credit_applied' => $redeemed]);
+            $this->refresh();
+        }
+
+        return $redeemed;
     }
 
     // Activer/renouveler l'abonnement (appelé après confirmation du paiement FedaPay)

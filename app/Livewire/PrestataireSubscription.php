@@ -15,6 +15,7 @@ class PrestataireSubscription extends Component
     public ?int $selectedPlanId = null;
     public string $paymentMethod = 'mtn_momo';
     public string $billingPeriod = 'monthly'; // monthly | yearly
+    public bool $useReferralCredit = false;
 
     public function mount()
     {
@@ -166,10 +167,17 @@ class PrestataireSubscription extends Component
         ]);
 
         try {
-            $url = $payments->initiateForSubscription($subscription, $this->paymentMethod);
+            $url = $payments->initiateForSubscription($subscription, $this->paymentMethod, $this->useReferralCredit);
         } catch (\Throwable $e) {
             report($e);
-            $subscription->update(['status' => 'cancelled']);
+
+            // Un crédit de parrainage déjà consommé sur cette tentative avortée n'a servi à
+            // rien (aucune transaction FedaPay n'a abouti) — on le restitue avant d'annuler.
+            if ($subscription->referral_credit_applied > 0) {
+                $user->refundReferralCredit((float) $subscription->referral_credit_applied);
+            }
+
+            $subscription->update(['status' => 'cancelled', 'referral_credit_applied' => 0]);
 
             session()->flash('error', 'Le paiement n\'a pas pu être initié. Réessayez.');
             return;

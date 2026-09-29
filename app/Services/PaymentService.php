@@ -70,14 +70,16 @@ class PaymentService
      * Crée une transaction FedaPay pour un abonnement prestataire et renvoie l'URL
      * de paiement vers laquelle rediriger le prestataire.
      */
-    public function initiateForSubscription(Subscription $subscription, string $paymentMethod): string
+    public function initiateForSubscription(Subscription $subscription, string $paymentMethod, bool $useReferralCredit = false): string
     {
+        $subscription->applyReferralCredit($useReferralCredit);
+
         $payer = $subscription->user;
         $plan = $subscription->plan;
 
         $transaction = Transaction::create([
             'description' => "Abonnement {$plan->name}" . ($subscription->billing_period === 'yearly' ? ' (annuel)' : '') . ' - Azohub',
-            'amount' => (int) round($plan->priceFor($subscription->billing_period)),
+            'amount' => (int) round((float) $subscription->total_charged),
             'currency' => ['iso' => 'XOF'],
             'callback_url' => route('payments.subscription-callback', ['subscription' => $subscription->id]),
             'customer' => [
@@ -98,7 +100,7 @@ class PaymentService
             'transaction_id' => (string) $transaction->id,
             'payment_method' => $paymentMethod,
             'phone_number' => $payer->phone,
-            'amount' => $plan->priceFor($subscription->billing_period),
+            'amount' => $subscription->total_charged,
             'status' => 'pending',
             'type' => 'subscription',
             'gateway_reference' => $transaction->reference ?? null,
