@@ -19,12 +19,14 @@ class Dispute extends Model
         'status',
         'admin_note',
         'resolution',
+        'refund_amount',
         'resolved_at',
         'resolved_by',
     ];
 
     protected $casts = [
         'evidences' => 'array',
+        'refund_amount' => 'decimal:2',
         'resolved_at' => 'datetime',
     ];
 
@@ -53,9 +55,11 @@ class Dispute extends Model
     // résolution relancée avec une résolution différente) pourrait déclencher deux
     // branches d'argent contradictoires (ex. paiement prestataire ET remboursement
     // client) sur le même litige.
-    public function resolve(string $resolution, int $adminId, ?string $action = null): void
+    // $refundAmount : uniquement pour resolution = 'partial_refund' — montant exact rendu au
+    // client, le prestataire recevant automatiquement le reste (cf. Order::partialRefund()).
+    public function resolve(string $resolution, int $adminId, ?float $refundAmount = null): void
     {
-        DB::transaction(function () use ($resolution, $adminId) {
+        DB::transaction(function () use ($resolution, $adminId, $refundAmount) {
             $dispute = static::whereKey($this->id)->lockForUpdate()->first();
 
             if (!$dispute || $dispute->status === 'resolved') {
@@ -65,13 +69,16 @@ class Dispute extends Model
             $dispute->update([
                 'resolution' => $resolution,
                 'status' => 'resolved',
+                'refund_amount' => $resolution === 'partial_refund' ? $refundAmount : null,
                 'resolved_at' => now(),
                 'resolved_by' => $adminId,
             ]);
 
             match ($resolution) {
-                'refund_client', 'partial_refund' => $dispute->order->refund(
-                    'Litige résolu : ' . ($resolution === 'partial_refund' ? 'remboursement partiel' : 'remboursement client')
+                'refund_client' => $dispute->order->refund('Litige résolu : remboursement client'),
+                'partial_refund' => $dispute->order->partialRefund(
+                    (float) $refundAmount,
+                    'Litige résolu : remboursement partiel'
                 ),
                 'pay_prestataire' => $dispute->order->releasePayment(),
                 // "no_action" : la commande n'était pas réellement bloquée (litige

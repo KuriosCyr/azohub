@@ -7,6 +7,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\HtmlString;
@@ -95,6 +96,11 @@ class DisputeForm
                             ->disabled(),
                         DateTimePicker::make('resolved_at')
                             ->label('Résolu le')
+                            ->disabled(),
+                        TextInput::make('refund_amount')
+                            ->label('Montant remboursé au client')
+                            ->numeric()
+                            ->suffix('FCFA')
                             ->disabled(),
                         Textarea::make('admin_note')
                             ->label('Note admin')

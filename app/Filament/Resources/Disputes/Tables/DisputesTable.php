@@ -8,8 +8,10 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -117,16 +119,26 @@ class DisputesTable
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (Dispute $record) => in_array($record->status, ['open', 'under_review']))
-                    ->form([
+                    ->form(fn (Dispute $record) => [
                         Select::make('resolution')
                             ->label('Décision')
                             ->options([
                                 'refund_client' => 'Rembourser le client (commande annulée)',
                                 'pay_prestataire' => 'Payer le prestataire (commande complétée)',
-                                'partial_refund' => 'Remboursement partiel (à traiter manuellement)',
+                                'partial_refund' => 'Remboursement partiel (montant à préciser)',
                                 'no_action' => 'Aucune action (litige non fondé)',
                             ])
+                            ->live()
                             ->required(),
+                        TextInput::make('refund_amount')
+                            ->label('Montant à rembourser au client')
+                            ->numeric()
+                            ->suffix('FCFA')
+                            ->minValue(1)
+                            ->maxValue((float) $record->order->amount)
+                            ->helperText('Commande de ' . number_format((float) $record->order->amount, 0, ',', ' ') . ' FCFA. Le prestataire reçoit automatiquement le reste, réduit dans la même proportion.')
+                            ->visible(fn (Get $get) => $get('resolution') === 'partial_refund')
+                            ->required(fn (Get $get) => $get('resolution') === 'partial_refund'),
                         Textarea::make('admin_note')
                             ->label('Note / justification')
                             ->required()
@@ -136,7 +148,7 @@ class DisputesTable
                         $record->admin_note = $data['admin_note'];
                         $record->save();
 
-                        $record->resolve($data['resolution'], Auth::id());
+                        $record->resolve($data['resolution'], Auth::id(), isset($data['refund_amount']) ? (float) $data['refund_amount'] : null);
 
                         Notification::make()
                             ->title('Litige résolu pour la commande ' . $record->order->order_number)

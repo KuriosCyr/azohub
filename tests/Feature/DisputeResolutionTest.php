@@ -79,16 +79,26 @@ class DisputeResolutionTest extends TestCase
         $this->assertNotNull($dispute->resolved_at);
     }
 
-    public function test_partial_refund_behaves_like_refund_client_on_the_order(): void
+    public function test_partial_refund_splits_between_client_and_prestataire_proportionally(): void
     {
+        // Commande à 10 000 FCFA, prestataire_amount = 9 000. Remboursement partiel de 4 000
+        // FCFA au client (40% du prix) : le prestataire doit recevoir 60% de sa part, soit 5 400.
         $order = $this->makeDisputedOrder();
         $dispute = $order->dispute;
+        $prestataire = $order->prestataire;
 
-        $dispute->resolve('partial_refund', $this->adminUser->id);
+        $dispute->resolve('partial_refund', $this->adminUser->id, 4000.0);
 
         $order->refresh();
-        $this->assertSame('cancelled', $order->status);
+        $prestataire->refresh();
+
+        $this->assertSame('completed', $order->status);
         $this->assertSame('refund_pending', $order->payment_status);
+        $this->assertEquals(5400, $prestataire->wallet_balance);
+        $this->assertSame('refund_pending', $order->payments()->latest()->first()->status);
+
+        $dispute->refresh();
+        $this->assertEquals(4000, $dispute->refund_amount);
     }
 
     public function test_pay_prestataire_completes_order_and_credits_wallet_immediately(): void

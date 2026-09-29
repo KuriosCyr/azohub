@@ -313,6 +313,46 @@ class Order extends Model
         $this->payments()->where('status', 'refund_pending')->update(['status' => 'refunded']);
     }
 
+    // Litige tranché "à moitié" : le client récupère $clientRefundAmount (à traiter
+    // manuellement, comme refund()) et le prestataire reçoit tout de suite le reste de sa part,
+    // réduite dans la même proportion que le remboursement client (ex. un remboursement de 50%
+    // du prix laisse le prestataire avec 50% de ce qu'il aurait touché en cas de livraison
+    // complète). Verrouillée comme releasePayment() : sans ça, une résolution relancée
+    // créditerait deux fois le portefeuille du prestataire.
+    public function partialRefund(float $clientRefundAmount, ?string $reason = null): void
+    {
+        DB::transaction(function () use ($clientRefundAmount, $reason) {
+            $order = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if (!$order || in_array($order->payment_status, ['released', 'refunded'], true)) {
+                return;
+            }
+
+            $refundRatio = $order->amount > 0 ? min(1, max(0, $clientRefundAmount / (float) $order->amount)) : 1;
+            $prestatairePayout = round((float) $order->prestataire_amount * (1 - $refundRatio), 2);
+
+            $order->update([
+                'status' => 'completed',
+                'payment_status' => 'refund_pending',
+                'validated_at' => $order->validated_at ?? now(),
+                'cancellation_reason' => $reason ?? $order->cancellation_reason,
+            ]);
+
+            if ($order->prestataire && $prestatairePayout > 0) {
+                $order->prestataire->increment('wallet_balance', $prestatairePayout);
+            }
+
+            $successfulPayment = $order->payments()->where('status', 'success')->latest()->first();
+            $successfulPayment?->update(['status' => 'refund_pending']);
+
+            // Pas d'incrément de completed_orders/total_orders ici (contrairement à
+            // releasePayment()) : une commande soldée par un litige ne doit pas gonfler
+            // artificiellement la réputation du prestataire comme une livraison réussie.
+        });
+
+        $this->refresh();
+    }
+
     // Libérer le paiement au prestataire (validation client, auto-validation après
     // délai, ou litige tranché en sa faveur). Verrouillée en transaction et gardée
     // par un contrôle de payment_status pour éviter un double crédit du portefeuille
