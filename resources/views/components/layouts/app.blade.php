@@ -50,7 +50,11 @@
     <meta name="twitter:image" content="{{ $pageImage }}">
 
     @if($jsonLd)
-        <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+        {{-- JSON_HEX_TAG encode < et > en </> : sans ça, un nom de prestataire ou un
+             titre de service contenant "</script>" (non modéré, modifiable à tout moment) referme
+             cette balise et injecte son propre <script> juste après (XSS). JSON_HEX_AMP fait de
+             même pour "&", qui peut sinon casser certains parseurs HTML en contexte <script>. --}}
+        <script type="application/ld+json">{!! json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
     @endif
 
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
