@@ -115,10 +115,6 @@ class Payment extends Model
         $order->client->notify(new OrderConfirmed($order));
 
         $this->finalizeNegotiatedOrder($order);
-
-        // Sans effet si ce n'est pas sa toute première commande payée, ou si personne ne l'a
-        // parrainé (voir User::maybeRewardReferrer()).
-        $order->client->maybeRewardReferrer();
     }
 
     // Un seul abonnement actif à la fois : celui-ci remplace tout abonnement en cours.

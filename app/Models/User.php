@@ -38,8 +38,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         });
     }
 
-    // 100 FCFA par filleul récompensé (client ou prestataire) — montant volontairement modeste,
-    // ajustable ici sans toucher au reste de la logique.
+    // 100 FCFA par filleul PRESTATAIRE récompensé — montant volontairement modeste, ajustable
+    // ici sans toucher au reste de la logique. Un filleul qui reste client ne rapporte rien
+    // (choix délibéré : évite de compliquer avec deux mécaniques de récompense différentes ;
+    // pourrait changer plus tard avec des liens de parrainage séparés client/prestataire).
     public const REFERRAL_REWARD_AMOUNT = 100;
 
     // Au-delà, les filleuls suivants restent bien rattachés (referred_by, utile pour les
@@ -65,21 +67,25 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         return $this->hasMany(User::class, 'referred_by');
     }
 
-    // Appelée sur le FILLEUL (pas le parrain) au moment où sa toute première commande aboutit —
-    // paiement confirmé côté client (Payment::activatePaidOrder), paiement libéré côté
-    // prestataire (Order::releasePayment). Ne fait rien si ce filleul a déjà déclenché la
-    // récompense de son parrain une fois, si personne ne l'a parrainé, ou si son parrain a déjà
-    // atteint le plafond de filleuls récompensés.
+    // Appelée sur le FILLEUL (pas le parrain), uniquement quand son identité vient d'être
+    // approuvée par un admin (User::approveIdentityVerification()) — jamais sur la base d'une
+    // commande : un filleul resté client ne rapporte rien, et un prestataire n'a plus besoin
+    // d'attendre sa première commande (qui peut prendre des semaines, ou ne jamais arriver, tant
+    // que la plateforme manque de clients). La vérification d'identité est aussi une bien
+    // meilleure barrière anti-fraude que "commande payée puis remboursée" : elle exige un vrai
+    // document examiné et approuvé à la main par un admin. Ne fait rien si ce filleul a déjà
+    // déclenché la récompense de son parrain une fois, si personne ne l'a parrainé, ou si son
+    // parrain a déjà atteint le plafond de filleuls récompensés.
     public function maybeRewardReferrer(): void
     {
-        if (!$this->referred_by || $this->referral_reward_granted) {
+        if (!$this->isPrestataire() || !$this->referred_by || $this->referral_reward_granted) {
             return;
         }
 
         DB::transaction(function () {
             $referee = static::whereKey($this->id)->lockForUpdate()->first();
 
-            if (!$referee || !$referee->referred_by || $referee->referral_reward_granted) {
+            if (!$referee || !$referee->isPrestataire() || !$referee->referred_by || $referee->referral_reward_granted) {
                 return;
             }
 
@@ -678,6 +684,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
             'identity_verified' => true,
             'identity_rejection_reason' => null,
         ]);
+
+        // Sans effet si ce n'est pas un prestataire, si personne ne l'a parrainé, ou si c'est
+        // déjà fait — voir maybeRewardReferrer().
+        $this->maybeRewardReferrer();
     }
 
     public function rejectIdentityVerification(string $reason): void

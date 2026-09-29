@@ -16,7 +16,7 @@
         </div>
         <div>
             <h3 class="font-bold text-ink-900">Parrainez et gagnez</h3>
-            <p class="text-sm text-ink-500">100 FCFA de crédit par filleul, dès sa première commande</p>
+            <p class="text-sm text-ink-500">100 FCFA de crédit dès qu'un filleul devient prestataire et fait vérifier son identité</p>
         </div>
     </div>
 
