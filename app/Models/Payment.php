@@ -6,6 +6,7 @@ use App\Notifications\OrderConfirmed;
 use App\Notifications\PaymentConfirmed;
 use App\Notifications\ProposalRejected;
 use App\Notifications\SubscriptionActivated;
+use App\Services\AdminNotifier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -52,74 +53,110 @@ class Payment extends Model
     // Marquer comme payé (appelé par PaymentService après confirmation FedaPay)
     public function markAsPaid(?string $gatewayResponse = null)
     {
-        $this->status = 'success';
         $this->paid_at = now();
         if ($gatewayResponse !== null) {
             $this->gateway_response = $gatewayResponse;
         }
+
+        // Le client a ouvert la page FedaPay, puis annulé la commande sur Azohub (ou une autre
+        // proposition/offre a été choisie entre-temps, cf. ProposalAccept), mais a quand même
+        // terminé le paiement dans l'autre onglet — ou un double paiement (deux onglets, deux
+        // transactions réussies sur la même commande) confirme un deuxième paiement alors que le
+        // premier a déjà financé la commande. Dans les deux cas, FedaPay a bel et bien encaissé
+        // l'argent : on ne le laisse jamais "success" sans suite (ce qui le rendrait invisible
+        // côté Azohub, sans remboursement prévu), on le marque à rembourser manuellement et on
+        // alerte l'admin. On ne touche pas à la commande elle-même : son statut actuel est déjà
+        // ce qu'il doit être (annulée, ou déjà financée par un autre paiement) — le resurrectir
+        // ici serait pire que ne rien faire.
+        if ($this->order && $this->order->status !== 'pending_payment') {
+            $this->status = 'refund_pending';
+            $this->save();
+
+            AdminNotifier::actionRequired(
+                'Paiement reçu sur une commande non payable',
+                "Le paiement de {$this->amount} FCFA (transaction {$this->transaction_id}) pour la commande {$this->order->order_number} a été confirmé par FedaPay, mais la commande n'est plus en attente de paiement (statut actuel : {$this->order->status}). Remboursement à traiter manuellement.",
+                route('filament.admin.resources.orders.edit', $this->order),
+            );
+
+            return;
+        }
+
+        $this->status = 'success';
         $this->save();
 
-        // La commande passe en "paid" et le paiement reste bloqué en escrow
-        // jusqu'à validation de la livraison par le client (cf. Order::releasePayment()).
         if ($this->order && $this->order->status === 'pending_payment') {
-            // Compte à rebours de livraison : démarre tout de suite pour une commande directe
-            // (le service et son délai sont déjà définis) — pour une commande négociée, il
-            // démarre seulement quand le prestataire accepte (cf. OrderController::accept()),
-            // le travail n'ayant pas encore été formellement cadré avant ça.
-            $expectedDeliveryAt = (!$this->order->isNegotiated() && $this->order->delivery_time)
-                ? now()->addDays($this->order->delivery_time)
-                : null;
-
-            $this->order->update([
-                'status' => 'paid',
-                'payment_status' => 'held',
-                'expected_delivery_at' => $expectedDeliveryAt,
-            ]);
-
-            $this->order->prestataire->notify(new PaymentConfirmed($this->order));
-            $this->order->client->notify(new OrderConfirmed($this->order));
-
-            $this->finalizeNegotiatedOrder($this->order);
+            $this->activatePaidOrder($this->order);
         }
 
-        // Un seul abonnement actif à la fois : celui-ci remplace tout abonnement en cours.
-        // Un paiement (carte notamment) peut rester bloqué côté FedaPay puis se confirmer
-        // très en retard, après que l'utilisateur a entre-temps déjà payé et activé un autre
-        // plan pendant que celui-ci restait "pending" en attente. Sans ce garde-fou, cette
-        // confirmation tardive écraserait l'abonnement actif actuel avec un choix abandonné
-        // depuis longtemps — donc on vérifie qu'aucun abonnement plus récent n'est déjà actif
-        // avant de traiter celui-ci.
         if ($this->subscription && $this->subscription->status === 'pending') {
-            $supersededByNewerActive = Subscription::where('user_id', $this->subscription->user_id)
-                ->where('status', 'active')
-                ->where('created_at', '>', $this->subscription->created_at)
-                ->exists();
-
-            if ($supersededByNewerActive) {
-                \Illuminate\Support\Facades\Log::warning(
-                    "Paiement #{$this->id} confirmé tardivement pour l'abonnement #{$this->subscription->id}, " .
-                    "mais un abonnement plus récent est déjà actif pour cet utilisateur — ignoré pour ne pas " .
-                    "écraser l'abonnement actif actuel avec un choix abandonné entre-temps."
-                );
-            } else {
-                $others = Subscription::where('user_id', $this->subscription->user_id)
-                    ->where('id', '!=', $this->subscription->id)
-                    ->where('status', 'active');
-
-                // Le temps restant sur l'abonnement remplacé est reporté sur le nouveau, que ce
-                // soit un renouvellement anticipé du même plan ou une montée en gamme (Pro ->
-                // Premium) : PrestataireSubscription::choosePlan() ne laisse jamais arriver
-                // jusqu'ici un changement qui ferait perdre du temps déjà payé (une baisse de
-                // gamme y est bloquée avant le paiement), donc tout ce qui atteint ce code est
-                // soit un renouvellement, soit une amélioration — jamais une perte.
-                $carryOverFrom = (clone $others)->max('ends_at');
-
-                $others->update(['status' => 'cancelled']);
-
-                $this->subscription->renew($carryOverFrom ? \Carbon\Carbon::parse($carryOverFrom) : null);
-                $this->subscription->user->notify(new SubscriptionActivated($this->subscription));
-            }
+            $this->activatePendingSubscription($this->subscription);
         }
+    }
+
+    // La commande passe en "paid" et le paiement reste bloqué en escrow jusqu'à validation de
+    // la livraison par le client (cf. Order::releasePayment()).
+    private function activatePaidOrder(Order $order): void
+    {
+        // Compte à rebours de livraison : démarre tout de suite pour une commande directe
+        // (le service et son délai sont déjà définis) — pour une commande négociée, il
+        // démarre seulement quand le prestataire accepte (cf. OrderController::accept()),
+        // le travail n'ayant pas encore été formellement cadré avant ça.
+        $expectedDeliveryAt = (!$order->isNegotiated() && $order->delivery_time)
+            ? now()->addDays($order->delivery_time)
+            : null;
+
+        $order->update([
+            'status' => 'paid',
+            'payment_status' => 'held',
+            'expected_delivery_at' => $expectedDeliveryAt,
+        ]);
+
+        $order->prestataire->notify(new PaymentConfirmed($order));
+        $order->client->notify(new OrderConfirmed($order));
+
+        $this->finalizeNegotiatedOrder($order);
+    }
+
+    // Un seul abonnement actif à la fois : celui-ci remplace tout abonnement en cours.
+    // Un paiement (carte notamment) peut rester bloqué côté FedaPay puis se confirmer
+    // très en retard, après que l'utilisateur a entre-temps déjà payé et activé un autre
+    // plan pendant que celui-ci restait "pending" en attente. Sans ce garde-fou, cette
+    // confirmation tardive écraserait l'abonnement actif actuel avec un choix abandonné
+    // depuis longtemps — donc on vérifie qu'aucun abonnement plus récent n'est déjà actif
+    // avant de traiter celui-ci.
+    private function activatePendingSubscription(Subscription $subscription): void
+    {
+        $supersededByNewerActive = Subscription::where('user_id', $subscription->user_id)
+            ->where('status', 'active')
+            ->where('created_at', '>', $subscription->created_at)
+            ->exists();
+
+        if ($supersededByNewerActive) {
+            \Illuminate\Support\Facades\Log::warning(
+                "Paiement #{$this->id} confirmé tardivement pour l'abonnement #{$subscription->id}, " .
+                "mais un abonnement plus récent est déjà actif pour cet utilisateur — ignoré pour ne pas " .
+                "écraser l'abonnement actif actuel avec un choix abandonné entre-temps."
+            );
+
+            return;
+        }
+
+        $others = Subscription::where('user_id', $subscription->user_id)
+            ->where('id', '!=', $subscription->id)
+            ->where('status', 'active');
+
+        // Le temps restant sur l'abonnement remplacé est reporté sur le nouveau, que ce
+        // soit un renouvellement anticipé du même plan ou une montée en gamme (Pro ->
+        // Premium) : PrestataireSubscription::choosePlan() ne laisse jamais arriver
+        // jusqu'ici un changement qui ferait perdre du temps déjà payé (une baisse de
+        // gamme y est bloquée avant le paiement), donc tout ce qui atteint ce code est
+        // soit un renouvellement, soit une amélioration — jamais une perte.
+        $carryOverFrom = (clone $others)->max('ends_at');
+
+        $others->update(['status' => 'cancelled']);
+
+        $subscription->renew($carryOverFrom ? \Carbon\Carbon::parse($carryOverFrom) : null);
+        $subscription->user->notify(new SubscriptionActivated($subscription));
     }
 
     // Commande issue d'une proposition ou d'une offre personnalisée : c'est seulement maintenant
