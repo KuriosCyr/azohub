@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Service;
 use App\Models\ServicePackage;
 use App\Services\PaymentService;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -84,6 +85,31 @@ class OrderCreate extends Component
             ];
         }
 
+        // Une tentative précédente abandonnée (ex. code promo invalide) pour ce même service est
+        // reprise plutôt que d'en créer une nouvelle (voir plus bas) — cherchée dès maintenant
+        // pour savoir, avant d'écraser quoi que ce soit, s'il y a d'anciens fichiers à conserver
+        // ou à effacer du disque (audit externe : sans ça, un nouvel envoi de fichiers sur un
+        // nouvel essai laissait les précédents orphelins sur le disque, plus référencés nulle
+        // part).
+        $existingOrder = Order::where('client_id', auth()->id())
+            ->where('service_id', $this->service->id)
+            ->where('service_package_id', $this->resolvedPackage?->id)
+            ->where('status', 'pending_payment')
+            ->first();
+
+        if (!empty($uploadedAttachments)) {
+            // De nouveaux fichiers remplacent les précédents : ceux-ci ne sont plus référencés
+            // nulle part, on les efface du disque avant d'écrire les nouveaux.
+            foreach ($existingOrder?->attachments ?? [] as $old) {
+                Storage::disk('local')->delete($old['path']);
+            }
+        } elseif ($existingOrder) {
+            // Aucun nouveau fichier sélectionné sur cette tentative : conserve ceux déjà
+            // envoyés lors de la précédente, au lieu de les effacer de la commande (ils
+            // restent utilisables sur le disque).
+            $uploadedAttachments = $existingOrder->attachments ?? [];
+        }
+
         $pkg = $this->resolvedPackage;
         $price = $pkg?->price ?? $this->service->price;
         $deliveryTime = $pkg?->delivery_time ?? $this->service->delivery_time;
@@ -112,12 +138,10 @@ class OrderCreate extends Component
         // Une tentative précédente abandonnée pour ce même service (ex. code promo invalide,
         // paiement jamais finalisé) est reprise plutôt que d'en créer une nouvelle à chaque
         // essai — comme le font déjà ProposalAccept/CustomOfferAccept (audit externe : sans ça,
-        // chaque nouvel essai laissait une ligne "jamais payée" orpheline en base).
-        $order = Order::where('client_id', auth()->id())
-            ->where('service_id', $this->service->id)
-            ->where('service_package_id', $pkg?->id)
-            ->where('status', 'pending_payment')
-            ->first();
+        // chaque nouvel essai laissait une ligne "jamais payée" orpheline en base). $existingOrder
+        // (cherchée plus haut, avant de décider du sort des fichiers déjà envoyés) est la même
+        // commande.
+        $order = $existingOrder;
 
         if ($order) {
             $order->update($orderData);
