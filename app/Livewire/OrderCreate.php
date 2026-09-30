@@ -92,7 +92,7 @@ class OrderCreate extends Component
         $commission = round($price * $this->service->prestataire->commissionRate(), 2);
         $clientFee = round($price * Order::CLIENT_FEE_RATE, 2);
 
-        $order = Order::create([
+        $orderData = [
             'client_id'        => auth()->id(),
             'prestataire_id'   => $this->service->user_id,
             'service_id'       => $this->service->id,
@@ -107,7 +107,23 @@ class OrderCreate extends Component
             'revisions_included' => $revisionsIncluded,
             'status'           => 'pending_payment',
             'payment_status'   => 'pending',
-        ]);
+        ];
+
+        // Une tentative précédente abandonnée pour ce même service (ex. code promo invalide,
+        // paiement jamais finalisé) est reprise plutôt que d'en créer une nouvelle à chaque
+        // essai — comme le font déjà ProposalAccept/CustomOfferAccept (audit externe : sans ça,
+        // chaque nouvel essai laissait une ligne "jamais payée" orpheline en base).
+        $order = Order::where('client_id', auth()->id())
+            ->where('service_id', $this->service->id)
+            ->where('service_package_id', $pkg?->id)
+            ->where('status', 'pending_payment')
+            ->first();
+
+        if ($order) {
+            $order->update($orderData);
+        } else {
+            $order = Order::create($orderData);
+        }
 
         if ($promoError = $order->applyPromoCode($this->promoCode)) {
             $this->addError('promoCode', $promoError);
