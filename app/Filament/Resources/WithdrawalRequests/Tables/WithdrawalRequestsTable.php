@@ -128,9 +128,22 @@ class WithdrawalRequestsTable
                     // le processus a planté juste après la réservation (avant d'obtenir un
                     // identifiant FedaPay) restait bloquée pour toujours, sans aucune action
                     // disponible pour la débloquer.
+                    // Délai de 10 min sur 'initiating' seul, sans identifiant (audit externe — 3e
+                    // audit) : resolveFedapayCustomerId() peut légitimement tourner plusieurs
+                    // dizaines de secondes (jusqu'à 20 pages) — sans ce délai, un admin pressé
+                    // pouvait débloquer un essai simplement lent (pas mort) et en déclencher un
+                    // second en parallèle, alors que le premier, toujours actif, finit par envoyer
+                    // lui aussi (voir WithdrawalRequest::markFedapayPayoutSent(), qui refuse
+                    // maintenant d'envoyer si débloqué entre-temps — ce délai reste une seconde
+                    // barrière pour éviter même de tenter ce déblocage trop tôt). Un identifiant déjà
+                    // obtenu (fedapay_payout_id !== null) signifie que ce process est déjà terminé
+                    // (réussi ou en erreur), donc pas de fenêtre de course à protéger dans ce cas.
                     ->visible(fn (WithdrawalRequest $record) => $record->status === 'pending'
                         && $record->fedapay_status !== 'sent'
-                        && ($record->fedapay_payout_id !== null || $record->fedapay_status === 'initiating'))
+                        && (
+                            $record->fedapay_payout_id !== null
+                            || ($record->fedapay_status === 'initiating' && $record->updated_at?->lt(now()->subMinutes(10)))
+                        ))
                     ->requiresConfirmation()
                     ->modalDescription('À utiliser UNIQUEMENT après avoir vérifié sur le tableau de bord FedaPay que ce virement n\'a PAS été envoyé. Débloquer sans vérifier risque un double paiement si l\'argent est en réalité déjà parti.')
                     ->action(function (WithdrawalRequest $record) {

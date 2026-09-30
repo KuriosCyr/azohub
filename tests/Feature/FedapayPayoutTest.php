@@ -33,6 +33,17 @@ class FedapayPayoutTest extends TestCase
         ]);
     }
 
+    // initiatePayout() réserve toujours la demande ('initiating', sous verrou) AVANT d'appeler
+    // markFedapayPayoutSent() — ce helper reproduit cette précondition réelle, que
+    // markFedapayPayoutSent() exige maintenant strictement (voir test dédié plus bas).
+    private function markSent(WithdrawalRequest $withdrawal, string $payoutId): WithdrawalRequest
+    {
+        $withdrawal->update(['fedapay_status' => 'initiating']);
+        $withdrawal->markFedapayPayoutSent($payoutId);
+
+        return $withdrawal->fresh();
+    }
+
     public function test_a_fresh_withdrawal_can_be_retried_via_fedapay(): void
     {
         $withdrawal = $this->makePendingWithdrawal();
@@ -43,7 +54,7 @@ class FedapayPayoutTest extends TestCase
     {
         $withdrawal = $this->makePendingWithdrawal();
 
-        $withdrawal->markFedapayPayoutSent('payout_123');
+        $this->markSent($withdrawal, 'payout_123');
 
         $this->assertFalse($withdrawal->fresh()->canRetryFedapayPayout());
         $this->assertSame('pending', $withdrawal->fresh()->fedapay_status);
@@ -54,7 +65,7 @@ class FedapayPayoutTest extends TestCase
     public function test_confirming_a_payout_marks_the_withdrawal_paid(): void
     {
         $withdrawal = $this->makePendingWithdrawal();
-        $withdrawal->markFedapayPayoutSent('payout_123');
+        $this->markSent($withdrawal, 'payout_123');
 
         $withdrawal->confirmFedapayPayout();
 
@@ -74,7 +85,7 @@ class FedapayPayoutTest extends TestCase
     public function test_a_failed_payout_does_not_touch_the_wallet_and_allows_a_retry(): void
     {
         $withdrawal = $this->makePendingWithdrawal();
-        $withdrawal->markFedapayPayoutSent('payout_123');
+        $this->markSent($withdrawal, 'payout_123');
 
         $withdrawal->failFedapayPayout('Numéro invalide');
 
@@ -89,7 +100,7 @@ class FedapayPayoutTest extends TestCase
     public function test_rejecting_after_a_failed_payout_credits_the_wallet_only_once(): void
     {
         $withdrawal = $this->makePendingWithdrawal();
-        $withdrawal->markFedapayPayoutSent('payout_123');
+        $this->markSent($withdrawal, 'payout_123');
         $withdrawal->failFedapayPayout('Numéro invalide');
         $admin = User::factory()->create(['role' => 'admin']);
 
@@ -117,7 +128,7 @@ class FedapayPayoutTest extends TestCase
     public function test_an_ambiguous_payout_blocks_retry_until_manually_cleared(): void
     {
         $withdrawal = $this->makePendingWithdrawal();
-        $withdrawal->markFedapayPayoutSent('payout_ambigu');
+        $this->markSent($withdrawal, 'payout_ambigu');
 
         $this->assertFalse($withdrawal->fresh()->canRetryFedapayPayout());
 
@@ -130,7 +141,7 @@ class FedapayPayoutTest extends TestCase
     public function test_clearing_an_already_confirmed_payout_does_nothing(): void
     {
         $withdrawal = $this->makePendingWithdrawal();
-        $withdrawal->markFedapayPayoutSent('payout_123');
+        $this->markSent($withdrawal, 'payout_123');
         $withdrawal->confirmFedapayPayout();
 
         $withdrawal->clearAmbiguousFedapayAttempt();
@@ -143,19 +154,19 @@ class FedapayPayoutTest extends TestCase
         $service = app(PaymentService::class);
 
         $sentWithdrawal = $this->makePendingWithdrawal();
-        $sentWithdrawal->markFedapayPayoutSent('payout_sent');
+        $this->markSent($sentWithdrawal, 'payout_sent');
         $service->processPayoutUpdate('payout_sent', 'sent', null);
         $this->assertSame('paid', $sentWithdrawal->fresh()->status);
 
         $failedWithdrawal = $this->makePendingWithdrawal();
-        $failedWithdrawal->markFedapayPayoutSent('payout_failed');
+        $this->markSent($failedWithdrawal, 'payout_failed');
         $service->processPayoutUpdate('payout_failed', 'failed', 'Solde FedaPay insuffisant');
         $this->assertSame('pending', $failedWithdrawal->fresh()->status);
         $this->assertSame('failed', $failedWithdrawal->fresh()->fedapay_status);
 
         // Un statut encore intermédiaire ne doit rien changer.
         $pendingWithdrawal = $this->makePendingWithdrawal();
-        $pendingWithdrawal->markFedapayPayoutSent('payout_still_pending');
+        $this->markSent($pendingWithdrawal, 'payout_still_pending');
         $service->processPayoutUpdate('payout_still_pending', 'pending', null);
         $this->assertSame('pending', $pendingWithdrawal->fresh()->status);
         $this->assertSame('pending', $pendingWithdrawal->fresh()->fedapay_status);
@@ -181,7 +192,7 @@ class FedapayPayoutTest extends TestCase
     {
         $withdrawal = $this->makePendingWithdrawal();
 
-        $withdrawal->markFedapayPayoutSent('payout_historique');
+        $this->markSent($withdrawal, 'payout_historique');
 
         $this->assertDatabaseHas('fedapay_payout_attempts', [
             'withdrawal_request_id' => $withdrawal->id,
@@ -197,7 +208,7 @@ class FedapayPayoutTest extends TestCase
         Notification::fake();
         $admin = User::factory()->create(['role' => 'admin']);
         $withdrawal = $this->makePendingWithdrawal();
-        $withdrawal->markFedapayPayoutSent('payout_debloque');
+        $this->markSent($withdrawal, 'payout_debloque');
         $withdrawal->clearAmbiguousFedapayAttempt();
 
         app(PaymentService::class)->processPayoutUpdate('payout_debloque', 'sent', null);
@@ -220,5 +231,46 @@ class FedapayPayoutTest extends TestCase
 
         $this->assertNull($withdrawal->fresh()->fedapay_status);
         $this->assertTrue($withdrawal->fresh()->canRetryFedapayPayout());
+    }
+
+    // Corrigé suite à un 3e audit externe : initiatePayout() peut mettre plusieurs dizaines de
+    // secondes à obtenir un identifiant FedaPay (resolveFedapayCustomerId(), jusqu'à 20 pages) —
+    // si la demande est débloquée manuellement PENDANT ce délai (fedapay_status redevient null),
+    // markFedapayPayoutSent() doit refuser d'enregistrer cet identifiant et surtout de laisser
+    // PaymentService::initiatePayout() appeler sendNow() ensuite, pour ne jamais risquer un double
+    // virement réel si un second essai a été déclenché entre-temps.
+    public function test_marking_a_payout_sent_refuses_once_the_request_was_unlocked_in_the_meantime(): void
+    {
+        $withdrawal = $this->makePendingWithdrawal();
+        // Débloquée avant même d'avoir été réclamée ('initiating') : simule un admin qui a cliqué
+        // "Débloquer" pendant que ce virement était encore en préparation.
+        $withdrawal->update(['fedapay_status' => null]);
+
+        $sent = $withdrawal->markFedapayPayoutSent('payout_trop_tard');
+
+        $this->assertFalse($sent, 'Ne doit jamais prétendre avoir enregistré l\'envoi si la demande a été débloquée entre-temps.');
+        $this->assertNull($withdrawal->fresh()->fedapay_payout_id);
+        // L'historique garde quand même une trace : ce virement a bien été CRÉÉ côté FedaPay (même
+        // si jamais envoyé), utile pour qu'un futur webhook orphelin sur cet identifiant puisse
+        // être rattaché à quelque chose (voir PaymentService::processPayoutUpdate()).
+        $this->assertDatabaseHas('fedapay_payout_attempts', [
+            'withdrawal_request_id' => $withdrawal->id,
+            'fedapay_payout_id' => 'payout_trop_tard',
+        ]);
+    }
+
+    // Corrigé suite à un 3e audit externe : FedaPay envoie plusieurs webhooks par virement
+    // (pending, processing, sent...) — un virement débloqué/historique ne doit déclencher qu'UNE
+    // alerte admin (sur 'sent' ou 'failed'), pas une par étape intermédiaire reçue avant.
+    public function test_an_unknown_payout_id_does_not_alert_on_an_intermediate_status(): void
+    {
+        Notification::fake();
+        User::factory()->create(['role' => 'admin']);
+        $service = app(PaymentService::class);
+
+        $service->processPayoutUpdate('payout_inconnu', 'pending', null);
+        $service->processPayoutUpdate('payout_inconnu', 'processing', null);
+
+        Notification::assertNothingSent();
     }
 }

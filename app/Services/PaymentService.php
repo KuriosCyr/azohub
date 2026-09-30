@@ -251,7 +251,23 @@ class PaymentService
         // sur le tableau de bord FedaPay (WithdrawalRequest::clearAmbiguousFedapayAttempt())
         // peut ensuite débloquer la demande — jamais un nouvel essai automatique, qui risquerait
         // un double envoi si le premier avait en réalité réussi.
-        $claimed->markFedapayPayoutSent((string) $payout->id);
+        $sent = $claimed->markFedapayPayoutSent((string) $payout->id);
+
+        // La demande a été débloquée manuellement pendant qu'on préparait ce virement (audit
+        // externe — 3e audit, voir markFedapayPayoutSent()) : on N'ENVOIE PAS cet argent — un
+        // autre essai a pu être déclenché entre-temps, et sendNow() ici causerait un vrai double
+        // paiement. Le virement FedaPay créé (mais jamais envoyé) reste orphelin côté FedaPay,
+        // sans impact financier ; on alerte l'admin pour qu'il vérifie qu'aucun double paiement
+        // n'a eu lieu via l'autre essai.
+        if (!$sent) {
+            AdminNotifier::actionRequired(
+                'Virement FedaPay créé mais volontairement non envoyé (double essai détecté)',
+                "Un virement FedaPay ({$payout->id}, {$claimed->amount} FCFA pour {$claimed->prestataire->name}) a été créé mais PAS envoyé : la demande de retrait #{$claimed->id} a été débloquée manuellement pendant sa préparation, signe qu'un autre essai est peut-être en cours ou a déjà eu lieu. Vérifiez sur le tableau de bord FedaPay avant toute nouvelle action, pour écarter un double paiement.",
+                route('filament.admin.resources.withdrawal-requests.index'),
+            );
+
+            return;
+        }
 
         $phone = preg_replace('/\D/', '', (string) $claimed->phone_number);
 
@@ -350,6 +366,14 @@ class PaymentService
             // voir FedapayPayoutAttempt) — si elle a ensuite été repayée autrement, ce webhook
             // signale potentiellement un double paiement. Toujours alerter l'admin plutôt que de
             // laisser ça invisible.
+            // Seul 'sent'/'failed' déclenche une alerte (audit externe — 3e audit) : FedaPay
+            // envoie plusieurs webhooks par virement (pending, processing, sent...) — sans ce
+            // filtre, un même virement débloqué/historique déclenchait une alerte distincte à
+            // chaque étape intermédiaire, avant même de savoir si l'argent est vraiment parti.
+            if (!in_array($status, ['sent', 'failed'], true)) {
+                return;
+            }
+
             $historicalAttempt = FedapayPayoutAttempt::where('fedapay_payout_id', $payoutId)->first();
 
             AdminNotifier::actionRequired(

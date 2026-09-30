@@ -92,19 +92,41 @@ class WithdrawalRequest extends Model
     // seulement qu'un essai est EN COURS (fedapay_payout_id), sans toucher au statut métier
     // (reste 'pending') tant que la confirmation (webhook) n'est pas arrivée — voir
     // canRetryFedapayPayout(), qui empêche un second essai tant que celui-ci n'a pas échoué.
-    public function markFedapayPayoutSent(string $payoutId): void
+    // Retourne true si l'identifiant a bien été enregistré — false si la demande a été débloquée
+    // manuellement (clearAmbiguousFedapayAttempt()) PENDANT que ce virement se préparait (audit
+    // externe — 3e audit) : resolveFedapayCustomerId() peut paginer jusqu'à 20 fois avant d'arriver
+    // ici, laissant une fenêtre où un admin pressé peut débloquer un essai en réalité toujours en
+    // cours (pas mort) et en déclencher un second, réel, en parallèle. PaymentService::
+    // initiatePayout() n'appelle sendNow() — l'envoi réel de l'argent — que si ceci renvoie true,
+    // pour ne jamais risquer un double paiement sur cette fenêtre.
+    public function markFedapayPayoutSent(string $payoutId): bool
     {
-        $this->update([
-            'fedapay_payout_id' => $payoutId,
-            'fedapay_status' => 'pending',
-        ]);
+        $claimed = DB::transaction(function () use ($payoutId) {
+            $record = static::whereKey($this->id)->lockForUpdate()->first();
 
-        // Historique permanent, jamais effacé même par clearAmbiguousFedapayAttempt() — voir
-        // FedapayPayoutAttempt et PaymentService::processPayoutUpdate() (audit externe).
+            if (!$record || $record->fedapay_status !== 'initiating') {
+                return false;
+            }
+
+            $record->update([
+                'fedapay_payout_id' => $payoutId,
+                'fedapay_status' => 'pending',
+            ]);
+
+            return true;
+        });
+
+        // Historique permanent même si l'essai est abandonné ci-dessus, jamais effacé même par
+        // clearAmbiguousFedapayAttempt() — voir FedapayPayoutAttempt et PaymentService::
+        // processPayoutUpdate() (audit externe).
         FedapayPayoutAttempt::create([
             'withdrawal_request_id' => $this->id,
             'fedapay_payout_id' => $payoutId,
         ]);
+
+        $this->refresh();
+
+        return $claimed;
     }
 
     public function canRetryFedapayPayout(): bool
