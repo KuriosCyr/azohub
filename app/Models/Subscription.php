@@ -70,7 +70,7 @@ class Subscription extends Model
         }
 
         $redeemableCap = max(0, (float) $this->total_charged - 1);
-        $redeemed = $this->user->redeemReferralCredit($redeemableCap);
+        $redeemed = $this->user->redeemReferralCredit($redeemableCap, $this);
 
         if ($redeemed > 0) {
             $this->update(['referral_credit_applied' => $redeemed]);
@@ -118,7 +118,7 @@ class Subscription extends Model
             }
 
             if ((float) $subscription->referral_credit_applied > 0) {
-                $subscription->user->refundReferralCredit((float) $subscription->referral_credit_applied);
+                $subscription->user->refundReferralCredit((float) $subscription->referral_credit_applied, $subscription);
             }
 
             $subscription->update([

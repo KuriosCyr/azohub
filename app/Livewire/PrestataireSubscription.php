@@ -174,7 +174,7 @@ class PrestataireSubscription extends Component
             // Un crédit de parrainage déjà consommé sur cette tentative avortée n'a servi à
             // rien (aucune transaction FedaPay n'a abouti) — on le restitue avant d'annuler.
             if ($subscription->referral_credit_applied > 0) {
-                $user->refundReferralCredit((float) $subscription->referral_credit_applied);
+                $user->refundReferralCredit((float) $subscription->referral_credit_applied, $subscription);
             }
 
             $subscription->update(['status' => 'cancelled', 'referral_credit_applied' => 0]);

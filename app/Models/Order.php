@@ -147,7 +147,7 @@ class Order extends Model
         }
 
         $redeemableCap = max(0, (float) $this->total_charged - 1);
-        $redeemed = $this->client->redeemReferralCredit($redeemableCap);
+        $redeemed = $this->client->redeemReferralCredit($redeemableCap, $this);
 
         if ($redeemed > 0) {
             $this->update(['referral_credit_applied' => $redeemed]);
@@ -454,7 +454,7 @@ class Order extends Model
             ]);
 
             if ($creditToRestore > 0) {
-                $order->client->refundReferralCredit($creditToRestore);
+                $order->client->refundReferralCredit($creditToRestore, $order);
             }
 
             if ($releasePromoCode) {

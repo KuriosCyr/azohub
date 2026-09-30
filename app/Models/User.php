@@ -108,6 +108,16 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
             }
 
             $referrer->increment('referral_credit_balance', self::REFERRAL_REWARD_AMOUNT);
+
+            ReferralCreditTransaction::create([
+                'user_id' => $referrer->id,
+                'type' => 'earned',
+                'amount' => self::REFERRAL_REWARD_AMOUNT,
+                'balance_after' => $referrer->referral_credit_balance,
+                'reason' => "Filleul {$referee->name} devenu prestataire, identité vérifiée",
+                'source_type' => static::class,
+                'source_id' => $referee->id,
+            ]);
         });
 
         $this->refresh();
@@ -117,36 +127,65 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
     // disponible) et retourne le montant effectivement déduit — utilisé par PaymentService::
     // initiateForOrder() pour réduire ce que le client paie réellement. Séparé de creditWallet()/
     // debitWallet() comme le reste du crédit de parrainage : ce n'est pas un mouvement du wallet
-    // réel (voir maybeRewardReferrer()).
-    public function redeemReferralCredit(float $amount): float
+    // réel (voir maybeRewardReferrer()). $source : la commande ou l'abonnement concerné, pour le
+    // registre (ReferralCreditTransaction) — optionnel pour rester appelable sans, mais toujours
+    // fourni par les appelants réels.
+    public function redeemReferralCredit(float $amount, ?Model $source = null): float
     {
         if ($amount <= 0) {
             return 0.0;
         }
 
-        return DB::transaction(function () use ($amount) {
+        return DB::transaction(function () use ($amount, $source) {
             $user = static::whereKey($this->id)->lockForUpdate()->first();
             $redeemed = round(min($amount, (float) $user->referral_credit_balance), 2);
 
             if ($redeemed > 0) {
                 $user->decrement('referral_credit_balance', $redeemed);
+
+                ReferralCreditTransaction::create([
+                    'user_id' => $user->id,
+                    'type' => 'redeemed',
+                    'amount' => $redeemed,
+                    'balance_after' => $user->referral_credit_balance,
+                    'reason' => 'Appliqué en réduction au paiement',
+                    'source_type' => $source ? get_class($source) : null,
+                    'source_id' => $source?->getKey(),
+                ]);
             }
 
             return $redeemed;
         });
     }
 
-    // Restitue un crédit consommé par une commande finalement annulée avant tout paiement
-    // réussi (voir Order::refund() et l'abandon des commandes concurrentes dans ProposalAccept).
-    public function refundReferralCredit(float $amount): void
+    // Restitue un crédit consommé par une commande ou un abonnement finalement annulé avant tout
+    // paiement réussi (voir Order::refund(), Subscription::cancelAbandoned() et l'abandon des
+    // commandes concurrentes dans ProposalAccept).
+    public function refundReferralCredit(float $amount, ?Model $source = null): void
     {
         if ($amount <= 0) {
             return;
         }
 
-        DB::transaction(function () use ($amount) {
-            static::whereKey($this->id)->lockForUpdate()->first()
-                ?->increment('referral_credit_balance', round($amount, 2));
+        DB::transaction(function () use ($amount, $source) {
+            $user = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if (!$user) {
+                return;
+            }
+
+            $amount = round($amount, 2);
+            $user->increment('referral_credit_balance', $amount);
+
+            ReferralCreditTransaction::create([
+                'user_id' => $user->id,
+                'type' => 'refunded',
+                'amount' => $amount,
+                'balance_after' => $user->referral_credit_balance,
+                'reason' => 'Restitué (commande ou abonnement annulé avant paiement)',
+                'source_type' => $source ? get_class($source) : null,
+                'source_id' => $source?->getKey(),
+            ]);
         });
     }
 
