@@ -112,7 +112,12 @@ class Subscription extends Model
     public function cancelAbandoned(): void
     {
         DB::transaction(function () {
-            $subscription = static::whereKey($this->id)->lockForUpdate()->first();
+            // withTrashed() (audit externe — 3e audit) : un abonnement 'pending' supprimé par un
+            // admin restait invisible à cette requête (global scope SoftDeletes), donc jamais
+            // annulé — le crédit de parrainage consommé dessus restait bloqué pour toujours. La
+            // suppression n'empêche pas cette annulation : elle ne fait que libérer le crédit et
+            // marquer l'abonnement 'cancelled', rien qui ressuscite un enregistrement supprimé.
+            $subscription = static::withTrashed()->whereKey($this->id)->lockForUpdate()->first();
 
             if (!$subscription || $subscription->status !== 'pending') {
                 return;

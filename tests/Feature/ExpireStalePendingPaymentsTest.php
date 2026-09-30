@@ -143,6 +143,68 @@ class ExpireStalePendingPaymentsTest extends TestCase
         $this->assertEquals(500, $prestataire->fresh()->referral_credit_balance);
     }
 
+    // Corrigé suite à un 3e audit externe : une commande pending_payment supprimée (soft delete
+    // admin) restait invisible à cette requête (contrainte par le global scope SoftDeletes), donc
+    // jamais annulée — le crédit de parrainage consommé dessus restait bloqué pour toujours.
+    public function test_a_stale_soft_deleted_order_is_still_cancelled_and_restores_its_referral_credit(): void
+    {
+        $client = User::factory()->create(['role' => 'client', 'referral_credit_balance' => 300]);
+        $order = $this->makeStaleOrder($client);
+        $order->applyReferralCredit(true);
+        $this->backdateUpdatedAt($order, 25);
+        // delete() (SoftDeletes) touche updated_at à "maintenant" comme tout save() : rebackdater
+        // après, sinon la commande ne serait plus "stale" au sens de la requête.
+        $order->delete();
+        $this->backdateUpdatedAt($order, 25);
+
+        $this->artisan('payments:expire-stale-pending');
+
+        $this->assertSame('cancelled', $order->fresh()->status);
+        $this->assertEquals(300, $client->fresh()->referral_credit_balance);
+    }
+
+    // Même correctif côté abonnement (audit externe — 3e audit).
+    public function test_a_stale_soft_deleted_subscription_is_still_cancelled_and_restores_its_referral_credit(): void
+    {
+        $prestataire = User::factory()->create(['role' => 'prestataire', 'referral_credit_balance' => 500]);
+        $subscription = $this->makeStaleSubscription($prestataire);
+        $subscription->applyReferralCredit(true);
+        $this->backdateUpdatedAt($subscription, 25);
+        $subscription->delete();
+        $this->backdateUpdatedAt($subscription, 25);
+
+        $this->artisan('payments:expire-stale-pending');
+
+        $this->assertSame('cancelled', $subscription->fresh()->status);
+        $this->assertEquals(500, $prestataire->fresh()->referral_credit_balance);
+    }
+
+    // Corrigé suite à un 3e audit externe : ExpireStalePendingPayments charge les commandes stale
+    // AVANT de verrouiller chacune — un touch() concurrent (nouvelle tentative de paiement) entre
+    // cette lecture et le verrou pris dans refund() pouvait quand même faire annuler la commande.
+    // Order::refund() accepte maintenant la borne de fraîcheur utilisée par la requête
+    // ($mustBeStaleSince) et la revérifie sous verrou, sur la valeur FRAÎCHEMENT lue en base —
+    // reproduit ici directement (la vraie fenêtre de course n'est pas simulable en mono-thread).
+    public function test_refund_aborts_when_the_order_was_touched_after_the_staleness_cutoff(): void
+    {
+        $client = User::factory()->create(['role' => 'client', 'referral_credit_balance' => 300]);
+        $order = $this->makeStaleOrder($client); // updated_at à -25h
+        $order->applyReferralCredit(true);
+        $this->backdateUpdatedAt($order, 25);
+
+        // Le paiement a touché la commande APRÈS que la borne ait été capturée (simule
+        // PaymentService::initiateForOrder() s'exécutant entre la requête et le verrou).
+        $cutoff = now()->subHours(24);
+        $order->fresh()->touch();
+
+        $refunded = $order->refund('Expirée automatiquement.', $cutoff);
+
+        $this->assertFalse($refunded);
+        $this->assertSame('pending_payment', $order->fresh()->status);
+        // Le crédit reste consommé : la commande est toujours activement en cours.
+        $this->assertEquals(0, $client->fresh()->referral_credit_balance);
+    }
+
     public function test_marking_a_subscription_payment_failed_immediately_cancels_it_and_restores_credit(): void
     {
         $prestataire = User::factory()->create(['role' => 'prestataire', 'referral_credit_balance' => 500]);

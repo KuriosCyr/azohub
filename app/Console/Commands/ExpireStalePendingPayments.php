@@ -25,17 +25,31 @@ class ExpireStalePendingPayments extends Command
         // PaymentService::initiateForOrder() réinitialise updated_at à chaque tentative, pour
         // qu'une commande activement en train d'être payée ne soit jamais annulée sous le pied
         // du client par cette tâche planifiée.
-        $staleOrders = Order::where('status', 'pending_payment')
-            ->where('updated_at', '<=', now()->subHours(self::STALE_AFTER_HOURS))
+        // Capturé une seule fois : réutilisé comme borne à la fois pour la requête et pour la
+        // revérification sous verrou dans Order::refund() (voir $mustBeStaleSince ci-dessous).
+        $cutoff = now()->subHours(self::STALE_AFTER_HOURS);
+
+        // withTrashed() (audit externe — 3e audit) : une commande/un abonnement 'pending' supprimé
+        // par un admin restait invisible à ces requêtes (global scope SoftDeletes), donc jamais
+        // expiré — le crédit de parrainage ou le code promo éventuellement consommé dessus restait
+        // bloqué pour toujours. Order::refund() et Subscription::cancelAbandoned() acceptent
+        // maintenant les deux (withTrashed() en interne) : l'expiration ne fait que libérer le
+        // crédit et marquer annulé/cancelled, rien qui ressuscite un enregistrement supprimé.
+        $staleOrders = Order::withTrashed()->where('status', 'pending_payment')
+            ->where('updated_at', '<=', $cutoff)
             ->get();
 
         foreach ($staleOrders as $order) {
-            $order->refund('Commande jamais payée, expirée automatiquement après ' . self::STALE_AFTER_HOURS . 'h.');
+            // $cutoff repassé à refund() (audit externe — 3e audit) : une tentative de paiement
+            // concurrente (PaymentService::initiateForOrder(), qui touch() la commande) entre cette
+            // lecture et le verrou pris dans refund() ne doit plus faire annuler la commande sous
+            // le pied du client.
+            $order->refund('Commande jamais payée, expirée automatiquement après ' . self::STALE_AFTER_HOURS . 'h.', $cutoff);
             $this->line("  Commande #{$order->order_number} annulée (jamais payée).");
         }
 
-        $staleSubscriptions = Subscription::where('status', 'pending')
-            ->where('updated_at', '<=', now()->subHours(self::STALE_AFTER_HOURS))
+        $staleSubscriptions = Subscription::withTrashed()->where('status', 'pending')
+            ->where('updated_at', '<=', $cutoff)
             ->get();
 
         foreach ($staleSubscriptions as $subscription) {
