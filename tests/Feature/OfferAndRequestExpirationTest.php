@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Conversation;
 use App\Models\CustomOffer;
+use App\Models\Order;
+use App\Models\Payment;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Notifications\CustomOfferExpired;
@@ -71,6 +73,55 @@ class OfferAndRequestExpirationTest extends TestCase
 
         $this->assertSame('pending', $offer->fresh()->status);
         Notification::assertNothingSent();
+    }
+
+    // Corrigé suite à un audit externe : si le paiement se confirme juste après que l'offre ait
+    // expiré entre-temps (ExpireStaleOffers a tourné pendant que le client était sur la page
+    // FedaPay), la commande s'active quand même (l'argent est réel) mais l'offre restait bloquée
+    // sur "expirée" au lieu de refléter qu'elle avait bien été honorée.
+    public function test_a_payment_confirmed_after_the_offer_expired_still_marks_it_accepted(): void
+    {
+        $client = User::factory()->create(['role' => 'client']);
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+        $conversation = Conversation::create(['client_id' => $client->id, 'prestataire_id' => $prestataire->id]);
+
+        $offer = CustomOffer::create([
+            'conversation_id' => $conversation->id,
+            'client_id' => $client->id,
+            'prestataire_id' => $prestataire->id,
+            'title' => 'Offre test',
+            'description' => 'Description de test.',
+            'price' => 10000,
+            'delivery_days' => 5,
+            'status' => 'expired',
+            'expires_at' => now()->subDay(),
+        ]);
+
+        $order = Order::create([
+            'order_number' => 'AZH-TEST-' . uniqid(),
+            'client_id' => $client->id,
+            'prestataire_id' => $prestataire->id,
+            'custom_offer_id' => $offer->id,
+            'amount' => 10000,
+            'commission' => 1000,
+            'prestataire_amount' => 9000,
+            'delivery_time' => 5,
+            'status' => 'pending_payment',
+            'payment_status' => 'pending',
+        ]);
+
+        Payment::create([
+            'order_id' => $order->id,
+            'user_id' => $client->id,
+            'transaction_id' => 'TXN-' . uniqid(),
+            'payment_method' => 'mtn_momo',
+            'amount' => $order->amount,
+            'status' => 'pending',
+            'type' => 'order_payment',
+        ])->markAsPaid('{"status":"approved"}');
+
+        $this->assertSame('paid', $order->fresh()->status);
+        $this->assertSame('accepted', $offer->fresh()->status);
     }
 
     public function test_an_open_service_request_past_its_expiry_is_expired_and_client_notified(): void

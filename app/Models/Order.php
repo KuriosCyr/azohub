@@ -461,7 +461,10 @@ class Order extends Model
                 PromoCodeRedemption::where('order_id', $order->id)->delete();
             }
 
-            $successfulPayment?->update(['status' => 'refund_pending']);
+            $successfulPayment?->update([
+                'status' => 'refund_pending',
+                'refund_amount_due' => (float) $successfulPayment->amount,
+            ]);
         });
 
         $this->refresh();
@@ -514,6 +517,11 @@ class Order extends Model
                 return;
             }
 
+            // Filet de sécurité en plus de la validation du formulaire admin (audit externe) :
+            // ne jamais rembourser plus que ce que le client a réellement payé (total_charged),
+            // même si cette méthode est appelée autrement qu'via ce formulaire.
+            $clientRefundAmount = min($clientRefundAmount, (float) $order->total_charged);
+
             $refundRatio = $order->amount > 0 ? min(1, max(0, $clientRefundAmount / (float) $order->amount)) : 1;
             $prestatairePayout = round((float) $order->prestataire_amount * (1 - $refundRatio), 2);
 
@@ -532,8 +540,14 @@ class Order extends Model
                 );
             }
 
+            // $clientRefundAmount et non le montant total payé (audit externe) : un remboursement
+            // partiel ne doit pas apparaître comme "à rembourser en entier" sur le tableau de
+            // bord financier (FinancialOverview) — le reste est déjà chez le prestataire.
             $successfulPayment = $order->payments()->where('status', 'success')->latest()->first();
-            $successfulPayment?->update(['status' => 'refund_pending']);
+            $successfulPayment?->update([
+                'status' => 'refund_pending',
+                'refund_amount_due' => $clientRefundAmount,
+            ]);
 
             // Pas d'incrément de completed_orders/total_orders ici (contrairement à
             // releasePayment()) : une commande soldée par un litige ne doit pas gonfler

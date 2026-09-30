@@ -23,6 +23,7 @@ class Payment extends Model
         'payment_method',
         'phone_number',
         'amount',
+        'refund_amount_due',
         'status',
         'type',
         'gateway_response',
@@ -32,6 +33,7 @@ class Payment extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'refund_amount_due' => 'decimal:2',
         'paid_at' => 'datetime',
     ];
 
@@ -81,6 +83,7 @@ class Payment extends Model
                 // ressusciter ici serait pire que ne rien faire.
                 if (!$order || $order->status !== 'pending_payment') {
                     $this->status = 'refund_pending';
+                    $this->refund_amount_due = (float) $this->amount;
                     $this->save();
 
                     if ($order) {
@@ -152,7 +155,7 @@ class Payment extends Model
             // encaissé cet argent pour un abonnement qui ne sera jamais activé — même traitement
             // que l'argent orphelin côté commande (voir plus haut dans markAsPaid()) : marqué à
             // rembourser manuellement, et l'admin est alerté au lieu de ne rien voir du tout.
-            $this->update(['status' => 'refund_pending']);
+            $this->update(['status' => 'refund_pending', 'refund_amount_due' => (float) $this->amount]);
 
             AdminNotifier::actionRequired(
                 'Paiement d\'abonnement reçu en retard, abonnement déjà remplacé',
@@ -204,7 +207,12 @@ class Payment extends Model
 
         $offer = $order->customOffer;
 
-        if ($offer && $offer->status === 'pending') {
+        // 'expired' inclus (audit externe) : le paiement a pu se confirmer juste après que la
+        // commande planifiée ExpireStaleOffers ait marqué l'offre expirée entre-temps — la
+        // commande est activée quand même (l'argent est réel), donc l'offre doit refléter
+        // qu'elle a bien été honorée, pas rester bloquée sur "expirée" alors que la commande
+        // tourne normalement.
+        if ($offer && in_array($offer->status, ['pending', 'expired'], true)) {
             $offer->update(['status' => 'accepted']);
         }
     }

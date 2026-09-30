@@ -33,20 +33,25 @@ class StatsOverview extends BaseWidget
         $ordersThisMonth = Order::whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)->count();
         $activeOrders    = Order::whereIn('status', ['paid', 'in_progress', 'delivered'])->count();
 
-        // --- Bénéfices de la plateforme (commission prestataire + frais client) ---
+        // --- Bénéfices de la plateforme (commission prestataire + frais client, réduits du
+        // crédit de parrainage et des codes promo consommés — corrigé suite à un audit externe :
+        // ces réductions n'étaient pas soustraites, surestimant le revenu réel. prestataire_amount
+        // n'est jamais réduit par une remise, donc ce qu'Azohub garde vraiment est bien
+        // commission + frais - réductions, pas commission + frais seuls) ---
         // À ne pas confondre avec le volume payé par les clients (cf. $totalVolume) :
         // la majeure partie de ce volume est reversée aux prestataires, ce n'est pas
         // de l'argent qui appartient à Azohub.
         $paidStatuses = ['held', 'released'];
+        $revenueExpr = 'COALESCE(SUM(commission + client_fee - referral_credit_applied - promo_discount_applied), 0) as total';
 
         $totalRevenue = (float) Order::whereIn('payment_status', $paidStatuses)
-            ->selectRaw('COALESCE(SUM(commission + client_fee), 0) as total')->value('total');
+            ->selectRaw($revenueExpr)->value('total');
         $revenueThisMonth = (float) Order::whereIn('payment_status', $paidStatuses)
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)
-            ->selectRaw('COALESCE(SUM(commission + client_fee), 0) as total')->value('total');
+            ->selectRaw($revenueExpr)->value('total');
         $revenueLastMonth = (float) Order::whereIn('payment_status', $paidStatuses)
             ->whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year)
-            ->selectRaw('COALESCE(SUM(commission + client_fee), 0) as total')->value('total');
+            ->selectRaw($revenueExpr)->value('total');
 
         // --- Volume total (ce que les clients ont payé, avant reversement aux prestataires) ---
         $totalVolume = (float) Payment::where('status', 'success')->sum('amount');

@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\User;
 use App\Models\WithdrawalRequest;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -26,9 +27,14 @@ class FinancialOverview extends BaseWidget
 
         // Remboursements que FedaPay n'automatise pas (cf. Order::refund()) : chaque ligne ici
         // attend une action manuelle sur le dashboard FedaPay puis "Confirmer remboursement".
-        $refundOrders = Order::where('payment_status', 'refund_pending');
-        $refundCount = (clone $refundOrders)->count();
-        $refundAmount = (float) (clone $refundOrders)->sum('amount');
+        // Basé sur les paiements (pas orders.amount) — corrigé suite à un audit externe : compter
+        // orders.amount ignorait les frais client et les réductions (le vrai montant encaissé,
+        // et donc à rembourser, est payments.amount), comptait un remboursement PARTIEL comme
+        // total, et surtout ratait les paiements orphelins (Payment::markAsPaid()) dont la
+        // commande elle-même n'est jamais passée en 'refund_pending' — seul le paiement l'est.
+        $refundPayments = Payment::where('status', 'refund_pending');
+        $refundCount = (clone $refundPayments)->count();
+        $refundAmount = (float) (clone $refundPayments)->sum('refund_amount_due');
 
         // Retraits prestataires en attente de traitement (déjà débités de leur portefeuille au
         // moment de la demande — cf. PrestataireWallet::requestWithdrawal()).

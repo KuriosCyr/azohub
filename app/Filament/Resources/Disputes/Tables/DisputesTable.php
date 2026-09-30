@@ -128,13 +128,18 @@ class DisputesTable
                             ])
                             ->live()
                             ->required(),
+                        // Plafonné à ce que le client a RÉELLEMENT payé (total_charged : prix +
+                        // frais - réductions), pas au prix affiché de la commande (audit
+                        // externe) — avec un code promo ou du crédit de parrainage appliqué, le
+                        // client a payé moins que order.amount, et FedaPay ne peut évidemment pas
+                        // rembourser plus que ce qui a été réellement encaissé.
                         TextInput::make('refund_amount')
                             ->label('Montant à rembourser au client')
                             ->numeric()
                             ->suffix('FCFA')
                             ->minValue(1)
-                            ->maxValue((float) $record->order->amount)
-                            ->helperText('Commande de ' . number_format((float) $record->order->amount, 0, ',', ' ') . ' FCFA. Le prestataire reçoit automatiquement le reste, réduit dans la même proportion.')
+                            ->maxValue((float) $record->order->total_charged)
+                            ->helperText('Le client a payé ' . number_format((float) $record->order->total_charged, 0, ',', ' ') . ' FCFA au total. Le prestataire reçoit automatiquement le reste, réduit dans la même proportion.')
                             ->visible(fn (Get $get) => $get('resolution') === 'partial_refund')
                             ->required(fn (Get $get) => $get('resolution') === 'partial_refund'),
                         Textarea::make('admin_note')

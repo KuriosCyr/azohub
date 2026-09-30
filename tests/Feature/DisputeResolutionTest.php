@@ -101,6 +101,23 @@ class DisputeResolutionTest extends TestCase
         $this->assertEquals(4000, $dispute->refund_amount);
     }
 
+    // Corrigé suite à un audit externe : le remboursement demandé ne peut jamais dépasser ce que
+    // le client a réellement payé (total_charged), même si l'appelant demande plus — sans ce
+    // filet, un code promo ou du crédit de parrainage appliqué aurait permis de "rembourser" plus
+    // que ce que FedaPay a réellement encaissé.
+    public function test_partial_refund_is_capped_to_what_the_client_actually_paid(): void
+    {
+        // Prix 10000 + frais 500 - réduction 2000 = total_charged 8500 réellement payé.
+        $order = $this->makeDisputedOrder(['client_fee' => 500, 'promo_discount_applied' => 2000]);
+        $dispute = $order->dispute;
+
+        // L'admin demande 9000 (plus que ce que le client a payé) — doit être plafonné à 8500.
+        $dispute->resolve('partial_refund', $this->adminUser->id, 9000.0);
+
+        $payment = $order->fresh()->payments()->latest()->first();
+        $this->assertEquals(8500, $payment->refund_amount_due);
+    }
+
     public function test_pay_prestataire_completes_order_and_credits_wallet_immediately(): void
     {
         $order = $this->makeDisputedOrder();

@@ -32,7 +32,9 @@ jobs:
       - name: PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          # Aligné sur la version en production (audit externe : la CI tournait en 8.3, la prod
+          # en 8.5 — un comportement propre à 8.5 aurait pu passer en CI et casser en prod).
+          php-version: '8.5'
           extensions: mbstring, dom, fileinfo, mysql, gd, zip
           coverage: none
 
