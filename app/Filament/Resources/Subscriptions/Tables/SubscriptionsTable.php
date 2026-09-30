@@ -5,9 +5,11 @@ namespace App\Filament\Resources\Subscriptions\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
 class SubscriptionsTable
@@ -71,6 +73,7 @@ class SubscriptionsTable
                 SelectFilter::make('status')
                     ->label('Statut')
                     ->options(self::STATUSES),
+                TrashedFilter::make(),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -78,6 +81,11 @@ class SubscriptionsTable
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    // Pas de ForceDeleteBulkAction (audit externe) : un abonnement porte un
+                    // historique de paiement réel qu'une suppression définitive effacerait en
+                    // cascade, sans trace. Le "Delete" simple (SoftDeletes) reste réversible via
+                    // RestoreBulkAction.
+                    RestoreBulkAction::make(),
                 ]),
             ]);
     }

@@ -37,11 +37,16 @@ class SubscriptionForm
                     ->required(),
                 DateTimePicker::make('ends_at')
                     ->label('Fin'),
+                // Non modifiable à la main (audit externe) : le statut est géré par le cycle de
+                // vie applicatif (Payment::markAsPaid(), Subscription::cancel()/
+                // cancelAbandoned()/renew()...) — un changement manuel pourrait désynchroniser
+                // l'état réel de l'abonnement (ex. remettre "active" un abonnement jamais payé).
                 Select::make('status')
                     ->label('Statut')
                     ->options(SubscriptionsTable::STATUSES)
                     ->default('active')
-                    ->required(),
+                    ->required()
+                    ->disabled(),
             ]);
     }
 }
