@@ -48,20 +48,69 @@ class StatsOverview extends BaseWidget
         // suite à un 2e audit externe : ils n'étaient pas du tout comptés ici). Contrairement
         // aux commandes, un abonnement payé va intégralement à Azohub — pas de part
         // "prestataire" à en retirer.
+        // paid_at, pas created_at (audit externe — 3e audit) : created_at est la date de LANCEMENT
+        // du paiement, pas de sa confirmation — un paiement lancé le 31 et confirmé le 1er était
+        // compté sur le mauvais mois. paid_at est toujours renseigné pour un paiement 'success'
+        // (Payment::markAsPaid() le fixe avant toute branche). N'affecte pas le total toutes
+        // périodes ci-dessous, qui ne filtre par aucune des deux colonnes.
         $subscriptionRevenueExpr = fn ($query) => (float) $query
             ->where('type', 'subscription')->where('status', 'success')->sum('amount');
 
+        // Commandes soldées par un remboursement PARTIEL (Order::partialRefund(), litige tranché
+        // "partial_refund") : payment_status passe en 'refund_pending' comme une annulation
+        // complète, mais contrairement à celle-ci Azohub GARDE une marge réduite (le prestataire
+        // reçoit une part proportionnelle, jamais zéro sauf remboursement total) — exclure ces
+        // commandes comme le reste de refund_pending sous-comptait ce revenu bien réel, pas
+        // seulement dans l'historique (audit externe — 3e audit, suivi du point laissé de côté au
+        // 2e audit). Calculé en PHP plutôt qu'en SQL : ces commandes sont rares (un litige tranché
+        // "partial_refund"), et le ratio dépend du montant exact rendu au client
+        // (payments.refund_amount_due), pas d'une simple colonne de order.
+        $partialRefundMarginByOrder = Order::where('payment_status', 'refund_pending')
+            ->where('status', 'completed')
+            ->with(['payments' => fn ($q) => $q->where('status', 'refund_pending')])
+            ->get()
+            ->map(function (Order $order) {
+                $refundedPayment = $order->payments->first();
+                $totalCharged = (float) $order->total_charged;
+
+                if (!$refundedPayment || $totalCharged <= 0) {
+                    return null;
+                }
+
+                // Order::partialRefund() écrit ici le montant EXACT rendu au client (jamais le
+                // montant total payé) — le même ratio que celui utilisé pour calculer la part
+                // réduite versée au prestataire au moment du litige.
+                $refundRatio = min(1, max(0, (float) $refundedPayment->refund_amount_due / $totalCharged));
+                $fullMargin = (float) $order->commission + (float) $order->client_fee
+                    - (float) $order->referral_credit_applied - (float) $order->promo_discount_applied;
+                $marginKept = round($fullMargin * (1 - $refundRatio), 2);
+
+                return $marginKept > 0 ? (object) ['month' => $order->created_at->format('Y-m'), 'total' => $marginKept] : null;
+            })
+            ->filter();
+
+        $partialRefundMarginTotal = (float) $partialRefundMarginByOrder->sum('total');
+        $partialRefundMarginThisMonth = (float) $partialRefundMarginByOrder
+            ->where('month', $now->format('Y-m'))->sum('total');
+        $partialRefundMarginLastMonth = (float) $partialRefundMarginByOrder
+            ->where('month', $lastMonth->format('Y-m'))->sum('total');
+        $partialRefundMarginByMonth = $partialRefundMarginByOrder->groupBy('month')
+            ->map(fn ($group) => (float) $group->sum('total'));
+
         $totalRevenue = (float) Order::whereIn('payment_status', $paidStatuses)
             ->selectRaw($revenueExpr)->value('total')
-            + $subscriptionRevenueExpr(Payment::query());
+            + $subscriptionRevenueExpr(Payment::query())
+            + $partialRefundMarginTotal;
         $revenueThisMonth = (float) Order::whereIn('payment_status', $paidStatuses)
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)
             ->selectRaw($revenueExpr)->value('total')
-            + $subscriptionRevenueExpr(Payment::whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear));
+            + $subscriptionRevenueExpr(Payment::whereMonth('paid_at', $thisMonth)->whereYear('paid_at', $thisYear))
+            + $partialRefundMarginThisMonth;
         $revenueLastMonth = (float) Order::whereIn('payment_status', $paidStatuses)
             ->whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year)
             ->selectRaw($revenueExpr)->value('total')
-            + $subscriptionRevenueExpr(Payment::whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year));
+            + $subscriptionRevenueExpr(Payment::whereMonth('paid_at', $lastMonth->month)->whereYear('paid_at', $lastMonth->year))
+            + $partialRefundMarginLastMonth;
 
         // --- Volume total (ce que les clients ont payé, avant reversement aux prestataires) ---
         $totalVolume = (float) Payment::where('status', 'success')->sum('amount');
@@ -84,15 +133,21 @@ class StatsOverview extends BaseWidget
             ->keyBy(fn($r) => $r->y . '-' . str_pad($r->m, 2, '0', STR_PAD_LEFT));
 
         $subscriptionRevenueByMonth = Payment::where('type', 'subscription')->where('status', 'success')
-            ->where('created_at', '>=', $start)
-            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(amount) as total')
+            ->where('paid_at', '>=', $start)
+            ->selectRaw('YEAR(paid_at) as y, MONTH(paid_at) as m, SUM(amount) as total')
             ->groupBy('y', 'm')
             ->get()
             ->keyBy(fn($r) => $r->y . '-' . str_pad($r->m, 2, '0', STR_PAD_LEFT));
 
-        $revenueByMonth = collect(array_unique(array_merge($orderRevenueByMonth->keys()->all(), $subscriptionRevenueByMonth->keys()->all())))
+        $revenueByMonth = collect(array_unique(array_merge(
+            $orderRevenueByMonth->keys()->all(),
+            $subscriptionRevenueByMonth->keys()->all(),
+            $partialRefundMarginByMonth->keys()->all(),
+        )))
             ->mapWithKeys(fn ($key) => [$key => (object) [
-                'total' => ($orderRevenueByMonth[$key]->total ?? 0) + ($subscriptionRevenueByMonth[$key]->total ?? 0),
+                'total' => ($orderRevenueByMonth[$key]->total ?? 0)
+                    + ($subscriptionRevenueByMonth[$key]->total ?? 0)
+                    + ($partialRefundMarginByMonth[$key] ?? 0),
             ]]);
 
         $ordersByMonth = Order::where('created_at', '>=', $start)
