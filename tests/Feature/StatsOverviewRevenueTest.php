@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Filament\Widgets\StatsOverview;
+use App\Models\Dispute;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -98,14 +100,12 @@ class StatsOverviewRevenueTest extends TestCase
             ->assertSee('3 000 FCFA ce mois');
     }
 
-    // Corrigé suite à un 3e audit externe (suivi du point laissé de côté au 2e audit) : une
-    // commande soldée par un remboursement PARTIEL (litige tranché "partial_refund") passe en
-    // payment_status='refund_pending' comme une annulation complète, mais Azohub y garde une
-    // marge réduite (le prestataire reçoit une part proportionnelle, jamais zéro) — l'exclure
-    // purement du CA comme le reste de refund_pending sous-comptait ce revenu bien réel.
-    public function test_revenue_includes_the_margin_kept_on_a_partially_refunded_order(): void
+    // Order::partialRefund() n'a qu'un seul appelant réel dans tout le code : Dispute::resolve()
+    // — passer par lui plutôt que par un appel direct reproduit le seul chemin qui existe
+    // réellement en production (et fournit disputes.refund_amount, utilisé par StatsOverview
+    // depuis le 5e audit externe).
+    private function makeOrderWithPartialRefund(User $admin, float $refundAmount = 4000.0): Order
     {
-        $admin = User::factory()->create(['role' => 'admin']);
         $client = User::factory()->create();
         $prestataire = User::factory()->create(['role' => 'prestataire']);
 
@@ -120,7 +120,7 @@ class StatsOverviewRevenueTest extends TestCase
             'commission' => 1000,
             'prestataire_amount' => 9000,
             'delivery_time' => 3,
-            'status' => 'in_progress',
+            'status' => 'disputed',
             'payment_status' => 'held',
         ]);
 
@@ -135,7 +135,28 @@ class StatsOverviewRevenueTest extends TestCase
             'paid_at' => now(),
         ]);
 
-        $order->partialRefund(4000.0, 'Litige tranché en faveur partielle du client.');
+        $dispute = Dispute::create([
+            'order_id' => $order->id,
+            'opened_by' => $client->id,
+            'reason' => 'work_not_delivered',
+            'description' => str_repeat('Le travail n\'a jamais été livré. ', 2),
+            'status' => 'open',
+        ]);
+
+        $dispute->resolve('partial_refund', $admin->id, $refundAmount);
+
+        return $order->fresh();
+    }
+
+    // Corrigé suite à un 3e audit externe (suivi du point laissé de côté au 2e audit) : une
+    // commande soldée par un remboursement PARTIEL (litige tranché "partial_refund") passe en
+    // payment_status='refund_pending' comme une annulation complète, mais Azohub y garde une
+    // marge réduite (le prestataire reçoit une part proportionnelle, jamais zéro) — l'exclure
+    // purement du CA comme le reste de refund_pending sous-comptait ce revenu bien réel.
+    public function test_revenue_includes_the_margin_kept_on_a_partially_refunded_order(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->makeOrderWithPartialRefund($admin);
 
         Livewire::actingAs($admin)
             ->test(StatsOverview::class)
@@ -151,44 +172,50 @@ class StatsOverviewRevenueTest extends TestCase
     public function test_revenue_from_a_partial_refund_is_unchanged_once_the_admin_confirms_it(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $client = User::factory()->create();
-        $prestataire = User::factory()->create(['role' => 'prestataire']);
-
-        $order = Order::create([
-            'order_number' => 'AZH-TEST-' . uniqid(),
-            'client_id' => $client->id,
-            'prestataire_id' => $prestataire->id,
-            'amount' => 10000,
-            'commission' => 1000,
-            'prestataire_amount' => 9000,
-            'delivery_time' => 3,
-            'status' => 'in_progress',
-            'payment_status' => 'held',
-        ]);
-
-        $payment = Payment::create([
-            'order_id' => $order->id,
-            'user_id' => $client->id,
-            'transaction_id' => 'TXN-' . uniqid(),
-            'payment_method' => 'mtn_momo',
-            'amount' => $order->amount,
-            'status' => 'success',
-            'type' => 'order_payment',
-            'paid_at' => now(),
-        ]);
-
-        $order->partialRefund(4000.0, 'Litige tranché en faveur partielle du client.');
+        $order = $this->makeOrderWithPartialRefund($admin);
 
         // Avant confirmation : la marge (600) apparaît déjà (test précédent).
         Livewire::actingAs($admin)->test(StatsOverview::class)->assertSee('600 FCFA');
 
         // L'admin rembourse le client sur FedaPay puis confirme — payment_status de la commande
         // passe alors à 'refunded'.
-        $payment->fresh()->confirmRefund();
+        $payment = $order->payments()->where('status', 'refund_pending')->latest()->first();
+        $payment->confirmRefund();
         $this->assertSame('refunded', $order->fresh()->payment_status);
 
         // Le CA ne doit PAS avoir bougé : c'est la même marge de 600, toujours gardée par Azohub.
         Livewire::actingAs($admin)->test(StatsOverview::class)->assertSee('600 FCFA');
+    }
+
+    // Corrigé suite à un 5e audit externe : l'ancienne version repérait "le paiement le plus
+    // récemment créé avec refund_amount_due non nul" — un paiement ORPHELIN distinct (double
+    // paiement, cf. Payment::markAsPaid()) créé APRÈS le litige sur la même commande pouvait être
+    // choisi à la place du bon paiement, donnant un ratio proche de 1 et une marge proche de 0.
+    // Le montant remboursé est maintenant lu sur disputes.refund_amount, insensible à ce paiement
+    // orphelin distinct.
+    public function test_revenue_margin_is_correct_even_with_an_unrelated_orphaned_double_payment_on_the_same_order(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->makeOrderWithPartialRefund($admin);
+
+        // Double paiement orphelin distinct, créé APRÈS le litige — son refund_amount_due (son
+        // propre montant total) est proche de total_charged, donc très différent des 4000
+        // réellement remboursés au client sur ce litige.
+        Payment::create([
+            'order_id' => $order->id,
+            'user_id' => $order->client_id,
+            'transaction_id' => 'TXN-ORPHAN-' . uniqid(),
+            'payment_method' => 'mtn_momo',
+            'amount' => 9999,
+            'status' => 'refund_pending',
+            'refund_amount_due' => 9999,
+            'type' => 'order_payment',
+            'paid_at' => now(),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(StatsOverview::class)
+            ->assertSee('600 FCFA');
     }
 
     // Corrigé suite à un 4e audit externe : symétrique au correctif déjà appliqué aux abonnements
@@ -256,6 +283,69 @@ class StatsOverviewRevenueTest extends TestCase
         Livewire::actingAs($admin)
             ->test(StatsOverview::class)
             ->assertSee('encore en escrow');
+    }
+
+    // Corrigé suite à un 5e audit externe : Carbon (3.11, ce projet) déborde par défaut en fin de
+    // mois — testé en réel, Carbon::parse('2026-03-31')->subMonth() donnait '2026-03-03' (le mois
+    // EN COURS, pas le mois dernier), et la boucle du graphique (subMonths($i) depuis "maintenant")
+    // produisait des mois en double et d'autres absents. StatsOverview part maintenant du 1er du
+    // mois avant de soustraire — reproduit ici exactement le motif utilisé dans le fichier (pas
+    // seulement le comportement général de Carbon, déjà vérifié séparément).
+    public function test_chart_month_keys_never_collide_at_the_end_of_a_31_day_month(): void
+    {
+        $now = Carbon::create(2026, 3, 31, 12, 0, 0);
+        $startOfThisMonth = $now->copy()->startOfMonth();
+
+        $keys = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $keys[] = $startOfThisMonth->copy()->subMonths($i)->format('Y-m');
+        }
+
+        $this->assertCount(7, array_unique($keys), 'Les 7 mois du graphique ne doivent jamais se répéter.');
+        $this->assertEquals(
+            ['2025-09', '2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03'],
+            $keys
+        );
+    }
+
+    // Vérifie que le dashboard reste cohérent (pas de crash, "ce mois" correctement isolé) un
+    // 31 mars — le jour précis où l'ancien calcul débordait.
+    public function test_revenue_this_month_is_correctly_isolated_on_the_31st_of_march(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 31, 12, 0, 0));
+
+        try {
+            $admin = User::factory()->create(['role' => 'admin']);
+            $prestataire = User::factory()->create(['role' => 'prestataire']);
+
+            // Payé le mois dernier (février) : ne doit PAS apparaître dans "ce mois".
+            Payment::create([
+                'user_id' => $prestataire->id,
+                'transaction_id' => 'TXN-FEV-' . uniqid(),
+                'payment_method' => 'mtn_momo',
+                'amount' => 1111,
+                'status' => 'success',
+                'type' => 'subscription',
+                'paid_at' => Carbon::create(2026, 2, 15, 10, 0, 0),
+            ]);
+
+            // Payé ce mois (31 mars) : doit apparaître dans "ce mois".
+            Payment::create([
+                'user_id' => $prestataire->id,
+                'transaction_id' => 'TXN-MARS-' . uniqid(),
+                'payment_method' => 'mtn_momo',
+                'amount' => 3000,
+                'status' => 'success',
+                'type' => 'subscription',
+                'paid_at' => Carbon::create(2026, 3, 31, 10, 0, 0),
+            ]);
+
+            Livewire::actingAs($admin)
+                ->test(StatsOverview::class)
+                ->assertSee('3 000 FCFA ce mois');
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     // Une commande ENTIÈREMENT annulée (pas de remboursement partiel) ne doit toujours rien

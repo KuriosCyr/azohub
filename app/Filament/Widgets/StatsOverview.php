@@ -20,7 +20,20 @@ class StatsOverview extends BaseWidget
         $now       = Carbon::now();
         $thisMonth = $now->month;
         $thisYear  = $now->year;
-        $lastMonth = $now->copy()->subMonth();
+        // startOfMonth() AVANT de soustraire (audit externe — 5e audit) : Carbon (3.11, ce
+        // projet) déborde par défaut sur les mois plus courts en fin de mois — testé en réel,
+        // Carbon::parse('2026-03-31')->subMonth() donne '2026-03-03', pas fin février. Sans ce
+        // correctif, le 31 mars (ou tout jour 29-31 selon le mois cible) faisait passer "mois
+        // dernier" pour le mois EN COURS (flèche de tendance et couleur faussées), et créait des
+        // mois en double / absents dans le graphique 7 mois (subMonths($i) même souci). Partir du
+        // jour 1 élimine le débordement : soustraire des mois entiers depuis le 1er ne peut jamais
+        // tomber sur un jour inexistant.
+        $startOfThisMonth = $now->copy()->startOfMonth();
+        $lastMonth = $startOfThisMonth->copy()->subMonth();
+        // Utilisé pour filtrer les requêtes "sur 7 mois" ci-dessous (dont $paidOrderPayments,
+        // qui sans cette borne chargeait TOUT l'historique des paiements de commande à chaque
+        // affichage — audit externe — 5e audit).
+        $start = $startOfThisMonth->copy()->subMonths(6);
 
         // --- Utilisateurs ---
         $totalUsers        = User::count();
@@ -68,31 +81,42 @@ class StatsOverview extends BaseWidget
         // exactement au moment où l'admin confirme correctement le remboursement — alors qu'aucun
         // argent supplémentaire n'a bougé à cet instant. status='completed' + payment_status
         // refund_pending/refunded n'arrive QUE via ce chemin (releasePayment() utilise 'released',
-        // jamais ces deux-là ensemble). Le paiement correspondant est identifié par
-        // refund_amount_due non nul plutôt que par son statut, pour la même raison (il passe aussi
-        // de 'refund_pending' à 'refunded' sans que refund_amount_due ne change). Calculé en PHP
-        // plutôt qu'en SQL : ces commandes sont rares (un litige tranché "partial_refund").
+        // jamais ces deux-là ensemble).
+        // Le montant remboursé est lu sur le LITIGE (disputes.refund_amount), pas sur un paiement
+        // (audit externe — 5e audit) : Order::partialRefund() n'a qu'un seul appelant dans tout le
+        // code, Dispute::resolve('partial_refund', ...), qui écrit ce même montant sur le litige
+        // AVANT d'appeler partialRefund() — et canOpenDispute() interdit tout second litige sur une
+        // commande qui en a déjà eu un (même résolu), donc $order->dispute est sans ambiguïté.
+        // L'ancienne version repérait "le paiement le plus RÉCEMMENT CRÉÉ avec refund_amount_due
+        // non nul" : un paiement ORPHELIN distinct (double paiement, cf. Payment::markAsPaid())
+        // créé APRÈS le litige sur la même commande pouvait être choisi à la place du bon paiement
+        // — son refund_amount_due (son propre montant total, proche de total_charged) donnait alors
+        // un ratio proche de 1 et une marge proche de 0, alors que la vraie marge restait positive.
         $partialRefundMarginByOrder = Order::where('status', 'completed')
             ->whereIn('payment_status', ['refund_pending', 'refunded'])
-            ->with(['payments' => fn ($q) => $q->whereNotNull('refund_amount_due')->latest()])
+            ->with('dispute')
             ->get()
             ->map(function (Order $order) {
-                $refundedPayment = $order->payments->first();
+                $clientRefundAmount = (float) ($order->dispute->refund_amount ?? 0);
                 $totalCharged = (float) $order->total_charged;
 
-                if (!$refundedPayment || $totalCharged <= 0) {
+                if ($clientRefundAmount <= 0 || $totalCharged <= 0) {
                     return null;
                 }
 
-                // Order::partialRefund() écrit ici le montant EXACT rendu au client (jamais le
-                // montant total payé) — le même ratio que celui utilisé pour calculer la part
-                // réduite versée au prestataire au moment du litige.
-                $refundRatio = min(1, max(0, (float) $refundedPayment->refund_amount_due / $totalCharged));
+                // Même ratio que celui utilisé pour calculer la part réduite versée au
+                // prestataire au moment du litige (Order::partialRefund()).
+                $refundRatio = min(1, max(0, $clientRefundAmount / $totalCharged));
                 $fullMargin = (float) $order->commission + (float) $order->client_fee
                     - (float) $order->referral_credit_applied - (float) $order->promo_discount_applied;
                 $marginKept = round($fullMargin * (1 - $refundRatio), 2);
 
-                return $marginKept > 0 ? (object) ['month' => $order->created_at->format('Y-m'), 'total' => $marginKept] : null;
+                // Regroupé par la date de résolution du litige (audit externe — 5e audit) : pas
+                // created_at de la commande (incohérent avec paid_at utilisé partout ailleurs dans
+                // ce widget) — resolved_at est le moment où cette marge a réellement été déterminée.
+                return $marginKept > 0
+                    ? (object) ['month' => $order->dispute->resolved_at->format('Y-m'), 'total' => $marginKept]
+                    : null;
             })
             ->filter();
 
@@ -111,7 +135,13 @@ class StatsOverview extends BaseWidget
         // le paiement 'success' de chaque commande : invariant du domaine — une commande
         // held/released a EXACTEMENT un paiement 'success' (un double paiement finit toujours en
         // refund_pending, jamais 'success' deux fois, cf. Payment::markAsPaid()).
+        // paid_at >= $start (audit externe — 5e audit) : chargeait auparavant TOUT l'historique des
+        // paiements de commande réussis à chaque affichage du dashboard, sans limite — $start (7
+        // mois en arrière) couvre largement $revenueThisMonth/$revenueLastMonth/le graphique, seuls
+        // usages de cette collection ($totalRevenue passe par sa propre requête SQL séparée,
+        // non filtrée par date, donc non affectée par cette borne).
         $paidOrderPayments = Payment::where('type', 'order_payment')->where('status', 'success')
+            ->where('paid_at', '>=', $start)
             ->whereHas('order', fn ($q) => $q->whereIn('payment_status', $paidStatuses))
             ->with('order:id,commission,client_fee,referral_credit_applied,promo_discount_applied')
             ->get();
@@ -147,8 +177,8 @@ class StatsOverview extends BaseWidget
         $activeServices  = Service::where('status', 'active')->count();
         $pendingServices = Service::where('status', 'pending')->count();
 
-        // --- Charts : 1 requête GROUP BY par modèle au lieu de 7 ---
-        $start = $now->copy()->subMonths(6)->startOfMonth();
+        // --- Charts : 1 requête GROUP BY par modèle au lieu de 7 --- ($start déjà calculé plus
+        // haut, sans débordement de fin de mois, et déjà réutilisé pour $paidOrderPayments)
 
         // Réductions soustraites et abonnements inclus (audit externe — 2e audit), comme pour
         // le chiffre d'affaires total ci-dessus : sans ça, ce graphique racontait une histoire
@@ -197,7 +227,9 @@ class StatsOverview extends BaseWidget
         $usersChart   = [];
 
         for ($i = 6; $i >= 0; $i--) {
-            $key = $now->copy()->subMonths($i)->format('Y-m');
+            // $startOfThisMonth, pas $now (audit externe — 5e audit) : sans ça, subMonths($i)
+            // depuis "maintenant" (jour variable) déborde en fin de mois — voir plus haut.
+            $key = $startOfThisMonth->copy()->subMonths($i)->format('Y-m');
             $revenueChart[] = ($revenueByMonth[$key]->total ?? 0) / 1000;
             $ordersChart[]  = $ordersByMonth[$key]->total ?? 0;
             $usersChart[]   = $usersByMonth[$key]->total ?? 0;
