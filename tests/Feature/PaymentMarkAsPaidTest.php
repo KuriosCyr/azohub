@@ -121,6 +121,30 @@ class PaymentMarkAsPaidTest extends TestCase
         Notification::assertSentTo($admin, AdminActionRequired::class);
     }
 
+    // Corrigé suite à un 2e audit externe (suggestion de clôture de l'audit) : OrderCreate
+    // réutilise une commande pending_payment plutôt que d'en recréer une à chaque tentative — un
+    // onglet FedaPay resté ouvert depuis AVANT un changement de prix (le service a été modifié
+    // puis re-validé entre-temps) pourrait sinon activer la commande à l'ancien montant, laissant
+    // un escrow insuffisant pour ce qui est réellement dû au prestataire.
+    public function test_a_payment_confirming_an_outdated_amount_is_flagged_instead_of_activating_the_order(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->makeOrder();
+        // Paiement initié AVANT que le prix de la commande ne change (ex. reprise via
+        // OrderCreate après une modification du service).
+        $payment = $this->makePayment($order, ['amount' => 8000]);
+
+        $order->update(['amount' => 12000, 'prestataire_amount' => 10800]);
+
+        $payment->markAsPaid('{"status":"approved"}');
+
+        $this->assertSame('refund_pending', $payment->fresh()->status);
+        $this->assertSame('pending_payment', $order->fresh()->status, 'La commande ne doit pas être activée avec un montant obsolète.');
+        Notification::assertSentTo($admin, AdminActionRequired::class);
+    }
+
     public function test_subscription_payment_without_an_order_is_unaffected(): void
     {
         // Un paiement d'abonnement (pas de order_id) ne doit jamais passer par la branche
@@ -198,6 +222,58 @@ class PaymentMarkAsPaidTest extends TestCase
         $payment->markAsPaid('{"status":"approved"}');
 
         $this->assertSame('refund_pending', $payment->fresh()->status);
+        Notification::assertSentTo($admin, AdminActionRequired::class);
+    }
+
+    // Corrigé suite à un second audit externe : contrairement à la commande orpheline (traitée
+    // depuis le premier audit), un paiement d'abonnement confirmé APRÈS que l'abonnement ait été
+    // annulé (expiré après 24h, ou paiement marqué échoué — voir Subscription::cancelAbandoned())
+    // restait "success" pour toujours, sans remboursement prévu ni alerte admin.
+    public function test_late_confirmation_on_a_cancelled_subscription_is_flagged_for_manual_refund(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+        $plan = SubscriptionPlan::create([
+            'name' => 'Pro',
+            'slug' => 'pro-' . uniqid(),
+            'price' => 3000,
+            'max_services' => 10,
+            'commission_rate' => 10,
+            'is_active' => true,
+        ]);
+
+        $subscription = Subscription::create([
+            'user_id' => $prestataire->id,
+            'subscription_plan_id' => $plan->id,
+            'starts_at' => now(),
+            'ends_at' => now(),
+            'status' => 'pending',
+            'billing_period' => 'monthly',
+            'auto_renew' => true,
+        ]);
+
+        $payment = Payment::create([
+            'subscription_id' => $subscription->id,
+            'user_id' => $prestataire->id,
+            'transaction_id' => 'TXN-' . uniqid(),
+            'payment_method' => 'mtn_momo',
+            'amount' => 3000,
+            'status' => 'pending',
+            'type' => 'subscription',
+        ]);
+
+        // Le prestataire a abandonné la page FedaPay, la tentative est annulée avant même que le
+        // paiement ne se confirme (reproduit ExpireStalePendingPayments / markAsFailed).
+        $subscription->cancelAbandoned();
+
+        // FedaPay confirme quand même, en retard.
+        $payment->markAsPaid('{"status":"approved"}');
+
+        $this->assertSame('refund_pending', $payment->fresh()->status);
+        $this->assertEquals(3000, $payment->fresh()->refund_amount_due);
+        $this->assertSame('cancelled', $subscription->fresh()->status);
         Notification::assertSentTo($admin, AdminActionRequired::class);
     }
 }

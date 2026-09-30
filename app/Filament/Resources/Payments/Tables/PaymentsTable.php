@@ -2,7 +2,10 @@
 
 namespace App\Filament\Resources\Payments\Tables;
 
+use App\Models\Payment;
+use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -53,6 +56,11 @@ class PaymentsTable
                     ->label('Montant')
                     ->formatStateUsing(fn ($state) => number_format((float) $state, 0, ',', ' ') . ' FCFA')
                     ->sortable(),
+                TextColumn::make('refund_amount_due')
+                    ->label('Dû au remboursement')
+                    ->placeholder('—')
+                    ->formatStateUsing(fn ($state) => $state !== null ? number_format((float) $state, 0, ',', ' ') . ' FCFA' : null)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('payment_method')
                     ->label('Moyen de paiement')
                     ->badge()
@@ -94,6 +102,27 @@ class PaymentsTable
                     ->options(self::TYPES),
             ])
             ->recordActions([
+                // Indépendant de Order::confirmRefund() (audit externe — 2e audit) : un paiement
+                // "orphelin" n'a pas forcément d'ordre en payment_status='refund_pending' (ex.
+                // commande déjà annulée autrement, ou abonnement sans commande associée) — sans
+                // cette action, ces lignes restaient indéfiniment dans "Remboursements à traiter"
+                // sans aucun moyen de les résoudre.
+                Action::make('confirm_refund')
+                    ->label('Confirmer remboursement')
+                    ->icon('heroicon-o-banknotes')
+                    ->color('warning')
+                    ->visible(fn (Payment $record) => $record->status === 'refund_pending')
+                    ->requiresConfirmation()
+                    ->modalHeading('Confirmer le remboursement')
+                    ->modalDescription('FedaPay ne propose pas de remboursement automatique : confirmez uniquement après avoir traité ce remboursement manuellement depuis le dashboard FedaPay (Transactions → Rembourser).')
+                    ->action(function (Payment $record) {
+                        $record->confirmRefund();
+
+                        Notification::make()
+                            ->title('Remboursement confirmé')
+                            ->success()
+                            ->send();
+                    }),
                 ViewAction::make(),
             ]);
     }

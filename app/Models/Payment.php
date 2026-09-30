@@ -97,18 +97,66 @@ class Payment extends Model
                     return;
                 }
 
+                // Le montant réellement confirmé par FedaPay doit correspondre à ce que la
+                // commande demande MAINTENANT (audit externe — 2e audit, suggestion de clôture) :
+                // OrderCreate réutilise une commande pending_payment plutôt que d'en recréer une
+                // à chaque tentative — un onglet FedaPay resté ouvert depuis AVANT un changement
+                // de prix (ex. service repassé en modération puis re-publié à un autre tarif)
+                // pourrait sinon activer la commande à l'ancien prix, avec un escrow insuffisant
+                // pour couvrir ce qui est réellement dû au prestataire. Tolérance de 1 FCFA pour
+                // l'arrondi.
+                if (abs((float) $this->amount - (float) $order->total_charged) > 1) {
+                    $this->status = 'refund_pending';
+                    $this->refund_amount_due = (float) $this->amount;
+                    $this->save();
+
+                    AdminNotifier::actionRequired(
+                        'Paiement reçu ne correspondant plus au montant de la commande',
+                        "Le paiement de {$this->amount} FCFA (transaction {$this->transaction_id}) pour la commande {$order->order_number} a été confirmé par FedaPay, mais la commande demande maintenant {$order->total_charged} FCFA (le prix ou une réduction a changé depuis). Remboursement à traiter manuellement.",
+                        route('filament.admin.resources.orders.edit', $order),
+                    );
+
+                    return;
+                }
+
                 $this->status = 'success';
                 $this->save();
 
                 $this->activatePaidOrder($order);
             });
+        } elseif ($this->subscription_id) {
+            // Même principe que la branche commande ci-dessus (audit externe — 2e audit) :
+            // l'abonnement peut avoir été annulé entre-temps (expiré après 24h, ou paiement
+            // marqué échoué — voir Subscription::cancelAbandoned()) avant qu'une confirmation
+            // FedaPay tardive n'arrive. Avant ce correctif, rien ne gérait ce cas précis : le
+            // paiement restait "success" pour toujours, invisible, sans remboursement prévu.
+            DB::transaction(function () {
+                $subscription = Subscription::whereKey($this->subscription_id)->lockForUpdate()->first();
+
+                if (!$subscription || $subscription->status !== 'pending') {
+                    $this->status = 'refund_pending';
+                    $this->refund_amount_due = (float) $this->amount;
+                    $this->save();
+
+                    if ($subscription) {
+                        AdminNotifier::actionRequired(
+                            'Paiement d\'abonnement reçu, abonnement non activable',
+                            "Le paiement de {$this->amount} FCFA (transaction {$this->transaction_id}) pour l'abonnement #{$subscription->id} de {$subscription->user->name} a été confirmé par FedaPay, mais l'abonnement n'est plus en attente (statut actuel : {$subscription->status}). Remboursement à traiter manuellement.",
+                            route('filament.admin.resources.subscriptions.edit', $subscription),
+                        );
+                    }
+
+                    return;
+                }
+
+                $this->status = 'success';
+                $this->save();
+
+                $this->activatePendingSubscription($subscription);
+            });
         } else {
             $this->status = 'success';
             $this->save();
-        }
-
-        if ($this->subscription && $this->subscription->status === 'pending') {
-            $this->activatePendingSubscription($this->subscription);
         }
     }
 
@@ -218,6 +266,16 @@ class Payment extends Model
     }
 
     // Marquer comme échoué
+    // Confirme qu'un remboursement en attente a bien été traité manuellement — indépendant de
+    // Order::confirmRefund() : corrige un point signalé par un 2e audit externe où un paiement
+    // "orphelin" (dont la commande elle-même n'est pas/plus en payment_status='refund_pending' —
+    // ex. commande déjà annulée autrement, ou paiement d'abonnement sans commande) n'avait aucune
+    // action possible dans l'admin et restait indéfiniment dans "Remboursements à traiter".
+    public function confirmRefund(): void
+    {
+        $this->update(['status' => 'refunded']);
+    }
+
     public function markAsFailed(?string $gatewayResponse = null)
     {
         $this->status = 'failed';
