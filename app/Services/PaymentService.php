@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\OrderNoLongerPayableException;
 use App\Models\FedapayPayoutAttempt;
 use App\Models\Order;
 use App\Models\Payment;
@@ -56,7 +57,11 @@ class PaymentService
         });
 
         if (!$order) {
-            throw new \RuntimeException("Cette commande n'est plus en attente de paiement.");
+            // Exception dédiée, pas une \RuntimeException générique (audit externe — 5e audit) :
+            // les 4 appelants la traitaient comme une vraie erreur technique (report($e), bruit
+            // dans les logs) et affichaient "réessayez", trompeur puisqu'un nouvel essai échouera
+            // de la même façon tant que la commande reste non payable.
+            throw new OrderNoLongerPayableException("Cette commande n'est plus en attente de paiement.");
         }
 
         $order->applyReferralCredit($useReferralCredit);

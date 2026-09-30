@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Exceptions\OrderNoLongerPayableException;
 use App\Models\Order;
 use App\Models\Service;
 use App\Models\ServicePackage;
@@ -157,6 +158,9 @@ class OrderCreate extends Component
 
         try {
             $url = $payments->initiateForOrder($order, $this->paymentMethod, $this->useReferralCredit);
+        } catch (OrderNoLongerPayableException $e) {
+            return redirect()->route('orders.show', $order)
+                ->with('error', "Cette commande n'est plus disponible pour le paiement (annulée ou expirée entre-temps). Consultez son statut actuel ci-dessous.");
         } catch (\Throwable $e) {
             report($e);
 

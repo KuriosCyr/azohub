@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\OrderNoLongerPayableException;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Subscription;
@@ -34,6 +35,12 @@ class PaymentController extends Controller
 
         try {
             $url = $payments->initiateForOrder($order, $validated['payment_method']);
+        } catch (OrderNoLongerPayableException $e) {
+            // Condition métier attendue, pas une panne (audit externe — 5e audit) : pas de
+            // report() ici, et un message qui n'incite pas à réessayer inutilement.
+            return redirect()
+                ->route('orders.show', $order)
+                ->with('error', "Cette commande n'est plus disponible pour le paiement (annulée ou expirée entre-temps). Consultez son statut actuel ci-dessous.");
         } catch (\Throwable $e) {
             report($e);
 
