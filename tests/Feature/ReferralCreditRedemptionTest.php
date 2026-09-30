@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Exceptions\OrderNoLongerPayableException;
 use App\Models\Order;
+use App\Models\PromoCode;
 use App\Models\User;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -191,8 +193,9 @@ class ReferralCreditRedemptionTest extends TestCase
         try {
             app(PaymentService::class)->initiateForOrder($order, 'mtn_momo', true);
             $this->fail('Une exception était attendue.');
-        } catch (\RuntimeException $e) {
-            // Attendu.
+        } catch (OrderNoLongerPayableException $e) {
+            // Attendu — exception dédiée (5e audit), pas une \RuntimeException générique : les
+            // appelants doivent pouvoir la distinguer d'une vraie panne technique.
         }
 
         $this->assertEquals(300, $client->fresh()->referral_credit_balance, 'Le crédit ne doit pas avoir été débité.');
@@ -201,5 +204,54 @@ class ReferralCreditRedemptionTest extends TestCase
             $order->fresh()->updated_at->timestamp,
             'La commande ne doit pas avoir été touchée (ExpireStalePendingPayments ne doit pas la croire activement en cours de paiement).'
         );
+    }
+
+    // Corrigé suite à un 5e audit externe : le contrôle "déjà appliqué ?" se faisait sur l'objet
+    // en mémoire, jamais rechargé sous verrou — seul order.status était revérifié. Deux requêtes
+    // concurrentes (double clic, deux onglets) chargeant chacune la commande AVANT que l'une des
+    // deux n'écrive passaient toutes les deux ce contrôle, débitaient chacune le solde client
+    // (redeemReferralCredit() est verrouillé côté User, donc réellement débité deux fois si le
+    // solde le permet), et la seconde écrasait la commande sans qu'aucun remboursement ne soit
+    // déclenché pour la première — un crédit orphelin, perdu pour toujours. Reproduit avec deux
+    // objets PHP distincts chargés sur la même ligne, comme les autres tests de course de cette
+    // suite (une vraie concurrence n'étant pas simulable en mono-thread).
+    public function test_applying_referral_credit_concurrently_on_the_same_order_only_debits_once(): void
+    {
+        // Largement plus que le nécessaire pour cette commande (10500), pour que les DEUX appels
+        // obtiennent un montant non nul de redeemReferralCredit() s'ils ne sont pas bloqués —
+        // c'est précisément ce qui rendait le double débit possible.
+        $client = User::factory()->create(['role' => 'client', 'referral_credit_balance' => 50000]);
+        $order = $this->makeOrder($client);
+
+        $firstRequest = Order::find($order->id);
+        $secondRequest = Order::find($order->id);
+
+        $firstApplied = $firstRequest->applyReferralCredit(true);
+        $secondApplied = $secondRequest->applyReferralCredit(true);
+
+        $this->assertEquals(10499, $firstApplied);
+        // La seconde requête ne débite pas une seconde fois : elle relit sous verrou que le crédit
+        // est déjà appliqué et renvoie cette même valeur sans toucher au solde.
+        $this->assertEquals(10499, $secondApplied);
+        $this->assertEquals(10499, $order->fresh()->referral_credit_applied);
+        $this->assertEquals(50000 - 10499, $client->fresh()->referral_credit_balance);
+    }
+
+    // Trou symétrique corrigé (5e audit externe) : applyReferralCredit() ne revérifiait pas
+    // promo_code_id sous verrou — un code promo appliqué par une requête concurrente entre le
+    // chargement de cette copie et cet appel ne devait plus pouvoir être court-circuité.
+    public function test_applying_referral_credit_after_a_promo_code_was_applied_concurrently_is_a_no_op(): void
+    {
+        PromoCode::create(['code' => 'CONCURRENT', 'type' => 'fixed', 'value' => 500]);
+        $client = User::factory()->create(['role' => 'client', 'referral_credit_balance' => 300]);
+        $order = $this->makeOrder($client);
+        $concurrentRequest = Order::find($order->id);
+
+        $order->applyPromoCode('CONCURRENT');
+        $applied = $concurrentRequest->applyReferralCredit(true);
+
+        $this->assertEquals(0, $applied);
+        $this->assertEquals(0, $order->fresh()->referral_credit_applied);
+        $this->assertEquals(300, $client->fresh()->referral_credit_balance, 'Le solde ne doit pas avoir été touché.');
     }
 }

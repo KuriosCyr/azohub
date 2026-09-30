@@ -213,6 +213,25 @@ class PromoCodeRedemptionTest extends TestCase
         $this->assertNull($newOrder->applyPromoCode('PERIME3'));
     }
 
+    // Trou symétrique corrigé (5e audit externe) : applyPromoCode() ne revérifiait pas
+    // referral_credit_applied sous verrou — un crédit de parrainage appliqué par une requête
+    // concurrente entre le chargement de cette copie et cet appel ne devait plus pouvoir être
+    // court-circuité (l'exclusion mutuelle doit tenir même entre deux copies PHP distinctes).
+    public function test_applying_a_promo_code_after_referral_credit_was_applied_concurrently_is_rejected(): void
+    {
+        $code = PromoCode::create(['code' => 'CONCURRENT2', 'type' => 'fixed', 'value' => 500]);
+        $client = User::factory()->create(['role' => 'client', 'referral_credit_balance' => 300]);
+        $order = $this->makeOrder($client);
+        $concurrentRequest = Order::find($order->id);
+
+        $order->applyReferralCredit(true);
+        $error = $concurrentRequest->applyPromoCode('CONCURRENT2');
+
+        $this->assertNotNull($error);
+        $this->assertNull($order->fresh()->promo_code_id);
+        $this->assertEquals(0, PromoCodeRedemption::where('promo_code_id', $code->id)->count());
+    }
+
     public function test_cancelling_a_never_paid_order_releases_the_promo_code(): void
     {
         $code = PromoCode::create(['code' => 'LIBERE', 'type' => 'fixed', 'value' => 500, 'max_uses' => 1]);

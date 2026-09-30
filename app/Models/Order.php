@@ -142,43 +142,42 @@ class Order extends Model
     // suffirait à tout couvrir. Retourne le montant effectivement appliqué.
     public function applyReferralCredit(bool $useReferralCredit): float
     {
-        if (!$useReferralCredit || $this->promo_code_id || (float) $this->referral_credit_applied > 0) {
+        if (!$useReferralCredit) {
             return (float) $this->referral_credit_applied;
         }
 
-        $redeemableCap = max(0, (float) $this->total_charged - 1);
-        $redeemed = $this->client->redeemReferralCredit($redeemableCap, $this);
+        // Verrouillée EN PREMIER, avant tout débit (audit externe — 5e audit) : l'ancienne version
+        // testait promo_code_id/referral_credit_applied sur $this (objet en mémoire, jamais
+        // rechargé) avant de débiter le solde client, et ne revérifiait que le statut sous verrou.
+        // Deux requêtes concurrentes (double clic, deux onglets) sur la même commande passaient
+        // alors TOUTES LES DEUX le contrôle initial, débitaient chacune le solde client
+        // (redeemReferralCredit() est verrouillé côté User, donc réellement débité à chaque fois
+        // si le solde le permet), puis écrivaient chacune sur la commande l'une après l'autre : la
+        // seconde écrasait la valeur de la première SANS déclencher de remboursement pour son
+        // débit — un crédit orphelin, perdu pour toujours. Verrouiller la commande d'abord et
+        // revérifier TOUS les champs déjà testés avant le verrou élimine cette fenêtre : le solde
+        // n'est plus jamais débité pour un crédit qui ne sera pas réellement appliqué.
+        return DB::transaction(function () {
+            $order = static::whereKey($this->id)->lockForUpdate()->first();
 
-        if ($redeemed > 0) {
-            // Verrouillée + revérifiée sous verrou (audit externe — 4e audit) : le crédit vient
-            // d'être réellement débité du solde client (ligne ci-dessus) — si la commande n'est
-            // plus 'pending_payment' au moment d'écrire referral_credit_applied (annulée
-            // entre-temps par l'expiration automatique, par exemple, entre le chargement de cette
-            // commande et cet appel), on le restitue tout de suite plutôt que de le laisser
-            // consommé sur une commande qui ne sera jamais payée — il resterait sinon perdu pour
-            // toujours (rien ne rembourse le crédit d'une commande déjà annulée).
-            $applied = DB::transaction(function () use ($redeemed) {
-                $order = static::whereKey($this->id)->lockForUpdate()->first();
-
-                if (!$order || $order->status !== 'pending_payment') {
-                    return false;
-                }
-
-                $order->update(['referral_credit_applied' => $redeemed]);
-
-                return true;
-            });
-
-            if (!$applied) {
-                $this->client->refundReferralCredit($redeemed, $this);
-
+            if (!$order || $order->status !== 'pending_payment') {
                 return (float) $this->referral_credit_applied;
             }
 
-            $this->refresh();
-        }
+            if ($order->promo_code_id || (float) $order->referral_credit_applied > 0) {
+                return (float) $order->referral_credit_applied;
+            }
 
-        return $redeemed;
+            $redeemableCap = max(0, (float) $order->total_charged - 1);
+            $redeemed = $order->client->redeemReferralCredit($redeemableCap, $order);
+
+            if ($redeemed > 0) {
+                $order->update(['referral_credit_applied' => $redeemed]);
+                $this->refresh();
+            }
+
+            return $redeemed;
+        });
     }
 
     // Applique un code promo à cette commande, si fourni et pas déjà fait (idempotent, comme
@@ -192,25 +191,28 @@ class Order extends Model
             return null;
         }
 
-        if ($this->promo_code_id) {
-            return null;
-        }
-
-        if ((float) $this->referral_credit_applied > 0) {
-            return 'Le crédit de parrainage est déjà appliqué à cette commande.';
-        }
-
         return DB::transaction(function () use ($rawCode) {
-            // Verrouillée + revérifiée sous verrou (audit externe — 4e audit) : même risque que
-            // côté crédit de parrainage (voir applyReferralCredit()) — une commande annulée
-            // entre-temps (ex. expiration automatique) ne doit plus se voir appliquer un code
-            // promo après coup, ce qui consommerait inutilement un usage du code (et bloquerait ce
-            // client de le réutiliser, alreadyUsedBy() ci-dessous) sans que la commande ne soit
-            // jamais payée.
+            // Verrouillée + TOUS les champs déjà testés avant le verrou revérifiés dessus (audit
+            // externe — 4e puis 5e audit) : promo_code_id et referral_credit_applied n'étaient
+            // auparavant lus que sur $this (objet en mémoire, jamais rechargé) avant le verrou —
+            // seul order.status était revérifié sous verrou. Une commande annulée entre-temps (ex.
+            // expiration automatique) ne doit plus se voir appliquer un code promo après coup, ce
+            // qui consommerait inutilement un usage du code (et bloquerait ce client de le
+            // réutiliser, alreadyUsedBy() ci-dessous) sans que la commande ne soit jamais payée —
+            // et l'exclusion mutuelle avec le crédit de parrainage doit tenir même si les deux
+            // méthodes sont appelées concurremment sur la même commande.
             $order = static::whereKey($this->id)->lockForUpdate()->first();
 
             if (!$order || $order->status !== 'pending_payment') {
                 return "Cette commande n'est plus en attente de paiement.";
+            }
+
+            if ($order->promo_code_id) {
+                return null;
+            }
+
+            if ((float) $order->referral_credit_applied > 0) {
+                return 'Le crédit de parrainage est déjà appliqué à cette commande.';
             }
 
             // Verrouille la ligne du code : deux tentatives concurrentes sur le dernier usage
