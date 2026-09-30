@@ -26,7 +26,13 @@ class PrestataireStatistics extends Component
 
         $userId = $user->id;
         $now = now();
-        $start = $now->copy()->subMonths(5)->startOfMonth();
+        // startOfMonth() AVANT de soustraire (audit externe — 5e audit, même correctif que
+        // StatsOverview) : Carbon déborde par défaut sur les mois plus courts en fin de mois
+        // (testé en réel : Carbon::parse('2026-03-31')->subMonths(5) déborde) — sans ça, $start
+        // pouvait glisser d'un mois, et la boucle plus bas (mêmes soustractions depuis "maintenant")
+        // pouvait afficher un mois en double et en sauter un autre dans le graphique.
+        $startOfThisMonth = $now->copy()->startOfMonth();
+        $start = $startOfThisMonth->copy()->subMonths(5);
         $paidStatuses = ['held', 'released'];
 
         $totalViews = ProfileView::where('prestataire_id', $userId)->count();
@@ -67,7 +73,7 @@ class PrestataireStatistics extends Component
         $messagesChart = [];
 
         for ($i = 5; $i >= 0; $i--) {
-            $d = $now->copy()->subMonths($i);
+            $d = $startOfThisMonth->copy()->subMonths($i);
             $key = $d->format('Y-m');
             $months[] = self::MONTH_LABELS[(int) $d->format('n')];
             $viewsChart[] = $viewsByMonth[$key]->total ?? 0;
