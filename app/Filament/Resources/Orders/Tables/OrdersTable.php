@@ -3,12 +3,10 @@
 namespace App\Filament\Resources\Orders\Tables;
 
 use App\Models\Order;
-use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\RestoreBulkAction;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -155,27 +153,13 @@ class OrdersTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
-                Action::make('confirm_refund')
-                    ->label('Confirmer remboursement')
-                    ->icon('heroicon-o-banknotes')
-                    ->color('warning')
-                    ->visible(fn (Order $record) => $record->payment_status === 'refund_pending')
-                    ->requiresConfirmation()
-                    ->modalHeading('Confirmer le remboursement')
-                    ->modalDescription('FedaPay ne propose pas de remboursement automatique : confirmez uniquement après avoir traité ce remboursement manuellement depuis le dashboard FedaPay (Transactions → Rembourser).')
-                    ->action(function (Order $record, $livewire) {
-                        $record->confirmRefund();
-
-                        Notification::make()
-                            ->title('Remboursement confirmé pour la commande ' . $record->order_number)
-                            ->success()
-                            ->send();
-
-                        // Le badge "Commandes" de la sidebar (compte les remboursements en
-                        // attente) n'est recalculé qu'au chargement complet d'une page : sans cet
-                        // événement, il reste affiché tel quel jusqu'à ce que l'admin recharge.
-                        $livewire->dispatch('refresh-sidebar');
-                    }),
+                // Le remboursement se confirme désormais UNIQUEMENT depuis la fiche Paiement
+                // (audit externe — 3e audit) : cette action confirmait TOUS les paiements
+                // refund_pending de la commande en un seul clic, ce qui pouvait résoudre à tort un
+                // paiement orphelin distinct (ex. double paiement jamais réellement remboursé)
+                // simplement parce qu'il partageait la même commande. Voir Payment::confirmRefund(),
+                // qui met désormais à jour order.payment_status lui-même une fois tous ses
+                // paiements résolus.
                 EditAction::make(),
             ])
             ->toolbarActions([

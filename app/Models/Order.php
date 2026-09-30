@@ -397,21 +397,37 @@ class Order extends Model
     // FedaPay n'expose pas d'API de remboursement automatique : un paiement déjà
     // encaissé passe en "refund_pending" et doit être traité manuellement par un
     // administrateur depuis le dashboard FedaPay, puis confirmé côté Azohub via
-    // Order::confirmRefund().
+    // Payment::confirmRefund() (sur la fiche du paiement, pas de la commande — audit
+    // externe, 3e audit).
     // Retourne true si l'annulation a réellement eu lieu, false si l'appel n'a rien fait (déjà
     // traité autrement) — audit externe (2e audit) : sans ça, Dispute::resolve() marquait le
     // litige "résolu : remboursement client" même quand refund() n'avait en réalité rien changé.
-    public function refund(?string $reason = null): bool
+    // $mustBeStaleSince : réservé à ExpireStalePendingPayments (audit externe — 3e audit) — sans
+    // ça, une commande chargée "stale" AVANT le verrou, mais touch()ée entre-temps par une
+    // nouvelle tentative de paiement concurrente (PaymentService::initiateForOrder()), pouvait
+    // quand même être annulée sous le pied du client une fois le verrou pris ici. Sans perte
+    // réelle dans ce cas précis (l'argent confirmé ensuite finit en refund_pending, traçable), mais
+    // une commande activement en train d'être payée ne doit plus être annulée par erreur.
+    public function refund(?string $reason = null, ?\Illuminate\Support\Carbon $mustBeStaleSince = null): bool
     {
-        $refunded = DB::transaction(function () use ($reason) {
+        $refunded = DB::transaction(function () use ($reason, $mustBeStaleSince) {
             // Verrouillée + revérifiée sous verrou (audit externe) : sans ça, un remboursement
             // demandé au même instant qu'une libération de paiement concurrente (releasePayment())
             // pouvait s'exécuter quand même après coup, écrasant payment_status='released' en
             // 'refund_pending' sans que rien ne signale que le prestataire avait déjà été payé —
             // les deux parties se retrouvaient payées sur la même commande.
-            $order = static::whereKey($this->id)->lockForUpdate()->first();
+            // withTrashed() (audit externe — 3e audit) : une commande pending_payment supprimée
+            // par un admin restait invisible à cette requête (contrainte par le global scope
+            // SoftDeletes), donc jamais annulée par ExpireStalePendingPayments — le crédit de
+            // parrainage ou le code promo éventuellement consommé dessus restait bloqué pour
+            // toujours.
+            $order = static::withTrashed()->whereKey($this->id)->lockForUpdate()->first();
 
             if (!$order) {
+                return false;
+            }
+
+            if ($mustBeStaleSince && $order->updated_at->gt($mustBeStaleSince)) {
                 return false;
             }
 
@@ -475,15 +491,6 @@ class Order extends Model
         $this->refresh();
 
         return $refunded;
-    }
-
-    // Confirme qu'un remboursement en attente a bien été traité manuellement
-    // (bouton admin, une fois le remboursement effectué depuis le dashboard FedaPay).
-    public function confirmRefund(): void
-    {
-        $this->update(['payment_status' => 'refunded']);
-
-        $this->payments()->where('status', 'refund_pending')->update(['status' => 'refunded']);
     }
 
     // Litige tranché "aucune action" (non fondé) : la commande retourne à l'état qu'elle avait
@@ -595,13 +602,17 @@ class Order extends Model
                 return false;
             }
 
-            // Un litige ouvert entre-temps (DisputeController::store(), verrouillée comme ici)
-            // ne doit jamais être court-circuité par une validation client ou l'auto-validation
-            // qui aurait démarré juste avant — seule une résolution de litige explicite peut
-            // libérer le paiement d'une commande encore 'disputed' (audit externe : sans ce
-            // garde-fou, une commande pouvait finir 'disputed' ET payment_status='released' en
-            // même temps).
-            if (!$allowFromDisputed && $order->status === 'disputed') {
+            // Le statut doit être exactement celui attendu au moment de l'exécution, sous verrou
+            // (audit externe — 3e audit) : validate() vérifie 'delivered' AVANT de prendre ce
+            // verrou — une demande de révision concurrente (elle-même verrouillée, cf.
+            // OrderController::requestRevision()) peut faire passer la commande en 'in_progress'
+            // entre-temps. L'ancien contrôle ne bloquait que 'disputed' : une commande remise en
+            // travail par une révision pouvait quand même voir son paiement libéré juste après.
+            // $allowFromDisputed est réservé à Dispute::resolve() ('pay_prestataire'), seul cas
+            // légitime où la commande est encore 'disputed' à cet instant.
+            $expectedStatus = $allowFromDisputed ? 'disputed' : 'delivered';
+
+            if ($order->status !== $expectedStatus) {
                 return false;
             }
 

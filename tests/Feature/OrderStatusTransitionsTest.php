@@ -159,6 +159,25 @@ class OrderStatusTransitionsTest extends TestCase
         Notification::assertNothingSent();
     }
 
+    // Corrigé suite à un 3e audit externe : releasePayment() ne revérifiait sous verrou que
+    // payment_status et le cas 'disputed', pas status === 'delivered' — une demande de révision
+    // concurrente (qui repasse la commande en 'in_progress', elle-même verrouillée) pouvait
+    // s'intercaler entre le contrôle de validate() (hors verrou) et le verrou de releasePayment(),
+    // libérant quand même le paiement sur une commande que le client venait de remettre en travail.
+    public function test_release_payment_is_blocked_when_the_order_is_no_longer_delivered(): void
+    {
+        $order = $this->makeOrder(['status' => 'in_progress', 'payment_status' => 'held']);
+        $prestataire = $order->prestataire;
+
+        $released = $order->releasePayment();
+
+        $this->assertFalse($released);
+        $order->refresh();
+        $prestataire->refresh();
+        $this->assertSame('held', $order->payment_status);
+        $this->assertEquals(0, $prestataire->wallet_balance);
+    }
+
     // DisputeController::store() ne verrouillait pas la commande avant de créer le litige
     // (audit externe) — une commande qui vient d'être validée/complétée ne doit plus pouvoir
     // passer en 'disputed' après coup.
