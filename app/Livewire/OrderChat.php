@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Message;
 use App\Notifications\NewMessageReceived;
 use App\Support\ContactInfoDetector;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,11 @@ class OrderChat extends Component
 
     // Même principe que ConversationShow::$messagesLimit : évite de recharger tout l'historique
     // à chaque sondage (wire:poll.5s) sur une commande avec beaucoup d'échanges.
+    // #[Locked] (audit externe — 5e audit) : une propriété Livewire publique sans ça est
+    // modifiable depuis le navigateur (snapshot renvoyé au client puis réhydraté tel quel) — un
+    // client pouvait la forcer à une valeur énorme pour charger tout l'historique à chaque
+    // sondage au lieu de seulement $messagesLimit messages.
+    #[Locked]
     public int $messagesLimit = 50;
 
     public function loadMoreMessages(): void

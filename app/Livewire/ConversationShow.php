@@ -10,6 +10,7 @@ use App\Notifications\CustomOfferReceived;
 use App\Notifications\NewConversationMessage;
 use App\Support\ContactInfoDetector;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -27,6 +28,10 @@ class ConversationShow extends Component
     // historique de plusieurs centaines de messages repartait intégralement de la base à chaque
     // fois. "Charger les messages précédents" augmente cette limite à la demande plutôt que de
     // tout charger d'un coup.
+    // #[Locked] (audit externe — 5e audit) : sans ça, cette propriété publique est modifiable
+    // depuis le navigateur (snapshot renvoyé au client puis réhydraté tel quel) — un client
+    // pouvait la forcer à une valeur énorme pour charger tout l'historique à chaque sondage.
+    #[Locked]
     public int $messagesLimit = 50;
 
     public function loadMoreMessages(): void
