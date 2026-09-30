@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Widgets\StatsOverview;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -44,5 +45,27 @@ class StatsOverviewRevenueTest extends TestCase
             ->test(StatsOverview::class)
             ->assertSee('700 FCFA')
             ->assertDontSee('1 500 FCFA');
+    }
+
+    // Corrigé suite à un 2e audit externe : un abonnement payé va intégralement à Azohub (pas de
+    // part prestataire à en retirer, contrairement à une commande), mais n'était jamais compté
+    // dans "Bénéfices Azohub".
+    public function test_revenue_includes_subscription_payments(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+
+        Payment::create([
+            'user_id' => $prestataire->id,
+            'transaction_id' => 'TXN-' . uniqid(),
+            'payment_method' => 'mtn_momo',
+            'amount' => 3000,
+            'status' => 'success',
+            'type' => 'subscription',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(StatsOverview::class)
+            ->assertSee('3 000 FCFA');
     }
 }

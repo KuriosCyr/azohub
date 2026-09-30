@@ -44,14 +44,24 @@ class StatsOverview extends BaseWidget
         $paidStatuses = ['held', 'released'];
         $revenueExpr = 'COALESCE(SUM(commission + client_fee - referral_credit_applied - promo_discount_applied), 0) as total';
 
+        // Les abonnements prestataires sont aussi un revenu Azohub à part entière (corrigé
+        // suite à un 2e audit externe : ils n'étaient pas du tout comptés ici). Contrairement
+        // aux commandes, un abonnement payé va intégralement à Azohub — pas de part
+        // "prestataire" à en retirer.
+        $subscriptionRevenueExpr = fn ($query) => (float) $query
+            ->where('type', 'subscription')->where('status', 'success')->sum('amount');
+
         $totalRevenue = (float) Order::whereIn('payment_status', $paidStatuses)
-            ->selectRaw($revenueExpr)->value('total');
+            ->selectRaw($revenueExpr)->value('total')
+            + $subscriptionRevenueExpr(Payment::query());
         $revenueThisMonth = (float) Order::whereIn('payment_status', $paidStatuses)
             ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)
-            ->selectRaw($revenueExpr)->value('total');
+            ->selectRaw($revenueExpr)->value('total')
+            + $subscriptionRevenueExpr(Payment::whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear));
         $revenueLastMonth = (float) Order::whereIn('payment_status', $paidStatuses)
             ->whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year)
-            ->selectRaw($revenueExpr)->value('total');
+            ->selectRaw($revenueExpr)->value('total')
+            + $subscriptionRevenueExpr(Payment::whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year));
 
         // --- Volume total (ce que les clients ont payé, avant reversement aux prestataires) ---
         $totalVolume = (float) Payment::where('status', 'success')->sum('amount');
@@ -63,12 +73,27 @@ class StatsOverview extends BaseWidget
         // --- Charts : 1 requête GROUP BY par modèle au lieu de 7 ---
         $start = $now->copy()->subMonths(6)->startOfMonth();
 
-        $revenueByMonth = Order::whereIn('payment_status', $paidStatuses)
+        // Réductions soustraites et abonnements inclus (audit externe — 2e audit), comme pour
+        // le chiffre d'affaires total ci-dessus : sans ça, ce graphique racontait une histoire
+        // différente (et plus favorable) que le chiffre affiché juste à côté.
+        $orderRevenueByMonth = Order::whereIn('payment_status', $paidStatuses)
             ->where('created_at', '>=', $start)
-            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(commission + client_fee) as total')
+            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(commission + client_fee - referral_credit_applied - promo_discount_applied) as total')
             ->groupBy('y', 'm')
             ->get()
             ->keyBy(fn($r) => $r->y . '-' . str_pad($r->m, 2, '0', STR_PAD_LEFT));
+
+        $subscriptionRevenueByMonth = Payment::where('type', 'subscription')->where('status', 'success')
+            ->where('created_at', '>=', $start)
+            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(amount) as total')
+            ->groupBy('y', 'm')
+            ->get()
+            ->keyBy(fn($r) => $r->y . '-' . str_pad($r->m, 2, '0', STR_PAD_LEFT));
+
+        $revenueByMonth = collect(array_unique(array_merge($orderRevenueByMonth->keys()->all(), $subscriptionRevenueByMonth->keys()->all())))
+            ->mapWithKeys(fn ($key) => [$key => (object) [
+                'total' => ($orderRevenueByMonth[$key]->total ?? 0) + ($subscriptionRevenueByMonth[$key]->total ?? 0),
+            ]]);
 
         $ordersByMonth = Order::where('created_at', '>=', $start)
             ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, COUNT(*) as total')
