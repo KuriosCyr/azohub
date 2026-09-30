@@ -9,6 +9,7 @@ use App\Notifications\SubscriptionActivated;
 use App\Services\AdminNotifier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class Payment extends Model
@@ -29,12 +30,15 @@ class Payment extends Model
         'gateway_response',
         'gateway_reference',
         'paid_at',
+        'confirmed_refund_by',
+        'confirmed_refund_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'refund_amount_due' => 'decimal:2',
         'paid_at' => 'datetime',
+        'confirmed_refund_at' => 'datetime',
     ];
 
     // Relations
@@ -68,7 +72,12 @@ class Payment extends Model
             // "ressuscitant" en 'paid' une commande tout juste annulée (audit externe — fenêtre
             // de quelques millisecondes, mais avec un vrai impact financier si elle se produit).
             DB::transaction(function () {
-                $order = Order::whereKey($this->order_id)->lockForUpdate()->first();
+                // withTrashed() (audit externe — 3e audit) : une commande supprimée par un admin
+                // entre-temps ne doit jamais être activée, mais l'admin doit quand même être
+                // alerté que FedaPay a encaissé de l'argent dessus — sans withTrashed(), $order
+                // valait toujours null ici (contrainte par le global scope SoftDeletes) et l'alerte
+                // ci-dessous (conditionnée à `if ($order)`) ne partait jamais.
+                $order = Order::withTrashed()->whereKey($this->order_id)->lockForUpdate()->first();
 
                 // Le client a ouvert la page FedaPay, puis annulé la commande sur Azohub (ou une
                 // autre proposition/offre a été choisie entre-temps, cf. ProposalAccept), mais a
@@ -81,7 +90,7 @@ class Payment extends Model
                 // l'admin. On ne touche pas à la commande elle-même : son statut actuel est déjà
                 // ce qu'il doit être (annulée, ou déjà financée par un autre paiement) — la
                 // ressusciter ici serait pire que ne rien faire.
-                if (!$order || $order->status !== 'pending_payment') {
+                if (!$order || $order->trashed() || $order->status !== 'pending_payment') {
                     $this->status = 'refund_pending';
                     $this->refund_amount_due = (float) $this->amount;
                     $this->save();
@@ -131,9 +140,12 @@ class Payment extends Model
             // FedaPay tardive n'arrive. Avant ce correctif, rien ne gérait ce cas précis : le
             // paiement restait "success" pour toujours, invisible, sans remboursement prévu.
             DB::transaction(function () {
-                $subscription = Subscription::whereKey($this->subscription_id)->lockForUpdate()->first();
+                // withTrashed() : même raison que côté commande ci-dessus (audit externe — 3e
+                // audit) — un abonnement supprimé entre-temps ne doit jamais être activé, mais
+                // l'admin doit quand même être alerté.
+                $subscription = Subscription::withTrashed()->whereKey($this->subscription_id)->lockForUpdate()->first();
 
-                if (!$subscription || $subscription->status !== 'pending') {
+                if (!$subscription || $subscription->trashed() || $subscription->status !== 'pending') {
                     $this->status = 'refund_pending';
                     $this->refund_amount_due = (float) $this->amount;
                     $this->save();
@@ -145,6 +157,25 @@ class Payment extends Model
                             route('filament.admin.resources.subscriptions.edit', $subscription),
                         );
                     }
+
+                    return;
+                }
+
+                // Même garde-fou que côté commande (audit externe — 2e audit, étendu aux
+                // abonnements suite au 3e audit qui a relevé l'absence de cette vérification ici) :
+                // le montant réellement confirmé par FedaPay doit correspondre à ce que l'abonnement
+                // demande MAINTENANT — un changement de prix du plan entre la création du paiement
+                // et sa confirmation ne doit pas activer l'abonnement à l'ancien montant.
+                if (abs((float) $this->amount - (float) $subscription->total_charged) > 1) {
+                    $this->status = 'refund_pending';
+                    $this->refund_amount_due = (float) $this->amount;
+                    $this->save();
+
+                    AdminNotifier::actionRequired(
+                        'Paiement d\'abonnement reçu ne correspondant plus au montant attendu',
+                        "Le paiement de {$this->amount} FCFA (transaction {$this->transaction_id}) pour l'abonnement #{$subscription->id} de {$subscription->user->name} a été confirmé par FedaPay, mais l'abonnement demande maintenant {$subscription->total_charged} FCFA (le prix du plan a changé depuis). Remboursement à traiter manuellement.",
+                        route('filament.admin.resources.subscriptions.edit', $subscription),
+                    );
 
                     return;
                 }
@@ -266,14 +297,57 @@ class Payment extends Model
     }
 
     // Marquer comme échoué
-    // Confirme qu'un remboursement en attente a bien été traité manuellement — indépendant de
-    // Order::confirmRefund() : corrige un point signalé par un 2e audit externe où un paiement
+    // Confirme qu'un remboursement en attente a bien été traité manuellement — un paiement
     // "orphelin" (dont la commande elle-même n'est pas/plus en payment_status='refund_pending' —
     // ex. commande déjà annulée autrement, ou paiement d'abonnement sans commande) n'avait aucune
-    // action possible dans l'admin et restait indéfiniment dans "Remboursements à traiter".
+    // action possible dans l'admin et restait indéfiniment dans "Remboursements à traiter" (2e
+    // audit externe). C'est maintenant le SEUL point d'entrée pour confirmer un remboursement,
+    // ciblé sur CE paiement précis — Order::confirmRefund() (3e audit externe) marquait "refunded"
+    // TOUS les paiements refund_pending d'une commande en un seul clic, ce qui pouvait résoudre à
+    // tort un paiement orphelin distinct (ex. double paiement, le second jamais réellement
+    // remboursé) simplement parce qu'il partageait la même commande.
     public function confirmRefund(): void
     {
-        $this->update(['status' => 'refunded']);
+        DB::transaction(function () {
+            // Verrouillée + revérifiée sous verrou (audit externe — 3e audit) : sans ça, un
+            // double clic admin (ou deux onglets) pouvait enregistrer deux confirmations
+            // distinctes (confirmed_refund_at écrasé) pour un même remboursement déjà traité.
+            $payment = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if (!$payment || $payment->status !== 'refund_pending') {
+                return;
+            }
+
+            $payment->update([
+                'status' => 'refunded',
+                'confirmed_refund_by' => Auth::id(),
+                'confirmed_refund_at' => now(),
+            ]);
+
+            if (!$payment->order_id) {
+                return;
+            }
+
+            // Répercute sur la commande (audit externe — 3e audit) : confirmer un remboursement
+            // au niveau du paiement ne touchait jamais order.payment_status, qui restait
+            // 'refund_pending' pour toujours (visible dans le compteur de la barre latérale et le
+            // filtre admin) même une fois tous ses paiements résolus. On ne la marque "refunded"
+            // que lorsque PLUS AUCUN paiement de cette commande n'est encore à traiter (un double
+            // paiement orphelin distinct peut rester en attente).
+            $order = Order::withTrashed()->whereKey($payment->order_id)->lockForUpdate()->first();
+
+            if (!$order || $order->payment_status !== 'refund_pending') {
+                return;
+            }
+
+            $stillPending = $order->payments()->where('status', 'refund_pending')->exists();
+
+            if (!$stillPending) {
+                $order->update(['payment_status' => 'refunded']);
+            }
+        });
+
+        $this->refresh();
     }
 
     public function markAsFailed(?string $gatewayResponse = null)

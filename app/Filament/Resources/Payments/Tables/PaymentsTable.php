@@ -102,11 +102,15 @@ class PaymentsTable
                     ->options(self::TYPES),
             ])
             ->recordActions([
-                // Indépendant de Order::confirmRefund() (audit externe — 2e audit) : un paiement
-                // "orphelin" n'a pas forcément d'ordre en payment_status='refund_pending' (ex.
-                // commande déjà annulée autrement, ou abonnement sans commande associée) — sans
-                // cette action, ces lignes restaient indéfiniment dans "Remboursements à traiter"
-                // sans aucun moyen de les résoudre.
+                // SEUL point d'entrée pour confirmer un remboursement (audit externe — 2e puis 3e
+                // audit) : un paiement "orphelin" n'a pas forcément d'ordre en
+                // payment_status='refund_pending' (ex. commande déjà annulée autrement, ou
+                // abonnement sans commande associée) — sans cette action, ces lignes restaient
+                // indéfiniment dans "Remboursements à traiter" sans aucun moyen de les résoudre.
+                // L'ancienne action équivalente côté commande (Order::confirmRefund()) a été
+                // retirée : elle résolvait TOUS les paiements refund_pending d'une commande en un
+                // clic, ce qui pouvait à tort marquer "remboursé" un paiement orphelin distinct
+                // (ex. double paiement) partageant la même commande.
                 Action::make('confirm_refund')
                     ->label('Confirmer remboursement')
                     ->icon('heroicon-o-banknotes')

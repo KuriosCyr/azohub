@@ -276,4 +276,117 @@ class PaymentMarkAsPaidTest extends TestCase
         $this->assertSame('cancelled', $subscription->fresh()->status);
         Notification::assertSentTo($admin, AdminActionRequired::class);
     }
+
+    // Corrigé suite à un 3e audit externe : une commande supprimée (soft delete admin) entre la
+    // confirmation FedaPay et son traitement restait invisible à la requête qui charge $order
+    // (contrainte par le global scope SoftDeletes) — le paiement partait bien en refund_pending,
+    // mais l'alerte admin (conditionnée à `if ($order)`) ne partait jamais, laissant l'argent
+    // invisible dans "Remboursements à traiter" sans que personne ne soit prévenu.
+    public function test_a_payment_confirmed_after_its_order_was_deleted_still_alerts_the_admin(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $order = $this->makeOrder();
+        $payment = $this->makePayment($order);
+
+        $order->delete();
+
+        $payment->markAsPaid('{"status":"approved"}');
+
+        $this->assertSame('refund_pending', $payment->fresh()->status);
+        Notification::assertSentTo($admin, AdminActionRequired::class);
+    }
+
+    // Même correctif côté abonnement (audit externe — 3e audit).
+    public function test_a_subscription_payment_confirmed_after_its_subscription_was_deleted_still_alerts_the_admin(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+        $plan = SubscriptionPlan::create([
+            'name' => 'Pro',
+            'slug' => 'pro-' . uniqid(),
+            'price' => 3000,
+            'max_services' => 10,
+            'commission_rate' => 10,
+            'is_active' => true,
+        ]);
+
+        $subscription = Subscription::create([
+            'user_id' => $prestataire->id,
+            'subscription_plan_id' => $plan->id,
+            'starts_at' => now(),
+            'ends_at' => now(),
+            'status' => 'pending',
+            'billing_period' => 'monthly',
+            'auto_renew' => true,
+        ]);
+
+        $payment = Payment::create([
+            'subscription_id' => $subscription->id,
+            'user_id' => $prestataire->id,
+            'transaction_id' => 'TXN-' . uniqid(),
+            'payment_method' => 'mtn_momo',
+            'amount' => 3000,
+            'status' => 'pending',
+            'type' => 'subscription',
+        ]);
+
+        $subscription->delete();
+
+        $payment->markAsPaid('{"status":"approved"}');
+
+        $this->assertSame('refund_pending', $payment->fresh()->status);
+        Notification::assertSentTo($admin, AdminActionRequired::class);
+    }
+
+    // Corrigé suite à un 3e audit externe : l'équivalent du contrôle de montant obsolète côté
+    // commande (test plus haut) n'existait pas côté abonnement — un changement de prix du plan
+    // entre la création du paiement et sa confirmation aurait activé l'abonnement à l'ancien tarif.
+    public function test_a_subscription_payment_confirming_an_outdated_plan_price_is_flagged_instead_of_activating(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+        $plan = SubscriptionPlan::create([
+            'name' => 'Pro',
+            'slug' => 'pro-' . uniqid(),
+            'price' => 3000,
+            'max_services' => 10,
+            'commission_rate' => 10,
+            'is_active' => true,
+        ]);
+
+        $subscription = Subscription::create([
+            'user_id' => $prestataire->id,
+            'subscription_plan_id' => $plan->id,
+            'starts_at' => now(),
+            'ends_at' => now(),
+            'status' => 'pending',
+            'billing_period' => 'monthly',
+            'auto_renew' => true,
+        ]);
+
+        // Paiement initié au prix d'AVANT une hausse du plan.
+        $payment = Payment::create([
+            'subscription_id' => $subscription->id,
+            'user_id' => $prestataire->id,
+            'transaction_id' => 'TXN-' . uniqid(),
+            'payment_method' => 'mtn_momo',
+            'amount' => 3000,
+            'status' => 'pending',
+            'type' => 'subscription',
+        ]);
+
+        $plan->update(['price' => 5000]);
+
+        $payment->markAsPaid('{"status":"approved"}');
+
+        $this->assertSame('refund_pending', $payment->fresh()->status);
+        $this->assertSame('pending', $subscription->fresh()->status, 'L\'abonnement ne doit pas être activé avec un montant obsolète.');
+        Notification::assertSentTo($admin, AdminActionRequired::class);
+    }
 }
