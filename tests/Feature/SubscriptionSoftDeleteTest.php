@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Subscriptions\SubscriptionResource;
 use App\Models\Payment;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
@@ -58,5 +59,36 @@ class SubscriptionSoftDeleteTest extends TestCase
         $subscription->restore();
 
         $this->assertNotNull(Subscription::find($subscription->id));
+    }
+
+    // Corrigé suite à un 4e audit externe : contrairement à OrderResource (déjà corrigée), rien
+    // ne permettait d'ouvrir un abonnement supprimé dans l'admin — un lien direct (ex. depuis une
+    // alerte AdminNotifier vers un abonnement soft-deleted) donnait une 404 Filament, le binding de
+    // route par défaut excluant les éléments soft-deleted.
+    public function test_the_admin_route_binding_includes_soft_deleted_subscriptions(): void
+    {
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+        $plan = SubscriptionPlan::create([
+            'name' => 'Pro',
+            'slug' => 'pro-' . uniqid(),
+            'price' => 3000,
+            'max_services' => 10,
+            'commission_rate' => 10,
+            'is_active' => true,
+        ]);
+        $subscription = Subscription::create([
+            'user_id' => $prestataire->id,
+            'subscription_plan_id' => $plan->id,
+            'starts_at' => now(),
+            'ends_at' => now()->addMonth(),
+            'status' => 'active',
+            'billing_period' => 'monthly',
+            'auto_renew' => true,
+        ]);
+        $subscription->delete();
+
+        $found = SubscriptionResource::getRecordRouteBindingEloquentQuery()->find($subscription->id);
+
+        $this->assertNotNull($found, 'Un lien direct vers un abonnement supprimé ne doit pas donner une 404.');
     }
 }

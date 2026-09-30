@@ -257,6 +257,39 @@ class DisputeResolutionTest extends TestCase
         $this->assertEquals(0, $prestataire->wallet_balance);
     }
 
+    // Corrigé suite à un 4e audit externe : rien n'empêche un admin de supprimer (soft delete) une
+    // commande encore en litige — Dispute::order() n'avait pas withTrashed(), donc $dispute->order
+    // valait null pour une commande supprimée, ce qui faisait planter le formulaire admin
+    // "Résoudre" (TextInput::make('refund_amount')->maxValue($record->order->total_charged), évalué
+    // dès l'ouverture du modal) au lieu de simplement empêcher l'action proprement.
+    public function test_dispute_order_relation_still_resolves_after_the_order_is_soft_deleted(): void
+    {
+        $order = $this->makeDisputedOrder();
+        $dispute = $order->dispute;
+
+        $order->delete();
+
+        $this->assertNotNull($dispute->fresh()->order, 'Dispute::order() doit rester utilisable même si la commande a été supprimée.');
+    }
+
+    // releasePayment() utilise maintenant withTrashed() comme refund()/markAsPaid() (4e audit
+    // externe) : un litige tranché "payer le prestataire" sur une commande supprimée doit quand
+    // même créditer le prestataire pour un travail réellement livré, pas échouer en silence.
+    public function test_pay_prestataire_still_credits_the_wallet_when_the_order_was_soft_deleted(): void
+    {
+        $order = $this->makeDisputedOrder();
+        $dispute = $order->dispute;
+        $prestataire = $order->prestataire;
+
+        $order->delete();
+
+        $dispute->resolve('pay_prestataire', $this->adminUser->id);
+
+        $prestataire->refresh();
+        $this->assertEquals(9000, $prestataire->wallet_balance);
+        $this->assertSame('completed', $order->fresh()->status);
+    }
+
     public function test_resolving_an_already_resolved_dispute_is_a_no_op(): void
     {
         $order = $this->makeDisputedOrder();

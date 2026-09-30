@@ -31,9 +31,14 @@ class Dispute extends Model
     ];
 
     // Relations
+    // withTrashed() (audit externe — 4e audit) : rien n'empêche un admin de supprimer (soft
+    // delete) une commande encore en litige — sans ceci, $dispute->order valait null pour un
+    // litige sur une commande supprimée, ce qui faisait planter le formulaire admin "Résoudre"
+    // (TextInput::make('refund_amount')->maxValue($record->order->total_charged) est évalué dès
+    // l'ouverture du modal, pas dans une closure différée) au lieu de simplement empêcher l'action.
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class)->withTrashed();
     }
 
     public function openedBy()

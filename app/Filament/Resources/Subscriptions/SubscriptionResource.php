@@ -13,6 +13,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SubscriptionResource extends Resource
 {
@@ -49,5 +51,16 @@ class SubscriptionResource extends Resource
             'create' => CreateSubscription::route('/create'),
             'edit' => EditSubscription::route('/{record}/edit'),
         ];
+    }
+
+    // Symétrique à OrderResource (audit externe — 4e audit) : sans ça, un lien direct vers un
+    // abonnement supprimé (ex. depuis une alerte AdminNotifier) donnait une 404 Filament, le
+    // binding de route par défaut excluant les éléments soft-deleted.
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        return parent::getRecordRouteBindingEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
     }
 }
