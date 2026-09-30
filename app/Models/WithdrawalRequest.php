@@ -98,6 +98,13 @@ class WithdrawalRequest extends Model
             'fedapay_payout_id' => $payoutId,
             'fedapay_status' => 'pending',
         ]);
+
+        // Historique permanent, jamais effacé même par clearAmbiguousFedapayAttempt() — voir
+        // FedapayPayoutAttempt et PaymentService::processPayoutUpdate() (audit externe).
+        FedapayPayoutAttempt::create([
+            'withdrawal_request_id' => $this->id,
+            'fedapay_payout_id' => $payoutId,
+        ]);
     }
 
     public function canRetryFedapayPayout(): bool
@@ -166,12 +173,22 @@ class WithdrawalRequest extends Model
     // normales restent masquées (elles exigent toutes fedapay_payout_id === null) pour ne
     // jamais risquer un double envoi. Un admin qui a VÉRIFIÉ manuellement sur le tableau de
     // bord FedaPay que rien n'a été envoyé peut débloquer la demande avec cette méthode.
+    // 'initiating' inclus (audit externe — 2e audit) : si le processus PHP meurt entre la
+    // réservation de la demande et l'enregistrement de l'identifiant FedaPay (ex. timeout sur
+    // resolveFedapayCustomerId(), qui peut paginer jusqu'à 20 fois), la demande reste bloquée sur
+    // 'initiating' sans identifiant — et les 4 actions admin (dont celle-ci, avant ce correctif)
+    // étaient toutes masquées, sans aucun moyen de la débloquer. Sans risque de double paiement
+    // dans ce cas précis : sendNow() n'a jamais pu être appelé sans identifiant enregistré.
     public function clearAmbiguousFedapayAttempt(): void
     {
         DB::transaction(function () {
             $record = static::whereKey($this->id)->lockForUpdate()->first();
 
-            if (!$record || $record->status !== 'pending' || $record->fedapay_payout_id === null) {
+            if (!$record || $record->status !== 'pending') {
+                return;
+            }
+
+            if ($record->fedapay_payout_id === null && $record->fedapay_status !== 'initiating') {
                 return;
             }
 

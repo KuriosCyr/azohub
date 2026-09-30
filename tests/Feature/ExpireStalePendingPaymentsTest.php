@@ -8,6 +8,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 // Corrige un manque identifié par un audit externe : ni les commandes jamais payées, ni les
@@ -37,8 +38,20 @@ class ExpireStalePendingPaymentsTest extends TestCase
 
         $order->created_at = now()->subHours(25);
         $order->save();
+        $this->backdateUpdatedAt($order, 25);
 
         return $order;
+    }
+
+    // save() réécrit toujours updated_at sur "maintenant", même quand on vient d'assigner une
+    // autre valeur explicitement (Eloquent le fait systématiquement dans updateTimestamps()) —
+    // un DB::table()->update() brut est le seul moyen fiable de forcer une valeur précise.
+    // L'expiration se base maintenant sur updated_at (audit externe — 2e audit), donc tout appel
+    // ultérieur qui modifie le modèle (ex. applyReferralCredit()) doit être suivi d'un nouveau
+    // backdate pour que le test simule bien "plus aucune activité depuis 25h".
+    private function backdateUpdatedAt(Order|Subscription $model, int $hours): void
+    {
+        DB::table($model->getTable())->where('id', $model->id)->update(['updated_at' => now()->subHours($hours)]);
     }
 
     private function makeStaleSubscription(User $prestataire, array $overrides = []): Subscription
@@ -64,6 +77,7 @@ class ExpireStalePendingPaymentsTest extends TestCase
 
         $subscription->created_at = now()->subHours(25);
         $subscription->save();
+        $this->backdateUpdatedAt($subscription, 25);
 
         return $subscription;
     }
@@ -73,6 +87,7 @@ class ExpireStalePendingPaymentsTest extends TestCase
         $client = User::factory()->create(['role' => 'client', 'referral_credit_balance' => 300]);
         $order = $this->makeStaleOrder($client);
         $order->applyReferralCredit(true);
+        $this->backdateUpdatedAt($order, 25);
 
         $this->artisan('payments:expire-stale-pending');
 
@@ -92,11 +107,35 @@ class ExpireStalePendingPaymentsTest extends TestCase
         $this->assertSame('pending_payment', $order->fresh()->status);
     }
 
+    // Corrigé suite à un 2e audit externe : la tâche se basait sur created_at, pas sur la
+    // dernière tentative de paiement — une commande reprise (revenue via OrderCreate, ou
+    // relancée via le bouton "Payer") juste avant ses 24h pouvait être annulée par cette tâche
+    // pendant que le client était en train de payer. PaymentService::initiateForOrder() appelle
+    // maintenant $order->touch() à chaque tentative, ce qui doit protéger la commande ici.
+    public function test_an_order_actively_being_paid_survives_the_expiry_even_if_created_long_ago(): void
+    {
+        $client = User::factory()->create(['role' => 'client']);
+        $order = $this->makeStaleOrder($client); // created_at ET updated_at à -25h
+
+        // fresh() d'abord : l'objet $order en mémoire garde encore son updated_at d'AVANT le
+        // backdate SQL brut (posé après son dernier save() dans le helper) — sans recharger, la
+        // comparaison "dirty" de touch() ne verrait aucun changement (même seconde que tout à
+        // l'heure) et n'écrirait rien, un artefact de ce test seulement : en production, l'objet
+        // vient d'être rechargé depuis la base juste avant (OrderController::initiate(), route
+        // model binding), jamais du même appel que sa dernière écriture.
+        $order->fresh()->touch();
+
+        $this->artisan('payments:expire-stale-pending');
+
+        $this->assertSame('pending_payment', $order->fresh()->status);
+    }
+
     public function test_a_stale_pending_subscription_is_cancelled_and_restores_its_referral_credit(): void
     {
         $prestataire = User::factory()->create(['role' => 'prestataire', 'referral_credit_balance' => 500]);
         $subscription = $this->makeStaleSubscription($prestataire);
         $subscription->applyReferralCredit(true);
+        $this->backdateUpdatedAt($subscription, 25);
 
         $this->artisan('payments:expire-stale-pending');
 

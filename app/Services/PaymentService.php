@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\FedapayPayoutAttempt;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Subscription;
@@ -28,6 +29,14 @@ class PaymentService
      */
     public function initiateForOrder(Order $order, string $paymentMethod, bool $useReferralCredit = false): string
     {
+        // Réinitialise l'horloge d'expiration (ExpireStalePendingPayments se base sur
+        // updated_at) à CHAQUE tentative de paiement, pas seulement à la création — audit
+        // externe (2e audit) : sans ça, reprendre une commande proche de ses 24h via le bouton
+        // "Payer" (PaymentController::initiate(), qui ne touche jamais la commande) pouvait la
+        // voir annulée par la tâche planifiée pendant que le client était en train de payer,
+        // laissant un paiement confirmé sans commande à activer.
+        $order->touch();
+
         $order->applyReferralCredit($useReferralCredit);
 
         $payer = $order->client;
@@ -72,6 +81,10 @@ class PaymentService
      */
     public function initiateForSubscription(Subscription $subscription, string $paymentMethod, bool $useReferralCredit = false): string
     {
+        // Même principe que initiateForOrder() : réinitialise l'horloge d'expiration à chaque
+        // tentative de paiement.
+        $subscription->touch();
+
         $subscription->applyReferralCredit($useReferralCredit);
 
         $payer = $subscription->user;
@@ -331,6 +344,22 @@ class PaymentService
         $withdrawal = WithdrawalRequest::where('fedapay_payout_id', $payoutId)->first();
 
         if (!$withdrawal) {
+            // Ne retourne plus en silence (audit externe) : cet identifiant a pu appartenir à
+            // une demande depuis débloquée manuellement (WithdrawalRequest::
+            // clearAmbiguousFedapayAttempt() vide fedapay_payout_id sans supprimer l'historique,
+            // voir FedapayPayoutAttempt) — si elle a ensuite été repayée autrement, ce webhook
+            // signale potentiellement un double paiement. Toujours alerter l'admin plutôt que de
+            // laisser ça invisible.
+            $historicalAttempt = FedapayPayoutAttempt::where('fedapay_payout_id', $payoutId)->first();
+
+            AdminNotifier::actionRequired(
+                'Webhook FedaPay reçu pour un virement non reconnu',
+                $historicalAttempt
+                    ? "Le virement {$payoutId} (statut FedaPay : {$status}) correspondait à la demande de retrait #{$historicalAttempt->withdrawal_request_id}, mais n'y est plus rattaché (débloquée manuellement depuis). Vérifiez qu'aucun double paiement n'a eu lieu."
+                    : "Le virement {$payoutId} (statut FedaPay : {$status}) ne correspond à aucune demande de retrait connue.",
+                route('filament.admin.resources.withdrawal-requests.index'),
+            );
+
             return;
         }
 

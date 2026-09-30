@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\FedapayPayoutAttempt;
 use App\Models\User;
 use App\Models\WithdrawalRequest;
+use App\Notifications\AdminActionRequired;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 // Suggestion d'un audit externe, implémentée avec prudence (argent réel, API tierce) : les
@@ -158,12 +161,64 @@ class FedapayPayoutTest extends TestCase
         $this->assertSame('pending', $pendingWithdrawal->fresh()->fedapay_status);
     }
 
-    public function test_an_unknown_payout_id_is_ignored_without_error(): void
+    // Corrigé suite à un 2e audit externe : un webhook pour un identifiant inconnu était
+    // auparavant ignoré en silence — remplacé par une alerte admin systématique, pour ne jamais
+    // laisser passer un signal potentiel de double paiement sans que personne ne le voie.
+    public function test_an_unknown_payout_id_alerts_the_admin_instead_of_being_silently_ignored(): void
     {
+        Notification::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
         $service = app(PaymentService::class);
 
         $service->processPayoutUpdate('payout_inconnu', 'sent', null);
 
-        $this->assertTrue(true); // N'a pas levé d'exception.
+        Notification::assertSentTo($admin, AdminActionRequired::class);
+    }
+
+    // markFedapayPayoutSent() garde une trace permanente de chaque identifiant utilisé, même
+    // après un déblocage manuel qui vide fedapay_payout_id sur la demande elle-même.
+    public function test_marking_a_payout_sent_logs_it_to_the_permanent_history(): void
+    {
+        $withdrawal = $this->makePendingWithdrawal();
+
+        $withdrawal->markFedapayPayoutSent('payout_historique');
+
+        $this->assertDatabaseHas('fedapay_payout_attempts', [
+            'withdrawal_request_id' => $withdrawal->id,
+            'fedapay_payout_id' => 'payout_historique',
+        ]);
+    }
+
+    // Corrigé suite à un 2e audit externe : si un webhook arrive pour un identifiant qui a
+    // appartenu à une demande (débloquée manuellement depuis, donc plus "l'actuel"), l'admin
+    // doit être alerté du risque de double paiement — pas juste voir le webhook disparaître.
+    public function test_a_webhook_for_a_historically_unlocked_payout_alerts_the_admin(): void
+    {
+        Notification::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $withdrawal = $this->makePendingWithdrawal();
+        $withdrawal->markFedapayPayoutSent('payout_debloque');
+        $withdrawal->clearAmbiguousFedapayAttempt();
+
+        app(PaymentService::class)->processPayoutUpdate('payout_debloque', 'sent', null);
+
+        Notification::assertSentTo($admin, AdminActionRequired::class);
+        $this->assertTrue(FedapayPayoutAttempt::where('fedapay_payout_id', 'payout_debloque')->exists());
+    }
+
+    // Corrigé suite à un 2e audit externe : une demande bloquée sur 'initiating' (processus
+    // interrompu entre la réservation et l'obtention de l'identifiant FedaPay) n'avait
+    // auparavant AUCUNE action disponible pour la débloquer — clearAmbiguousFedapayAttempt()
+    // couvre maintenant aussi ce cas, sans risque de double paiement puisque sendNow() n'a
+    // jamais pu être appelé sans identifiant enregistré.
+    public function test_an_initiating_payout_can_be_cleared_even_without_a_payout_id(): void
+    {
+        $withdrawal = $this->makePendingWithdrawal();
+        $withdrawal->update(['fedapay_status' => 'initiating']);
+
+        $withdrawal->clearAmbiguousFedapayAttempt();
+
+        $this->assertNull($withdrawal->fresh()->fedapay_status);
+        $this->assertTrue($withdrawal->fresh()->canRetryFedapayPayout());
     }
 }

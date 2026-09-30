@@ -60,6 +60,7 @@ class WithdrawalRequestsTable
                     ->badge()
                     ->placeholder('—')
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'initiating' => 'Bloqué (à vérifier)',
                         'pending' => 'Virement en cours',
                         'sent' => 'Envoyé',
                         'failed' => 'Échoué',
@@ -68,7 +69,7 @@ class WithdrawalRequestsTable
                     ->color(fn (?string $state): string => match ($state) {
                         'sent' => 'success',
                         'pending' => 'warning',
-                        'failed' => 'danger',
+                        'failed', 'initiating' => 'danger',
                         default => 'gray',
                     })
                     ->toggleable(),
@@ -123,7 +124,13 @@ class WithdrawalRequestsTable
                     ->label('Débloquer manuellement')
                     ->icon('heroicon-o-lock-open')
                     ->color('warning')
-                    ->visible(fn (WithdrawalRequest $record) => $record->status === 'pending' && $record->fedapay_payout_id !== null && $record->fedapay_status !== 'sent')
+                    // 'initiating' inclus (audit externe — 2e audit) : sans ça, une demande dont
+                    // le processus a planté juste après la réservation (avant d'obtenir un
+                    // identifiant FedaPay) restait bloquée pour toujours, sans aucune action
+                    // disponible pour la débloquer.
+                    ->visible(fn (WithdrawalRequest $record) => $record->status === 'pending'
+                        && $record->fedapay_status !== 'sent'
+                        && ($record->fedapay_payout_id !== null || $record->fedapay_status === 'initiating'))
                     ->requiresConfirmation()
                     ->modalDescription('À utiliser UNIQUEMENT après avoir vérifié sur le tableau de bord FedaPay que ce virement n\'a PAS été envoyé. Débloquer sans vérifier risque un double paiement si l\'argent est en réalité déjà parti.')
                     ->action(function (WithdrawalRequest $record) {

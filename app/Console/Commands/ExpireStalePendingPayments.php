@@ -20,8 +20,13 @@ class ExpireStalePendingPayments extends Command
 
     public function handle(): int
     {
+        // updated_at, pas created_at (audit externe — 2e audit) : une commande peut être reprise
+        // bien après sa création (OrderCreate la réutilise, le bouton "Payer" la relance) —
+        // PaymentService::initiateForOrder() réinitialise updated_at à chaque tentative, pour
+        // qu'une commande activement en train d'être payée ne soit jamais annulée sous le pied
+        // du client par cette tâche planifiée.
         $staleOrders = Order::where('status', 'pending_payment')
-            ->where('created_at', '<=', now()->subHours(self::STALE_AFTER_HOURS))
+            ->where('updated_at', '<=', now()->subHours(self::STALE_AFTER_HOURS))
             ->get();
 
         foreach ($staleOrders as $order) {
@@ -30,7 +35,7 @@ class ExpireStalePendingPayments extends Command
         }
 
         $staleSubscriptions = Subscription::where('status', 'pending')
-            ->where('created_at', '<=', now()->subHours(self::STALE_AFTER_HOURS))
+            ->where('updated_at', '<=', now()->subHours(self::STALE_AFTER_HOURS))
             ->get();
 
         foreach ($staleSubscriptions as $subscription) {
