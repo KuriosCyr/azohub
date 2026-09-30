@@ -118,6 +118,50 @@ class DisputeResolutionTest extends TestCase
         $this->assertEquals(8500, $payment->refund_amount_due);
     }
 
+    // Corrigé suite à un second audit externe : le ratio du remboursement partiel se basait sur
+    // order.amount (le prix affiché), pas sur ce qu'Azohub a réellement encaissé (total_charged).
+    // Avec une réduction appliquée, ça faisait payer au prestataire une part calculée sur un
+    // montant plus gros que ce qui avait été perçu — Azohub reversait alors plus que ce qu'il
+    // avait encaissé. Reproduit l'exemple exact de l'audit : prix 10000, commission 1500,
+    // frais 500, réduction 2000 → 8500 réellement encaissés.
+    public function test_partial_refund_never_pays_out_more_than_azohub_collected(): void
+    {
+        $order = $this->makeDisputedOrder([
+            'commission' => 1500,
+            'prestataire_amount' => 8500,
+            'client_fee' => 500,
+            'promo_discount_applied' => 2000,
+        ]);
+        $dispute = $order->dispute;
+        $prestataire = $order->prestataire;
+
+        // Remboursement total des 8500 réellement payés : le prestataire ne doit plus rien
+        // recevoir (avant le correctif, il recevait encore 1275 FCFA en trop).
+        $dispute->resolve('partial_refund', $this->adminUser->id, 8500.0);
+
+        $prestataire->refresh();
+        $this->assertEquals(0, $prestataire->wallet_balance);
+    }
+
+    public function test_a_genuinely_partial_refund_with_a_discount_splits_without_any_loss(): void
+    {
+        $order = $this->makeDisputedOrder([
+            'commission' => 1500,
+            'prestataire_amount' => 8500,
+            'client_fee' => 500,
+            'promo_discount_applied' => 2000,
+        ]);
+        $dispute = $order->dispute;
+        $prestataire = $order->prestataire;
+
+        // 5000 sur 8500 réellement encaissés rendus au client ; le prestataire reçoit le reste
+        // proportionnel (3500) — total versé (8500) égal à ce qu'Azohub a collecté, jamais plus.
+        $dispute->resolve('partial_refund', $this->adminUser->id, 5000.0);
+
+        $prestataire->refresh();
+        $this->assertEquals(3500, $prestataire->wallet_balance);
+    }
+
     public function test_pay_prestataire_completes_order_and_credits_wallet_immediately(): void
     {
         $order = $this->makeDisputedOrder();

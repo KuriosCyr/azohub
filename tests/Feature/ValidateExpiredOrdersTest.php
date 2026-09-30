@@ -51,6 +51,40 @@ class ValidateExpiredOrdersTest extends TestCase
         Notification::assertSentTo($prestataire, OrderAutoValidated::class, fn ($n) => $n->forClient === false);
     }
 
+    // Corrigé suite à un 2e audit externe : une commande qui devient non-libérable entre la
+    // sélection de la liste (status='delivered') et le verrou posé par releasePayment() (ex. un
+    // litige ouvert au même instant, ou payment_status déjà changé autrement) ne doit plus
+    // déclencher de notification "auto-validée" trompeuse.
+    public function test_an_order_no_longer_releasable_is_skipped_without_a_false_notification(): void
+    {
+        Notification::fake();
+
+        $client = User::factory()->create();
+        $prestataire = User::factory()->create(['role' => 'prestataire', 'wallet_balance' => 0]);
+
+        $order = Order::create([
+            'order_number' => 'AZH-TEST-' . uniqid(),
+            'client_id' => $client->id,
+            'prestataire_id' => $prestataire->id,
+            'amount' => 10000,
+            'commission' => 1000,
+            'prestataire_amount' => 9000,
+            'delivery_time' => 3,
+            'status' => 'delivered',
+            // Simule une commande déjà passée en "remboursement à traiter" par un autre appel
+            // concurrent juste après que cette tâche a chargé sa liste initiale de commandes.
+            'payment_status' => 'refund_pending',
+            'auto_validated' => false,
+            'validation_deadline' => now()->subHour(),
+        ]);
+
+        $this->artisan('orders:validate-expired')->assertExitCode(0);
+
+        $this->assertSame('delivered', $order->fresh()->status);
+        $this->assertEquals(0, $prestataire->fresh()->wallet_balance);
+        Notification::assertNothingSent();
+    }
+
     public function test_orders_not_yet_expired_are_left_untouched(): void
     {
         Notification::fake();

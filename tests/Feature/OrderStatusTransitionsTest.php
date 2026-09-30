@@ -131,6 +131,34 @@ class OrderStatusTransitionsTest extends TestCase
         $this->assertSame('in_progress', $order->fresh()->status);
     }
 
+    public function test_client_can_validate_a_delivered_order(): void
+    {
+        Notification::fake();
+        $order = $this->makeOrder(['status' => 'delivered', 'delivered_at' => now()]);
+
+        $response = $this->actingAs($order->client)->post(route('orders.validate', $order));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertSame('released', $order->fresh()->payment_status);
+    }
+
+    // Corrigé suite à un 2e audit externe : releasePayment() peut échouer en silence (déjà
+    // traité, ou commande en litige) — validate() ne doit plus envoyer "le prestataire a reçu
+    // son paiement" quand ce n'est pas vraiment arrivé.
+    public function test_validating_an_order_that_cannot_be_released_shows_an_error_not_a_false_success(): void
+    {
+        Notification::fake();
+        // 'delivered' pour passer le premier contrôle du contrôleur, mais déjà en remboursement
+        // à traiter — releasePayment() doit refuser en interne, sous son propre verrou.
+        $order = $this->makeOrder(['status' => 'delivered', 'delivered_at' => now(), 'payment_status' => 'refund_pending']);
+
+        $response = $this->actingAs($order->client)->post(route('orders.validate', $order));
+
+        $response->assertSessionHas('error');
+        Notification::assertNothingSent();
+    }
+
     // DisputeController::store() ne verrouillait pas la commande avant de créer le litige
     // (audit externe) — une commande qui vient d'être validée/complétée ne doit plus pouvoir
     // passer en 'disputed' après coup.

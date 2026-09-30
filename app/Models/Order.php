@@ -398,9 +398,12 @@ class Order extends Model
     // encaissé passe en "refund_pending" et doit être traité manuellement par un
     // administrateur depuis le dashboard FedaPay, puis confirmé côté Azohub via
     // Order::confirmRefund().
-    public function refund(?string $reason = null)
+    // Retourne true si l'annulation a réellement eu lieu, false si l'appel n'a rien fait (déjà
+    // traité autrement) — audit externe (2e audit) : sans ça, Dispute::resolve() marquait le
+    // litige "résolu : remboursement client" même quand refund() n'avait en réalité rien changé.
+    public function refund(?string $reason = null): bool
     {
-        DB::transaction(function () use ($reason) {
+        $refunded = DB::transaction(function () use ($reason) {
             // Verrouillée + revérifiée sous verrou (audit externe) : sans ça, un remboursement
             // demandé au même instant qu'une libération de paiement concurrente (releasePayment())
             // pouvait s'exécuter quand même après coup, écrasant payment_status='released' en
@@ -409,7 +412,7 @@ class Order extends Model
             $order = static::whereKey($this->id)->lockForUpdate()->first();
 
             if (!$order) {
-                return;
+                return false;
             }
 
             if (in_array($order->payment_status, ['released', 'refund_pending', 'refunded'], true)) {
@@ -421,7 +424,7 @@ class Order extends Model
                     );
                 }
 
-                return;
+                return false;
             }
 
             $successfulPayment = $order->payments()->where('status', 'success')->latest()->first();
@@ -465,9 +468,13 @@ class Order extends Model
                 'status' => 'refund_pending',
                 'refund_amount_due' => (float) $successfulPayment->amount,
             ]);
+
+            return true;
         });
 
         $this->refresh();
+
+        return $refunded;
     }
 
     // Confirme qu'un remboursement en attente a bien été traité manuellement
@@ -522,7 +529,14 @@ class Order extends Model
             // même si cette méthode est appelée autrement qu'via ce formulaire.
             $clientRefundAmount = min($clientRefundAmount, (float) $order->total_charged);
 
-            $refundRatio = $order->amount > 0 ? min(1, max(0, $clientRefundAmount / (float) $order->amount)) : 1;
+            // Proportion calculée sur total_charged (ce qu'Azohub a réellement encaissé), pas sur
+            // amount (le prix affiché) — audit externe : avec une réduction (promo ou crédit de
+            // parrainage) appliquée, baser le ratio sur amount faisait payer au prestataire une
+            // part calculée sur un montant plus gros que ce qui avait été perçu, et Azohub
+            // reversait alors plus que ce qu'il avait encaissé (perte nette sur la commande).
+            // Un remboursement total (ratio = 1) laisse maintenant bien le prestataire à 0.
+            $totalCharged = (float) $order->total_charged;
+            $refundRatio = $totalCharged > 0 ? min(1, max(0, $clientRefundAmount / $totalCharged)) : 1;
             $prestatairePayout = round((float) $order->prestataire_amount * (1 - $refundRatio), 2);
 
             $order->update([
@@ -563,9 +577,14 @@ class Order extends Model
     // si deux déclencheurs (client + cron d'auto-validation) se chevauchent.
     // $allowFromDisputed : réservé à Dispute::resolve() ('pay_prestataire') — seul cas légitime
     // où la commande est encore 'disputed' au moment de l'appel.
-    public function releasePayment(bool $autoValidated = false, bool $allowFromDisputed = false)
+    // Retourne true si le paiement a réellement été libéré, false si l'appel n'a rien fait (déjà
+    // traité, ou commande en litige) — audit externe (2e audit) : les deux appelants
+    // (OrderController::validate(), ValidateExpiredOrders) envoyaient auparavant une notification
+    // "paiement reçu" au prestataire sans jamais vérifier si quoi que ce soit avait vraiment eu
+    // lieu, ce qui pouvait envoyer un message trompeur si un litige s'était ouvert entre-temps.
+    public function releasePayment(bool $autoValidated = false, bool $allowFromDisputed = false): bool
     {
-        DB::transaction(function () use ($autoValidated, $allowFromDisputed) {
+        $released = DB::transaction(function () use ($autoValidated, $allowFromDisputed) {
             $order = static::whereKey($this->id)->lockForUpdate()->first();
 
             // Une commande déjà libérée, déjà en attente de remboursement ou déjà remboursée ne
@@ -573,7 +592,7 @@ class Order extends Model
             // que 'released', ce qui pouvait payer le prestataire sur une commande déjà marquée
             // à rembourser au client — un litige tranché en cours de traitement, par exemple).
             if (!$order || in_array($order->payment_status, ['released', 'refund_pending', 'refunded'], true)) {
-                return;
+                return false;
             }
 
             // Un litige ouvert entre-temps (DisputeController::store(), verrouillée comme ici)
@@ -583,7 +602,7 @@ class Order extends Model
             // garde-fou, une commande pouvait finir 'disputed' ET payment_status='released' en
             // même temps).
             if (!$allowFromDisputed && $order->status === 'disputed') {
-                return;
+                return false;
             }
 
             $updateData = [
@@ -609,9 +628,13 @@ class Order extends Model
             }
 
             $order->service?->increment('total_orders');
+
+            return true;
         });
 
         $this->refresh();
+
+        return $released;
     }
 
     // Helper pour obtenir le libellé du statut

@@ -27,7 +27,13 @@ class ValidateExpiredOrders extends Command
         $count = 0;
 
         foreach ($orders as $order) {
-            $order->releasePayment(autoValidated: true);
+            // Ne notifie plus sans condition (audit externe — 2e audit) : un litige ouvert sur
+            // l'une de ces commandes pendant que la boucle tourne peut faire échouer
+            // releasePayment() en silence — sans cette vérification, les deux parties
+            // recevaient quand même un message "auto-validée" trompeur.
+            if (!$order->releasePayment(autoValidated: true)) {
+                continue;
+            }
 
             // Ni le client ni le prestataire n'étaient prévenus dans ce cas (contrairement à
             // une validation manuelle, cf. OrderController::validate()) : le prestataire

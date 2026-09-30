@@ -262,8 +262,17 @@ class OrderController extends Controller
                 ->with('error', 'Cette commande ne peut pas être validée.');
         }
 
-        // Libérer le paiement au prestataire et clôturer la commande
-        $order->releasePayment();
+        // Libérer le paiement au prestataire et clôturer la commande. Ne notifie plus sans
+        // condition (audit externe — 2e audit) : un litige ouvert entre ce contrôle de statut et
+        // le verrou posé dans releasePayment() pouvait faire échouer la libération en silence,
+        // tout en envoyant quand même "le prestataire a reçu son paiement" — un message trompeur.
+        $released = $order->releasePayment();
+
+        if (!$released) {
+            return redirect()
+                ->back()
+                ->with('error', 'Cette commande ne peut plus être validée (un litige a peut-être été ouvert entre-temps).');
+        }
 
         $order->prestataire->notify(new PaymentReleased($order));
 
