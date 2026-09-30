@@ -29,13 +29,35 @@ class PaymentService
      */
     public function initiateForOrder(Order $order, string $paymentMethod, bool $useReferralCredit = false): string
     {
-        // Réinitialise l'horloge d'expiration (ExpireStalePendingPayments se base sur
-        // updated_at) à CHAQUE tentative de paiement, pas seulement à la création — audit
-        // externe (2e audit) : sans ça, reprendre une commande proche de ses 24h via le bouton
-        // "Payer" (PaymentController::initiate(), qui ne touche jamais la commande) pouvait la
-        // voir annulée par la tâche planifiée pendant que le client était en train de payer,
-        // laissant un paiement confirmé sans commande à activer.
-        $order->touch();
+        // Verrouillée + revérifiée sous verrou (audit externe — 4e audit) : PaymentController::
+        // initiate() (et les Livewire équivalents) vérifient le statut AVANT d'appeler ceci, sans
+        // verrou — si l'expiration automatique (ExpireStalePendingPayments) annule la commande
+        // entre ce contrôle et cet appel, l'ancien code touchait puis appliquait quand même le
+        // crédit de parrainage sur une commande qui vient d'être annulée : le crédit est réellement
+        // débité du solde client (User::redeemReferralCredit()) pour une commande qui ne sera
+        // jamais payée ni remboursée pour ce montant précis, le laissant perdu pour toujours.
+        $order = DB::transaction(function () use ($order) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
+
+            if (!$locked || $locked->status !== 'pending_payment') {
+                return null;
+            }
+
+            // Réinitialise l'horloge d'expiration (ExpireStalePendingPayments se base sur
+            // updated_at) à CHAQUE tentative de paiement, pas seulement à la création — audit
+            // externe (2e audit) : sans ça, reprendre une commande proche de ses 24h via le bouton
+            // "Payer" pouvait la voir annulée par la tâche planifiée pendant que le client était en
+            // train de payer, laissant un paiement confirmé sans commande à activer. Fait dans la
+            // MÊME transaction que le verrou (4e audit) : sans ça, le touch() lui-même pouvait
+            // s'exécuter juste après qu'une annulation concurrente ait déjà eu lieu.
+            $locked->touch();
+
+            return $locked;
+        });
+
+        if (!$order) {
+            throw new \RuntimeException("Cette commande n'est plus en attente de paiement.");
+        }
 
         $order->applyReferralCredit($useReferralCredit);
 

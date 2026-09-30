@@ -150,7 +150,31 @@ class Order extends Model
         $redeemed = $this->client->redeemReferralCredit($redeemableCap, $this);
 
         if ($redeemed > 0) {
-            $this->update(['referral_credit_applied' => $redeemed]);
+            // Verrouillée + revérifiée sous verrou (audit externe — 4e audit) : le crédit vient
+            // d'être réellement débité du solde client (ligne ci-dessus) — si la commande n'est
+            // plus 'pending_payment' au moment d'écrire referral_credit_applied (annulée
+            // entre-temps par l'expiration automatique, par exemple, entre le chargement de cette
+            // commande et cet appel), on le restitue tout de suite plutôt que de le laisser
+            // consommé sur une commande qui ne sera jamais payée — il resterait sinon perdu pour
+            // toujours (rien ne rembourse le crédit d'une commande déjà annulée).
+            $applied = DB::transaction(function () use ($redeemed) {
+                $order = static::whereKey($this->id)->lockForUpdate()->first();
+
+                if (!$order || $order->status !== 'pending_payment') {
+                    return false;
+                }
+
+                $order->update(['referral_credit_applied' => $redeemed]);
+
+                return true;
+            });
+
+            if (!$applied) {
+                $this->client->refundReferralCredit($redeemed, $this);
+
+                return (float) $this->referral_credit_applied;
+            }
+
             $this->refresh();
         }
 
@@ -177,6 +201,18 @@ class Order extends Model
         }
 
         return DB::transaction(function () use ($rawCode) {
+            // Verrouillée + revérifiée sous verrou (audit externe — 4e audit) : même risque que
+            // côté crédit de parrainage (voir applyReferralCredit()) — une commande annulée
+            // entre-temps (ex. expiration automatique) ne doit plus se voir appliquer un code
+            // promo après coup, ce qui consommerait inutilement un usage du code (et bloquerait ce
+            // client de le réutiliser, alreadyUsedBy() ci-dessous) sans que la commande ne soit
+            // jamais payée.
+            $order = static::whereKey($this->id)->lockForUpdate()->first();
+
+            if (!$order || $order->status !== 'pending_payment') {
+                return "Cette commande n'est plus en attente de paiement.";
+            }
+
             // Verrouille la ligne du code : deux tentatives concurrentes sur le dernier usage
             // disponible d'un code à max_uses limité se sérialisent ici, la seconde ne comptant
             // le nombre d'utilisations qu'une fois la première validée (voir maybeRewardReferrer()
@@ -197,11 +233,11 @@ class Order extends Model
                 return "Ce code promo a atteint son nombre maximum d'utilisations.";
             }
 
-            if ($code->alreadyUsedBy($this->client_id)) {
+            if ($code->alreadyUsedBy($order->client_id)) {
                 return 'Vous avez déjà utilisé ce code promo.';
             }
 
-            if (!$code->meetsMinimumOrder((float) $this->total_charged)) {
+            if (!$code->meetsMinimumOrder((float) $order->total_charged)) {
                 return "Cette commande n'atteint pas le montant minimum requis pour ce code promo.";
             }
 
@@ -209,23 +245,23 @@ class Order extends Model
             // client) : elle ne peut jamais dépasser ce qu'Azohub a réellement encaissé, pour ne
             // jamais faire perdre d'argent à la plateforme sur une commande (audit externe).
             $discount = $code->discountFor(
-                (float) $this->total_charged,
-                (float) $this->commission + (float) $this->client_fee
+                (float) $order->total_charged,
+                (float) $order->commission + (float) $order->client_fee
             );
 
             if ($discount <= 0) {
                 return "Ce code promo ne peut pas s'appliquer à cette commande.";
             }
 
-            $this->update([
+            $order->update([
                 'promo_code_id' => $code->id,
                 'promo_discount_applied' => $discount,
             ]);
 
             PromoCodeRedemption::create([
                 'promo_code_id' => $code->id,
-                'user_id' => $this->client_id,
-                'order_id' => $this->id,
+                'user_id' => $order->client_id,
+                'order_id' => $order->id,
                 'amount_applied' => $discount,
             ]);
 
@@ -592,7 +628,11 @@ class Order extends Model
     public function releasePayment(bool $autoValidated = false, bool $allowFromDisputed = false): bool
     {
         $released = DB::transaction(function () use ($autoValidated, $allowFromDisputed) {
-            $order = static::whereKey($this->id)->lockForUpdate()->first();
+            // withTrashed() (audit externe — 4e audit) : comme refund()/markAsPaid(), une commande
+            // en litige peut être soft-deleted par un admin — Dispute::resolve() ('pay_prestataire')
+            // ne doit pas échouer silencieusement dans ce cas, le prestataire doit quand même être
+            // payé pour un travail réellement livré.
+            $order = static::withTrashed()->whereKey($this->id)->lockForUpdate()->first();
 
             // Une commande déjà libérée, déjà en attente de remboursement ou déjà remboursée ne
             // doit plus jamais repasser par ici (audit externe : releasePayment() ne bloquait

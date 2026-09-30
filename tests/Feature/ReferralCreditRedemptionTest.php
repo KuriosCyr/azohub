@@ -4,13 +4,15 @@ namespace Tests\Feature;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 // Couvre la dépense du crédit de parrainage (User::redeemReferralCredit()/refundReferralCredit(),
-// Order::applyReferralCredit(), Order::refund()) — jamais l'appel réel à FedaPay
-// (PaymentService::initiateForOrder ne teste que sa logique de réduction, extraite dans
-// Order::applyReferralCredit() pour rester testable sans toucher à l'API, comme FedapayPayoutTest).
+// Order::applyReferralCredit(), Order::refund()) — jamais l'appel réel à FedaPay.
+// PaymentService::initiateForOrder() n'est testée que sur son garde-fou de statut (qui lève AVANT
+// tout appel réseau, cf. test dédié plus bas) — sa logique de réduction est extraite dans
+// Order::applyReferralCredit() pour rester testable sans toucher à l'API, comme FedapayPayoutTest.
 class ReferralCreditRedemptionTest extends TestCase
 {
     use RefreshDatabase;
@@ -128,8 +130,11 @@ class ReferralCreditRedemptionTest extends TestCase
     public function test_cancelling_a_paid_order_does_not_restore_the_credit_it_already_paid_for(): void
     {
         $client = User::factory()->create(['role' => 'client', 'referral_credit_balance' => 300]);
-        $order = $this->makeOrder($client, ['status' => 'paid', 'payment_status' => 'held']);
+        // Le crédit s'applique pendant que la commande est encore 'pending_payment' (seul état où
+        // applyReferralCredit() l'accepte, 4e audit) — elle passe 'paid' seulement ensuite.
+        $order = $this->makeOrder($client);
         $order->applyReferralCredit(true);
+        $order->update(['status' => 'paid', 'payment_status' => 'held']);
         $order->payments()->create([
             'user_id' => $client->id,
             'transaction_id' => 'TXN-' . uniqid(),
@@ -146,5 +151,55 @@ class ReferralCreditRedemptionTest extends TestCase
         $this->assertEquals(0, $client->fresh()->referral_credit_balance);
         $this->assertEquals(300, $order->fresh()->referral_credit_applied);
         $this->assertSame('refund_pending', $order->fresh()->payment_status);
+    }
+
+    // Corrigé suite à un 4e audit externe : applyReferralCredit() lisait `referral_credit_applied`
+    // en mémoire (jamais rechargé sous verrou) avant de débiter puis d'écrire le crédit — une
+    // commande annulée entre-temps (ex. expiration automatique pendant qu'une requête de paiement
+    // concurrente était déjà en cours) pouvait quand même se voir appliquer le crédit après coup :
+    // l'argent est réellement débité du solde client pour une commande qui ne sera jamais payée,
+    // le crédit restant perdu pour toujours (rien ne rembourse une commande déjà 'cancelled').
+    // Reproduit directement l'état "commande annulée entre le chargement et l'écriture" plutôt que
+    // la vraie course concurrente (non simulable en mono-thread).
+    public function test_applying_referral_credit_on_a_no_longer_payable_order_refunds_it_immediately(): void
+    {
+        $client = User::factory()->create(['role' => 'client', 'referral_credit_balance' => 300]);
+        // La commande a déjà été annulée par l'expiration automatique au moment où
+        // applyReferralCredit() s'exécute (l'objet $order en mémoire, lui, date d'avant).
+        $order = $this->makeOrder($client, ['status' => 'cancelled', 'payment_status' => 'pending']);
+
+        $applied = $order->applyReferralCredit(true);
+
+        // Rien n'est resté appliqué sur la commande annulée, et le solde n'a pas bougé au final
+        // (débité puis immédiatement restitué).
+        $this->assertEquals(0, $applied);
+        $this->assertEquals(0, $order->fresh()->referral_credit_applied);
+        $this->assertEquals(300, $client->fresh()->referral_credit_balance);
+    }
+
+    // Corrigé suite à un 4e audit externe : PaymentService::initiateForOrder() touch()ait la
+    // commande puis appliquait le crédit de parrainage sans jamais revérifier sous verrou que la
+    // commande était toujours 'pending_payment' — un appelant (PaymentController::initiate()) ne
+    // vérifie le statut qu'AVANT, sans verrou. Lève maintenant avant tout effet de bord (avant même
+    // le touch()) si la commande n'est plus payable.
+    public function test_initiate_for_order_refuses_a_no_longer_payable_order_before_any_side_effect(): void
+    {
+        $client = User::factory()->create(['role' => 'client', 'referral_credit_balance' => 300]);
+        $order = $this->makeOrder($client, ['status' => 'cancelled', 'payment_status' => 'pending']);
+        $originalUpdatedAt = $order->fresh()->updated_at;
+
+        try {
+            app(PaymentService::class)->initiateForOrder($order, 'mtn_momo', true);
+            $this->fail('Une exception était attendue.');
+        } catch (\RuntimeException $e) {
+            // Attendu.
+        }
+
+        $this->assertEquals(300, $client->fresh()->referral_credit_balance, 'Le crédit ne doit pas avoir été débité.');
+        $this->assertEquals(
+            $originalUpdatedAt->timestamp,
+            $order->fresh()->updated_at->timestamp,
+            'La commande ne doit pas avoir été touchée (ExpireStalePendingPayments ne doit pas la croire activement en cours de paiement).'
+        );
     }
 }

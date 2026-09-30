@@ -191,6 +191,28 @@ class PromoCodeRedemptionTest extends TestCase
         $this->assertNull($order->fresh()->promo_code_id);
     }
 
+    // Corrigé suite à un 4e audit externe : applyPromoCode() ne revérifiait jamais que la commande
+    // était toujours 'pending_payment' avant d'appliquer la réduction et de créer la
+    // PromoCodeRedemption — une commande annulée entre-temps (ex. expiration automatique pendant
+    // qu'une tentative de paiement concurrente était en cours) consommait quand même un usage du
+    // code, bloquant ce client de le réutiliser sur une commande qui ne sera jamais payée.
+    public function test_applying_a_promo_code_on_a_no_longer_payable_order_is_rejected_without_consuming_it(): void
+    {
+        $code = PromoCode::create(['code' => 'PERIME3', 'type' => 'fixed', 'value' => 500]);
+        $client = User::factory()->create(['role' => 'client']);
+        $order = $this->makeOrder($client, ['status' => 'cancelled', 'payment_status' => 'pending']);
+
+        $error = $order->applyPromoCode('PERIME3');
+
+        $this->assertNotNull($error);
+        $this->assertNull($order->fresh()->promo_code_id);
+        $this->assertEquals(0, PromoCodeRedemption::where('promo_code_id', $code->id)->count());
+
+        // Le code reste utilisable par ce même client sur une nouvelle commande.
+        $newOrder = $this->makeOrder($client);
+        $this->assertNull($newOrder->applyPromoCode('PERIME3'));
+    }
+
     public function test_cancelling_a_never_paid_order_releases_the_promo_code(): void
     {
         $code = PromoCode::create(['code' => 'LIBERE', 'type' => 'fixed', 'value' => 500, 'max_uses' => 1]);
@@ -214,8 +236,11 @@ class PromoCodeRedemptionTest extends TestCase
     {
         $code = PromoCode::create(['code' => 'GARDE', 'type' => 'fixed', 'value' => 500]);
         $client = User::factory()->create(['role' => 'client']);
-        $order = $this->makeOrder($client, ['status' => 'paid', 'payment_status' => 'held']);
+        // Le code s'applique pendant que la commande est encore 'pending_payment' (seul état où
+        // applyPromoCode() l'accepte, 4e audit) — elle passe 'paid' seulement ensuite.
+        $order = $this->makeOrder($client);
         $order->applyPromoCode('GARDE');
+        $order->update(['status' => 'paid', 'payment_status' => 'held']);
         $order->payments()->create([
             'user_id' => $client->id,
             'transaction_id' => 'TXN-' . uniqid(),
