@@ -57,17 +57,24 @@ class StatsOverview extends BaseWidget
             ->where('type', 'subscription')->where('status', 'success')->sum('amount');
 
         // Commandes soldées par un remboursement PARTIEL (Order::partialRefund(), litige tranché
-        // "partial_refund") : payment_status passe en 'refund_pending' comme une annulation
-        // complète, mais contrairement à celle-ci Azohub GARDE une marge réduite (le prestataire
-        // reçoit une part proportionnelle, jamais zéro sauf remboursement total) — exclure ces
-        // commandes comme le reste de refund_pending sous-comptait ce revenu bien réel, pas
-        // seulement dans l'historique (audit externe — 3e audit, suivi du point laissé de côté au
-        // 2e audit). Calculé en PHP plutôt qu'en SQL : ces commandes sont rares (un litige tranché
-        // "partial_refund"), et le ratio dépend du montant exact rendu au client
-        // (payments.refund_amount_due), pas d'une simple colonne de order.
-        $partialRefundMarginByOrder = Order::where('payment_status', 'refund_pending')
-            ->where('status', 'completed')
-            ->with(['payments' => fn ($q) => $q->where('status', 'refund_pending')])
+        // "partial_refund") : status passe à 'completed' avec payment_status='refund_pending',
+        // mais contrairement à une annulation complète Azohub GARDE une marge réduite (le
+        // prestataire reçoit une part proportionnelle, jamais zéro sauf remboursement total) —
+        // exclure ces commandes comme le reste de refund_pending sous-comptait ce revenu bien réel
+        // (audit externe — 3e audit, suivi du point laissé de côté au 2e audit).
+        // status='completed' SEUL est le critère stable (4e audit) : payment_status passe ensuite
+        // à 'refunded' une fois le remboursement confirmé par l'admin (Payment::confirmRefund()),
+        // et le filtrer sur 'refund_pending' uniquement faisait DISPARAÎTRE cette marge du CA
+        // exactement au moment où l'admin confirme correctement le remboursement — alors qu'aucun
+        // argent supplémentaire n'a bougé à cet instant. status='completed' + payment_status
+        // refund_pending/refunded n'arrive QUE via ce chemin (releasePayment() utilise 'released',
+        // jamais ces deux-là ensemble). Le paiement correspondant est identifié par
+        // refund_amount_due non nul plutôt que par son statut, pour la même raison (il passe aussi
+        // de 'refund_pending' à 'refunded' sans que refund_amount_due ne change). Calculé en PHP
+        // plutôt qu'en SQL : ces commandes sont rares (un litige tranché "partial_refund").
+        $partialRefundMarginByOrder = Order::where('status', 'completed')
+            ->whereIn('payment_status', ['refund_pending', 'refunded'])
+            ->with(['payments' => fn ($q) => $q->whereNotNull('refund_amount_due')->latest()])
             ->get()
             ->map(function (Order $order) {
                 $refundedPayment = $order->payments->first();
@@ -97,20 +104,41 @@ class StatsOverview extends BaseWidget
         $partialRefundMarginByMonth = $partialRefundMarginByOrder->groupBy('month')
             ->map(fn ($group) => (float) $group->sum('total'));
 
+        // paid_at des commandes, pas created_at (audit externe — 4e audit : même bug déjà corrigé
+        // pour les abonnements au 3e audit, jamais étendu aux commandes) — OrderCreate réutilise
+        // une commande pending_payment jusqu'à 24h (ExpireStalePendingPayments), donc une commande
+        // créée un mois et payée le mois suivant existait déjà comme scénario réaliste. Repéré via
+        // le paiement 'success' de chaque commande : invariant du domaine — une commande
+        // held/released a EXACTEMENT un paiement 'success' (un double paiement finit toujours en
+        // refund_pending, jamais 'success' deux fois, cf. Payment::markAsPaid()).
+        $paidOrderPayments = Payment::where('type', 'order_payment')->where('status', 'success')
+            ->whereHas('order', fn ($q) => $q->whereIn('payment_status', $paidStatuses))
+            ->with('order:id,commission,client_fee,referral_credit_applied,promo_discount_applied')
+            ->get();
+
+        $orderMargin = fn ($payment) => (float) $payment->order->commission + (float) $payment->order->client_fee
+            - (float) $payment->order->referral_credit_applied - (float) $payment->order->promo_discount_applied;
+
         $totalRevenue = (float) Order::whereIn('payment_status', $paidStatuses)
             ->selectRaw($revenueExpr)->value('total')
             + $subscriptionRevenueExpr(Payment::query())
             + $partialRefundMarginTotal;
-        $revenueThisMonth = (float) Order::whereIn('payment_status', $paidStatuses)
-            ->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear)
-            ->selectRaw($revenueExpr)->value('total')
+        $revenueThisMonth = $paidOrderPayments
+                ->filter(fn ($p) => $p->paid_at?->month === $thisMonth && $p->paid_at?->year === $thisYear)
+                ->sum($orderMargin)
             + $subscriptionRevenueExpr(Payment::whereMonth('paid_at', $thisMonth)->whereYear('paid_at', $thisYear))
             + $partialRefundMarginThisMonth;
-        $revenueLastMonth = (float) Order::whereIn('payment_status', $paidStatuses)
-            ->whereMonth('created_at', $lastMonth->month)->whereYear('created_at', $lastMonth->year)
-            ->selectRaw($revenueExpr)->value('total')
+        $revenueLastMonth = $paidOrderPayments
+                ->filter(fn ($p) => $p->paid_at?->month === $lastMonth->month && $p->paid_at?->year === $lastMonth->year)
+                ->sum($orderMargin)
             + $subscriptionRevenueExpr(Payment::whereMonth('paid_at', $lastMonth->month)->whereYear('paid_at', $lastMonth->year))
             + $partialRefundMarginLastMonth;
+
+        // Part encore en escrow (payment_status='held') du chiffre affiché ci-dessus (audit
+        // externe — 4e audit) : ce revenu reste comptabilisable tant qu'aucun remboursement total
+        // n'a lieu, mais n'est pas encore définitivement acquis (pas 'released') — le libellé du
+        // Stat le précise maintenant plutôt que de laisser croire que tout est définitivement acquis.
+        $heldRevenue = (float) Order::where('payment_status', 'held')->selectRaw($revenueExpr)->value('total');
 
         // --- Volume total (ce que les clients ont payé, avant reversement aux prestataires) ---
         $totalVolume = (float) Payment::where('status', 'success')->sum('amount');
@@ -125,12 +153,14 @@ class StatsOverview extends BaseWidget
         // Réductions soustraites et abonnements inclus (audit externe — 2e audit), comme pour
         // le chiffre d'affaires total ci-dessus : sans ça, ce graphique racontait une histoire
         // différente (et plus favorable) que le chiffre affiché juste à côté.
-        $orderRevenueByMonth = Order::whereIn('payment_status', $paidStatuses)
-            ->where('created_at', '>=', $start)
-            ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(commission + client_fee - referral_credit_applied - promo_discount_applied) as total')
-            ->groupBy('y', 'm')
-            ->get()
-            ->keyBy(fn($r) => $r->y . '-' . str_pad($r->m, 2, '0', STR_PAD_LEFT));
+        // Groupé par paid_at comme $revenueThisMonth/$revenueLastMonth ci-dessus, pas par
+        // created_at (audit externe — 4e audit) : les deux devaient déjà être cohérents entre eux,
+        // sans quoi le graphique racontait encore une histoire différente des chiffres juste à
+        // côté — $paidOrderPayments est déjà chargé plus haut, réutilisé ici sans requête de plus.
+        $orderRevenueByMonth = $paidOrderPayments
+            ->filter(fn ($p) => $p->paid_at && $p->paid_at->gte($start))
+            ->groupBy(fn ($p) => $p->paid_at->format('Y-m'))
+            ->map(fn ($group) => (object) ['total' => $group->sum($orderMargin)]);
 
         $subscriptionRevenueByMonth = Payment::where('type', 'subscription')->where('status', 'success')
             ->where('paid_at', '>=', $start)
@@ -190,7 +220,10 @@ class StatsOverview extends BaseWidget
                 ->chart($ordersChart),
 
             Stat::make('Bénéfices Azohub', number_format($totalRevenue, 0, ',', ' ') . ' FCFA')
-                ->description(number_format($revenueThisMonth, 0, ',', ' ') . ' FCFA ce mois · commissions + frais de service')
+                ->description(
+                    number_format($revenueThisMonth, 0, ',', ' ') . ' FCFA ce mois · commissions + frais de service'
+                    . ($heldRevenue > 0 ? ' · dont ' . number_format($heldRevenue, 0, ',', ' ') . ' FCFA encore en escrow' : '')
+                )
                 ->descriptionIcon($revenueIcon)
                 ->color($revenueColor)
                 ->chart($revenueChart),

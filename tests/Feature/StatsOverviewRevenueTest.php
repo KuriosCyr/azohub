@@ -142,6 +142,122 @@ class StatsOverviewRevenueTest extends TestCase
             ->assertSee('600 FCFA');
     }
 
+    // Corrigé suite à un 4e audit externe : la marge d'un remboursement partiel (test précédent)
+    // était filtrée sur payment_status='refund_pending' — une fois l'admin confirme le
+    // remboursement via Payment::confirmRefund() (qui fait alors passer order.payment_status à
+    // 'refunded'), cette marge disparaissait du CA au moment précis où l'admin fait bien son
+    // travail, alors qu'aucun argent supplémentaire n'a bougé à cet instant. Reproduit le même
+    // scénario que le test précédent puis confirme le remboursement.
+    public function test_revenue_from_a_partial_refund_is_unchanged_once_the_admin_confirms_it(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $client = User::factory()->create();
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+
+        $order = Order::create([
+            'order_number' => 'AZH-TEST-' . uniqid(),
+            'client_id' => $client->id,
+            'prestataire_id' => $prestataire->id,
+            'amount' => 10000,
+            'commission' => 1000,
+            'prestataire_amount' => 9000,
+            'delivery_time' => 3,
+            'status' => 'in_progress',
+            'payment_status' => 'held',
+        ]);
+
+        $payment = Payment::create([
+            'order_id' => $order->id,
+            'user_id' => $client->id,
+            'transaction_id' => 'TXN-' . uniqid(),
+            'payment_method' => 'mtn_momo',
+            'amount' => $order->amount,
+            'status' => 'success',
+            'type' => 'order_payment',
+            'paid_at' => now(),
+        ]);
+
+        $order->partialRefund(4000.0, 'Litige tranché en faveur partielle du client.');
+
+        // Avant confirmation : la marge (600) apparaît déjà (test précédent).
+        Livewire::actingAs($admin)->test(StatsOverview::class)->assertSee('600 FCFA');
+
+        // L'admin rembourse le client sur FedaPay puis confirme — payment_status de la commande
+        // passe alors à 'refunded'.
+        $payment->fresh()->confirmRefund();
+        $this->assertSame('refunded', $order->fresh()->payment_status);
+
+        // Le CA ne doit PAS avoir bougé : c'est la même marge de 600, toujours gardée par Azohub.
+        Livewire::actingAs($admin)->test(StatsOverview::class)->assertSee('600 FCFA');
+    }
+
+    // Corrigé suite à un 4e audit externe : symétrique au correctif déjà appliqué aux abonnements
+    // (3e audit) — le CA des commandes se basait sur created_at (création) au lieu de paid_at
+    // (confirmation du paiement). Une commande créée un mois et payée le mois suivant (reprise
+    // via OrderCreate après un paiement abandonné) était comptée sur le mauvais mois.
+    public function test_revenue_groups_order_payments_by_confirmation_date_not_creation_date(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $client = User::factory()->create();
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+
+        $order = Order::create([
+            'order_number' => 'AZH-TEST-' . uniqid(),
+            'client_id' => $client->id,
+            'prestataire_id' => $prestataire->id,
+            'amount' => 10000,
+            'commission' => 1000,
+            'prestataire_amount' => 9000,
+            'delivery_time' => 3,
+            'status' => 'paid',
+            'payment_status' => 'held',
+        ]);
+        // Créée le mois dernier...
+        \Illuminate\Support\Facades\DB::table('orders')->where('id', $order->id)
+            ->update(['created_at' => now()->subMonth()]);
+
+        // ...mais payée (confirmée) ce mois-ci.
+        Payment::create([
+            'order_id' => $order->id,
+            'user_id' => $client->id,
+            'transaction_id' => 'TXN-' . uniqid(),
+            'payment_method' => 'mtn_momo',
+            'amount' => $order->amount,
+            'status' => 'success',
+            'type' => 'order_payment',
+            'paid_at' => now(),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(StatsOverview::class)
+            ->assertSee('1 000 FCFA ce mois');
+    }
+
+    // Le libellé précise maintenant la part encore en escrow (audit externe — 4e audit) : le CA
+    // compte aussi les commandes 'held' (pas encore définitivement libérées au prestataire).
+    public function test_revenue_description_mentions_the_amount_still_held_in_escrow(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $client = User::factory()->create();
+        $prestataire = User::factory()->create(['role' => 'prestataire']);
+
+        Order::create([
+            'order_number' => 'AZH-TEST-' . uniqid(),
+            'client_id' => $client->id,
+            'prestataire_id' => $prestataire->id,
+            'amount' => 10000,
+            'commission' => 1000,
+            'prestataire_amount' => 9000,
+            'delivery_time' => 3,
+            'status' => 'paid',
+            'payment_status' => 'held',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(StatsOverview::class)
+            ->assertSee('encore en escrow');
+    }
+
     // Une commande ENTIÈREMENT annulée (pas de remboursement partiel) ne doit toujours rien
     // ajouter au CA : Azohub n'y garde effectivement aucune marge.
     public function test_revenue_excludes_a_fully_refunded_order(): void
