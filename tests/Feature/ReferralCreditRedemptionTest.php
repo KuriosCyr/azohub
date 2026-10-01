@@ -235,6 +235,11 @@ class ReferralCreditRedemptionTest extends TestCase
         $this->assertEquals(10499, $secondApplied);
         $this->assertEquals(10499, $order->fresh()->referral_credit_applied);
         $this->assertEquals(50000 - 10499, $client->fresh()->referral_credit_balance);
+        // Corrigé suite à un 6e audit externe : $secondRequest (l'objet appelant, hors du verrou)
+        // doit refléter la réduction une fois rafraîchi — sans ça, son total_charged restait celui
+        // d'AVANT la réduction, et une transaction FedaPay construite dessus aurait demandé le
+        // montant plein au client.
+        $this->assertEquals(10500 - 10499, $secondRequest->total_charged);
     }
 
     // Trou symétrique corrigé (5e audit externe) : applyReferralCredit() ne revérifiait pas
@@ -253,5 +258,8 @@ class ReferralCreditRedemptionTest extends TestCase
         $this->assertEquals(0, $applied);
         $this->assertEquals(0, $order->fresh()->referral_credit_applied);
         $this->assertEquals(300, $client->fresh()->referral_credit_balance, 'Le solde ne doit pas avoir été touché.');
+        // 6e audit externe : $concurrentRequest doit refléter la réduction du code promo une fois
+        // rafraîchi, pas son ancien total_charged (sans réduction) gardé en mémoire.
+        $this->assertEquals(10500 - 500, $concurrentRequest->total_charged);
     }
 }

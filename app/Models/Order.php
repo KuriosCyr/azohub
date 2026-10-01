@@ -165,6 +165,15 @@ class Order extends Model
             }
 
             if ($order->promo_code_id || (float) $order->referral_credit_applied > 0) {
+                // $this->refresh() (audit externe — 6e audit) : sans ça, $this (l'objet de
+                // l'appelant, hors du verrou) gardait son ancien total_charged en mémoire — un
+                // double clic sur "Payer" pouvait alors faire construire la transaction FedaPay
+                // sur le montant PLEIN (sans la réduction appliquée par l'autre requête
+                // concurrente), menant à un trop-payé et à une commande qui reste bloquée en
+                // pending_payment (Payment::markAsPaid() refuse de l'activer sur un montant qui ne
+                // correspond plus, cf. son propre contrôle de montant).
+                $this->refresh();
+
                 return (float) $order->referral_credit_applied;
             }
 
@@ -208,10 +217,17 @@ class Order extends Model
             }
 
             if ($order->promo_code_id) {
+                // $this->refresh() (audit externe — 6e audit) : même raison que dans
+                // applyReferralCredit() — sans ça, $this (hors du verrou) garde son ancien
+                // total_charged en mémoire si un autre code a été appliqué entre-temps.
+                $this->refresh();
+
                 return null;
             }
 
             if ((float) $order->referral_credit_applied > 0) {
+                $this->refresh();
+
                 return 'Le crédit de parrainage est déjà appliqué à cette commande.';
             }
 

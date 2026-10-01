@@ -230,6 +230,28 @@ class PromoCodeRedemptionTest extends TestCase
         $this->assertNotNull($error);
         $this->assertNull($order->fresh()->promo_code_id);
         $this->assertEquals(0, PromoCodeRedemption::where('promo_code_id', $code->id)->count());
+        // 6e audit externe : $concurrentRequest doit refléter le crédit appliqué par l'autre
+        // requête une fois rafraîchi, pas son ancien total_charged (sans réduction).
+        $this->assertEquals(10500 - 300, $concurrentRequest->total_charged);
+    }
+
+    // Corrigé suite à un 6e audit externe : même garde-fou côté applyPromoCode() quand c'est un
+    // AUTRE code promo (via une autre copie PHP) qui a déjà été appliqué entre-temps — la branche
+    // "déjà appliqué" (promo_code_id non nul) doit aussi rafraîchir $this.
+    public function test_applying_a_promo_code_after_another_was_applied_concurrently_refreshes_the_caller(): void
+    {
+        $firstCode = PromoCode::create(['code' => 'PREMIER', 'type' => 'fixed', 'value' => 500]);
+        PromoCode::create(['code' => 'SECOND', 'type' => 'fixed', 'value' => 700]);
+        $client = User::factory()->create(['role' => 'client']);
+        $order = $this->makeOrder($client);
+        $concurrentRequest = Order::find($order->id);
+
+        $order->applyPromoCode('PREMIER');
+        $error = $concurrentRequest->applyPromoCode('SECOND');
+
+        $this->assertNull($error, 'Pas d\'erreur : promo_code_id déjà renseigné est un no-op silencieux (idempotence), pas un rejet.');
+        $this->assertSame($firstCode->id, $order->fresh()->promo_code_id);
+        $this->assertEquals(10500 - 500, $concurrentRequest->total_charged);
     }
 
     public function test_cancelling_a_never_paid_order_releases_the_promo_code(): void
