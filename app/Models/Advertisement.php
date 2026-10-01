@@ -74,6 +74,13 @@ class Advertisement extends Model
     // fortement les impressions/clics invités.
     public function recordImpression(): void
     {
+        // Un invité SANS cookie de session déjà existant n'est pas compté (audit externe — 8e
+        // audit) : sans ça, un robot sans cookies obtenait une NOUVELLE session à chaque
+        // requête, gonflant les impressions à l'infini.
+        if (!auth()->check() && !request()->hasCookie(config('session.cookie'))) {
+            return;
+        }
+
         $viewerKey = auth()->id() ?? 'guest:' . session()->getId();
         $throttleKey = "ad-impression:{$this->id}:{$viewerKey}";
 
@@ -91,6 +98,11 @@ class Advertisement extends Model
     // soit compté ou non.
     public function recordClick(): void
     {
+        // Même garde que recordImpression() (audit externe — 8e audit).
+        if (!auth()->check() && !request()->hasCookie(config('session.cookie'))) {
+            return;
+        }
+
         $viewerKey = auth()->id() ?? 'guest:' . session()->getId();
         $throttleKey = "ad-click:{$this->id}:{$viewerKey}";
 

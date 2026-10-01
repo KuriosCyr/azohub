@@ -16,6 +16,15 @@ class AdvertisementTrackingTest extends TestCase
 {
     use RefreshDatabase;
 
+    // Simule un invité qui a déjà chargé au moins une page (cookie de session déjà présent sur
+    // la requête) — audit externe — 8e audit : sans cookie entrant, recordImpression()/
+    // recordClick() ne comptent plus rien, pour qu'un robot sans cookies n'obtienne pas une
+    // nouvelle session (donc un nouveau compte) à chaque appel.
+    private function simulateReturningGuest(): void
+    {
+        request()->cookies->set(config('session.cookie'), 'fake-existing-session-id');
+    }
+
     private function makeAd(): Advertisement
     {
         return Advertisement::create([
@@ -34,6 +43,7 @@ class AdvertisementTrackingTest extends TestCase
 
     public function test_repeated_impressions_from_the_same_guest_within_an_hour_are_only_counted_once(): void
     {
+        $this->simulateReturningGuest();
         $ad = $this->makeAd();
 
         $ad->recordImpression();
@@ -45,12 +55,28 @@ class AdvertisementTrackingTest extends TestCase
 
     public function test_repeated_clicks_from_the_same_guest_within_an_hour_are_only_counted_once(): void
     {
+        $this->simulateReturningGuest();
         $ad = $this->makeAd();
 
         $ad->recordClick();
         $ad->recordClick();
 
         $this->assertEquals(1, $ad->fresh()->clicks);
+    }
+
+    // Corrigé suite à un 8e audit externe : l'effet inverse du correctif du tour précédent — un
+    // robot/crawler sans cookies obtenait une NOUVELLE session à chaque requête, donc chaque
+    // visite était comptée séparément. Sans cookie de session entrant, rien n'est compté.
+    public function test_a_guest_without_an_existing_session_cookie_is_not_counted(): void
+    {
+        $ad = $this->makeAd();
+
+        $ad->recordImpression();
+        $ad->recordImpression();
+        $ad->recordClick();
+
+        $this->assertEquals(0, $ad->fresh()->impressions);
+        $this->assertEquals(0, $ad->fresh()->clicks);
     }
 
     public function test_impressions_from_different_visitors_are_each_counted(): void
@@ -70,6 +96,7 @@ class AdvertisementTrackingTest extends TestCase
 
     public function test_an_impression_is_counted_again_once_the_throttle_window_has_passed(): void
     {
+        $this->simulateReturningGuest();
         $ad = $this->makeAd();
 
         $ad->recordImpression();
@@ -83,6 +110,7 @@ class AdvertisementTrackingTest extends TestCase
     // de compter une impression distincte, et inversement.
     public function test_impressions_and_clicks_are_throttled_independently(): void
     {
+        $this->simulateReturningGuest();
         $ad = $this->makeAd();
 
         $ad->recordImpression();

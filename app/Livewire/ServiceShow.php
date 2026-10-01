@@ -40,7 +40,14 @@ class ServiceShow extends Component
             $viewerKey = auth()->id() ?? 'guest:' . session()->getId();
             $throttleKey = "service-view:{$service->id}:{$viewerKey}";
 
-            if (!Cache::has($throttleKey)) {
+            // Un invité SANS cookie de session déjà existant (première requête de ce visiteur —
+            // ou d'un robot qui n'en garde jamais aucun) n'est pas compté (audit externe — 8e
+            // audit) : sans ça, un robot sans cookies obtenait une NOUVELLE session à chaque
+            // requête, gonflant le compteur à l'infini — l'effet inverse du sous-comptage par IP
+            // corrigé au tour précédent.
+            $isReturningVisitor = auth()->check() || request()->hasCookie(config('session.cookie'));
+
+            if ($isReturningVisitor && !Cache::has($throttleKey)) {
                 Cache::put($throttleKey, true, now()->addHour());
 
                 ServiceView::create([

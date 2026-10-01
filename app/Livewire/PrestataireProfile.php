@@ -39,7 +39,12 @@ class PrestataireProfile extends Component
             $viewerKey = Auth::id() ?? 'guest:' . session()->getId();
             $throttleKey = "profile-view:{$this->prestataire->id}:{$viewerKey}";
 
-            if (!Cache::has($throttleKey)) {
+            // Un invité SANS cookie de session déjà existant n'est pas compté (audit externe —
+            // 8e audit) : sans ça, un robot sans cookies obtenait une NOUVELLE session à chaque
+            // requête, gonflant le compteur à l'infini.
+            $isReturningVisitor = Auth::check() || request()->hasCookie(config('session.cookie'));
+
+            if ($isReturningVisitor && !Cache::has($throttleKey)) {
                 Cache::put($throttleKey, true, now()->addHour());
 
                 ProfileView::create([
