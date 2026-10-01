@@ -9,6 +9,7 @@ use App\Models\ServiceRequest;
 use App\Notifications\NewProposalReceived;
 use App\Notifications\ProposalRejected;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class ServiceRequestShow extends Component
@@ -101,27 +102,54 @@ class ServiceRequestShow extends Component
     {
         abort_unless($this->isOwner, 403);
 
-        $proposal = $this->serviceRequest->proposals()
-            ->where('id', $proposalId)
-            ->where('status', 'pending')
-            ->firstOrFail();
+        // Verrouillée comme ProposalAccept::confirm() (audit externe — 7e audit) : sans verrou,
+        // un refus et une acceptation concurrents (même client, deux onglets, au même instant)
+        // pouvaient se croiser — la vérification "paiement en cours" ci-dessous passant à false
+        // juste avant que confirm() ne crée la commande.
+        $result = DB::transaction(function () use ($proposalId) {
+            $proposal = $this->serviceRequest->proposals()
+                ->where('id', $proposalId)
+                ->where('status', 'pending')
+                ->lockForUpdate()
+                ->first();
 
-        // ProposalAccept::confirm() crée la commande SANS jamais changer proposal.status (reste
-        // 'pending' tant que le paiement n'est pas confirmé) — un paiement peut donc déjà être en
-        // cours pour cette proposition au moment du rejet. Si le client paie ensuite, la commande
-        // s'active quand même (Payment::finalizeNegotiatedOrder() n'accepte que les propositions
-        // encore 'pending'), mais la demande reste 'open' à tort : les autres prestataires
-        // continuent d'y avoir accès, et le prestataire réellement payé n'a pas la proposition
-        // 'accepted' qui le protégerait (audit externe — 6e audit). Refuser le rejet dans ce cas
-        // plutôt que de laisser cet état incohérent se produire.
-        if (Order::where('proposal_id', $proposal->id)->where('status', 'pending_payment')->exists()) {
-            session()->flash('error', 'Un paiement est en cours pour cette proposition : elle ne peut plus être refusée pour le moment.');
+            if (!$proposal) {
+                return 'not_found';
+            }
+
+            // ProposalAccept::confirm() crée la commande SANS jamais changer proposal.status
+            // (reste 'pending' tant que le paiement n'est pas confirmé) — un paiement peut donc
+            // déjà être en cours pour cette proposition au moment du rejet. Si le client paie
+            // ensuite, la commande s'active quand même (Payment::finalizeNegotiatedOrder()
+            // n'accepte que les propositions encore 'pending'), mais la demande reste 'open' à
+            // tort : les autres prestataires continuent d'y avoir accès, et le prestataire
+            // réellement payé n'a pas la proposition 'accepted' qui le protégerait (audit
+            // externe — 6e audit). Refuser le rejet dans ce cas plutôt que de laisser cet état
+            // incohérent se produire.
+            if (Order::where('proposal_id', $proposal->id)->where('status', 'pending_payment')->exists()) {
+                return 'payment_in_progress';
+            }
+
+            $proposal->update(['status' => 'rejected']);
+
+            return $proposal;
+        });
+
+        if ($result === 'not_found') {
+            abort(404);
+        }
+
+        if ($result === 'payment_in_progress') {
+            // Précise maintenant comment débloquer la situation (audit externe — 7e audit) : une
+            // tentative de paiement abandonnée (jamais finalisée) bloquait le rejet jusqu'à son
+            // expiration automatique (24h, cf. ExpireStalePendingPayments), sans que le client
+            // sache qu'il pouvait l'annuler lui-même pour débloquer immédiatement.
+            session()->flash('error', 'Un paiement est en cours pour cette proposition : elle ne peut plus être refusée pour le moment. Si cette tentative de paiement est abandonnée, vous pouvez l\'annuler depuis la page de la commande pour débloquer la situation.');
 
             return;
         }
 
-        $proposal->update(['status' => 'rejected']);
-        $proposal->prestataire->notify(new ProposalRejected($proposal));
+        $result->prestataire->notify(new ProposalRejected($result));
 
         $this->loadRequest();
 
