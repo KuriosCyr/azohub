@@ -135,7 +135,10 @@ class PrestataireSubscription extends Component
                     'is_trial' => true,
                     'auto_renew' => true,
                     'starts_at' => now(),
-                    'ends_at' => now()->addMonth(),
+                    // addMonthNoOverflow(), pas addMonth() (audit externe — 7e audit) : sinon un
+                    // essai démarré un 29-31 débordait (ex. 31 janvier -> 3 mars), incohérent avec
+                    // Subscription::renew() qui, lui, ne déborde plus depuis le 6e audit.
+                    'ends_at' => now()->addMonthNoOverflow(),
                 ]);
 
                 $user->notify(new SubscriptionActivated($trial));
