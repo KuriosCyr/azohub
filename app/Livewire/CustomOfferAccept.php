@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Exceptions\OrderNoLongerPayableException;
 use App\Models\CustomOffer;
 use App\Models\Order;
+use App\Models\User;
 use App\Services\PaymentService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,14 @@ class CustomOfferAccept extends Component
         abort_if($offer->isExpired(), 403, 'Cette offre a expiré.');
 
         $this->offer = $offer->load('prestataire', 'service');
+
+        // Même garde-fou que ProposalAccept::mount() (audit externe — 8e audit) : un prestataire
+        // désactivé ou supprimé après avoir envoyé cette offre ne doit plus pouvoir être payé.
+        abort_if(
+            !$this->offer->prestataire?->canReceiveOrders(),
+            403,
+            'Ce prestataire n\'est plus disponible pour accepter de nouvelles commandes.'
+        );
     }
 
     public function confirm(PaymentService $payments)
@@ -42,13 +51,21 @@ class CustomOfferAccept extends Component
                 abort(403, 'Cette offre ne peut plus être acceptée.');
             }
 
+            // Revérifié sous verrou (audit externe — 8e audit) : le contrôle de mount() peut
+            // avoir été fait avant qu'un admin ne désactive/supprime ce prestataire.
+            $prestataire = User::withTrashed()->whereKey($offer->prestataire_id)->first();
+
+            if (!$prestataire || !$prestataire->canReceiveOrders()) {
+                abort(403, 'Ce prestataire n\'est plus disponible pour accepter de nouvelles commandes.');
+            }
+
             $existing = Order::where('custom_offer_id', $offer->id)->where('status', 'pending_payment')->first();
             if ($existing) {
                 return $existing;
             }
 
             $amount = (float) $offer->price;
-            $commission = round($amount * $offer->prestataire->commissionRate(), 2);
+            $commission = round($amount * $prestataire->commissionRate(), 2);
             $clientFee = round($amount * Order::CLIENT_FEE_RATE, 2);
 
             return Order::create([

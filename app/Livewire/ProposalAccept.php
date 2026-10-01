@@ -6,6 +6,7 @@ use App\Exceptions\OrderNoLongerPayableException;
 use App\Models\Order;
 use App\Models\Proposal;
 use App\Models\ServiceRequest;
+use App\Models\User;
 use App\Notifications\ProposalRejected;
 use App\Services\PaymentService;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +30,17 @@ class ProposalAccept extends Component
 
         $this->serviceRequest = $serviceRequest->load('category');
         $this->proposal = $proposal->load('prestataire');
+
+        // Un prestataire désactivé ou supprimé après avoir envoyé cette proposition ne doit plus
+        // pouvoir être payé (audit externe — 8e audit) : contrairement à une commande directe sur
+        // un service (Service::isOrderable()), ce parcours négocié n'appliquait aucune
+        // vérification équivalente — l'argent partait en escrow vers un compte qui ne livrerait
+        // jamais.
+        abort_if(
+            !$this->proposal->prestataire?->canReceiveOrders(),
+            403,
+            'Ce prestataire n\'est plus disponible pour accepter de nouvelles commandes.'
+        );
     }
 
     public function confirm(PaymentService $payments)
@@ -51,6 +63,14 @@ class ProposalAccept extends Component
                 abort(403, 'Cette proposition ne peut plus être acceptée.');
             }
 
+            // Revérifié sous verrou (audit externe — 8e audit) : le contrôle de mount() peut avoir
+            // été fait avant qu'un admin ne désactive/supprime ce prestataire.
+            $prestataire = User::withTrashed()->whereKey($proposal->user_id)->first();
+
+            if (!$prestataire || !$prestataire->canReceiveOrders()) {
+                abort(403, 'Ce prestataire n\'est plus disponible pour accepter de nouvelles commandes.');
+            }
+
             // Déjà une commande en attente de paiement pour cette proposition : on la reprend.
             $existing = Order::where('proposal_id', $proposal->id)->where('status', 'pending_payment')->first();
             if ($existing) {
@@ -66,7 +86,7 @@ class ProposalAccept extends Component
                 ->each(fn (Order $o) => $o->refund('Une autre proposition a été choisie pour cette demande.'));
 
             $amount = (float) $proposal->proposed_price;
-            $commission = round($amount * $proposal->prestataire->commissionRate(), 2);
+            $commission = round($amount * $prestataire->commissionRate(), 2);
             $clientFee = round($amount * Order::CLIENT_FEE_RATE, 2);
 
             return Order::create([

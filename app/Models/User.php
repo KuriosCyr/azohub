@@ -272,6 +272,32 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         return $this->role === 'prestataire';
     }
 
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    // Annule les propositions et offres personnalisées encore en attente de ce prestataire
+    // (audit externe — 8e audit), qu'il soit désactivé ou supprimé : un client ne doit plus
+    // pouvoir les accepter et engager de l'argent en escrow vers un compte qui ne livrera jamais.
+    // Utilisée par l'action "Désactiver" de l'admin et par anonymizeAndDelete().
+    public function cancelPendingNegotiations(): void
+    {
+        Proposal::where('user_id', $this->id)->where('status', 'pending')->update(['status' => 'rejected']);
+        CustomOffer::where('prestataire_id', $this->id)->where('status', 'pending')->update(['status' => 'expired']);
+    }
+
+    // Vérification centrale (audit externe — 8e audit) : un prestataire supprimé ou désactivé
+    // ne doit jamais pouvoir recevoir une NOUVELLE commande. Déjà appliquée aux commandes
+    // directes sur un service (Service::isOrderable()) ; ProposalAccept et CustomOfferAccept
+    // (commandes négociées) ne l'appliquaient pas du tout — une proposition ou une offre en
+    // attente restait payable même après désactivation/suppression du prestataire, engageant de
+    // l'argent en escrow vers un compte qui ne livrerait jamais.
+    public function canReceiveOrders(): bool
+    {
+        return !$this->trashed() && $this->is_active !== false;
+    }
+
     // Premier mois offert : jamais utilisé (essai) ni payé d'abonnement, une seule fois par
     // prestataire. Utilisé à la fois par la page d'abonnement et par le rappel du dashboard.
     public function isTrialEligible(): bool
@@ -699,6 +725,14 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
             $blockers[] = 'Au moins une commande en cours (client ou prestataire) : à finaliser, valider ou annuler avant la suppression.';
         }
 
+        // Un paiement refund_pending reste traitable même après suppression (payments.
+        // phone_number est indépendant du compte), mais l'admin perd le contexte (nom, e-mail)
+        // une fois ce compte anonymisé — à traiter avant plutôt qu'après (audit externe — 8e
+        // audit).
+        if (Payment::where('user_id', $this->id)->where('status', 'refund_pending')->exists()) {
+            $blockers[] = 'Un remboursement est encore en attente de traitement sur ce compte.';
+        }
+
         return $blockers;
     }
 
@@ -731,6 +765,12 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
             'is_active' => false,
             'remember_token' => null,
         ])->save();
+
+        // Même nettoyage que l'action "Désactiver" de l'admin (audit externe — 8e audit) : une
+        // proposition/offre encore 'pending' de ce prestataire ne doit plus rester payable une
+        // fois le compte supprimé — accountDeletionBlockers() ne bloque que les commandes déjà
+        // actives, pas les propositions/offres pas encore acceptées.
+        $this->cancelPendingNegotiations();
 
         $this->delete();
     }

@@ -29,9 +29,14 @@ class Proposal extends Model
         return $this->belongsTo(ServiceRequest::class);
     }
 
+    // withTrashed() (audit externe — 8e audit, même principe que Order::prestataire()) : un
+    // prestataire peut être soft-deleted alors qu'une proposition encore 'pending' lui est
+    // rattachée — sans ceci, la relation renvoyait null et $proposal->prestataire->commissionRate()
+    // (dans ProposalAccept::confirm()) plantait avec une erreur 500 dès que le client tentait
+    // d'accepter.
     public function prestataire()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
 
     public function order()

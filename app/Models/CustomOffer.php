@@ -45,9 +45,14 @@ class CustomOffer extends Model
         return $this->belongsTo(User::class, 'client_id');
     }
 
+    // withTrashed() (audit externe — 8e audit, même principe que Order::prestataire()) : un
+    // prestataire peut être soft-deleted alors qu'une offre encore 'pending' lui est rattachée —
+    // sans ceci, la relation renvoyait null et $offer->prestataire->commissionRate() (dans
+    // CustomOfferAccept::confirm()) plantait avec une erreur 500 dès que le client tentait
+    // d'accepter.
     public function prestataire()
     {
-        return $this->belongsTo(User::class, 'prestataire_id');
+        return $this->belongsTo(User::class, 'prestataire_id')->withTrashed();
     }
 
     public function service()

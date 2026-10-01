@@ -32,11 +32,19 @@ class EditUser extends EditRecord
                 ->label('Supprimer')
                 ->icon('heroicon-o-trash')
                 ->color('danger')
-                ->visible(fn (User $record) => !$record->trashed())
+                // !isAdmin() (audit externe — 8e audit) : rien n'empêchait de supprimer un
+                // administrateur, y compris le dernier existant, ou de se supprimer soi-même —
+                // ce qui bloquerait l'accès au panneau. Les comptes admin se gèrent à part
+                // (créés/retirés directement en base par un autre admin si nécessaire).
+                ->visible(fn (User $record) => !$record->trashed() && !$record->isAdmin())
                 ->requiresConfirmation()
                 ->modalHeading('Supprimer ce compte')
                 ->modalDescription('Anonymise définitivement les données personnelles (nom, e-mail, téléphone, pièce d\'identité) puis supprime le compte. Impossible tant qu\'un solde, un retrait en cours ou une commande active existe.')
                 ->action(function (User $record) {
+                    if ($record->isAdmin()) {
+                        abort(403);
+                    }
+
                     $blockers = $record->accountDeletionBlockers();
 
                     if (!empty($blockers)) {

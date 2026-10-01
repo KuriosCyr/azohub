@@ -145,7 +145,7 @@ class Service extends Model
         return $this->status === 'active'
             && $this->is_active
             && $this->prestataire !== null
-            && $this->prestataire->is_active !== false;
+            && $this->prestataire->canReceiveOrders();
     }
 
     // Liste à plat des 77 communes du Bénin (config/communes.php), triée : sert de référence pour

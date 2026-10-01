@@ -157,6 +157,12 @@ class UsersTable
                         $record->update(['is_active' => false]);
                         $record->notify(new AccountStatusChanged(false, $data['reason']));
 
+                        // Les propositions et offres en attente de ce prestataire ne doivent plus
+                        // être payables une fois désactivé (audit externe — 8e audit) : sans ça,
+                        // un client pouvait encore les accepter, engageant de l'argent en escrow
+                        // vers un compte bloqué qui ne livrerait jamais.
+                        $record->cancelPendingNegotiations();
+
                         Notification::make()
                             ->title('Compte de ' . $record->name . ' désactivé')
                             ->success()
@@ -225,7 +231,10 @@ class UsersTable
                             $skipped = [];
 
                             foreach ($records as $record) {
-                                if ($record->trashed()) {
+                                // isAdmin() (audit externe — 8e audit) : rien n'empêchait de
+                                // supprimer un administrateur en masse, y compris le dernier
+                                // existant ou l'admin qui lance l'action lui-même.
+                                if ($record->trashed() || $record->isAdmin()) {
                                     continue;
                                 }
 
