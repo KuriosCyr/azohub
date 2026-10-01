@@ -30,9 +30,15 @@ class OrderChat extends Component
     #[Locked]
     public int $messagesLimit = 50;
 
+    // Plafond (audit externe — 6e audit) : #[Locked] empêche de fixer $messagesLimit directement
+    // depuis le navigateur, mais loadMoreMessages() restait appelable en boucle sans aucune limite
+    // — un client scripté pouvait l'appeler de nombreuses fois pour revenir à charger tout
+    // l'historique à chaque sondage, exactement ce que #[Locked] visait à empêcher.
+    private const MAX_MESSAGES_LIMIT = 1000;
+
     public function loadMoreMessages(): void
     {
-        $this->messagesLimit += 50;
+        $this->messagesLimit = min($this->messagesLimit + 50, self::MAX_MESSAGES_LIMIT);
     }
 
     protected $rules = [
