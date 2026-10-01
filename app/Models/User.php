@@ -137,7 +137,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         }
 
         return DB::transaction(function () use ($amount, $source) {
-            $user = static::whereKey($this->id)->lockForUpdate()->first();
+            // withTrashed() (audit externe — 7e audit), même raison que creditWallet().
+            $user = static::withTrashed()->whereKey($this->id)->lockForUpdate()->first();
             $redeemed = round(min($amount, (float) $user->referral_credit_balance), 2);
 
             if ($redeemed > 0) {
@@ -168,7 +169,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         }
 
         DB::transaction(function () use ($amount, $source) {
-            $user = static::whereKey($this->id)->lockForUpdate()->first();
+            // withTrashed() (audit externe — 7e audit), même raison que creditWallet().
+            $user = static::withTrashed()->whereKey($this->id)->lockForUpdate()->first();
 
             if (!$user) {
                 return;
@@ -667,6 +669,39 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
         return $max === null || $this->serviceSlotsUsed() < $max;
     }
 
+    // Raisons empêchant la suppression : un prestataire pourrait sinon disparaître avec un
+    // solde non retiré, un retrait déjà en cours de traitement, ou une commande en cours
+    // (client comme prestataire) — la commande resterait bloquée avec une partie devenue
+    // "Utilisateur supprimé" et injoignable, sans que personne ne puisse la faire avancer.
+    // Déplacée de ProfileController (audit externe — 7e audit) pour être réutilisable par
+    // l'action de suppression admin dans le panneau Filament, qui contournait ces vérifications
+    // en appelant directement $record->delete() (soft delete Eloquent brut, sans anonymisation
+    // ni garde-fou).
+    public function accountDeletionBlockers(): array
+    {
+        $blockers = [];
+
+        if ((float) $this->wallet_balance > 0) {
+            $blockers[] = 'Solde de ' . number_format((float) $this->wallet_balance, 0, ',', ' ') . ' FCFA non retiré : à retirer avant la suppression.';
+        }
+
+        if (WithdrawalRequest::where('prestataire_id', $this->id)->where('status', 'pending')->exists()) {
+            $blockers[] = 'Une demande de retrait est en cours de traitement.';
+        }
+
+        $activeStatuses = ['pending_payment', 'paid', 'in_progress', 'delivered', 'disputed'];
+
+        $hasActiveOrder = Order::whereIn('status', $activeStatuses)
+            ->where(fn ($query) => $query->where('client_id', $this->id)->orWhere('prestataire_id', $this->id))
+            ->exists();
+
+        if ($hasActiveOrder) {
+            $blockers[] = 'Au moins une commande en cours (client ou prestataire) : à finaliser, valider ou annuler avant la suppression.';
+        }
+
+        return $blockers;
+    }
+
     // Anonymise puis supprime (soft delete) le compte. On ne fait pas de suppression
     // définitive : orders.client_id/prestataire_id sont en cascade, une vraie
     // suppression casserait l'historique de commandes de l'autre partie.
@@ -757,7 +792,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
     public function creditWallet(float $amount, ?string $reason = null, ?Model $source = null): void
     {
         DB::transaction(function () use ($amount, $reason, $source) {
-            $user = static::whereKey($this->id)->lockForUpdate()->first();
+            // withTrashed() (audit externe — 7e audit) : un prestataire peut être soft-deleted
+            // alors qu'une commande encore active lui doit un paiement (Order::releasePayment(),
+            // lui-même déjà corrigé pour trouver ce compte via withTrashed()) — sans ceci, cette
+            // requête ne trouvait rien (`null`), et l'appel suivant plantait sur une valeur null.
+            $user = static::withTrashed()->whereKey($this->id)->lockForUpdate()->first();
 
             $user->increment('wallet_balance', $amount);
             $user->refresh();
@@ -779,7 +818,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Has
     public function debitWallet(float $amount, ?string $reason = null, ?Model $source = null): bool
     {
         $debited = DB::transaction(function () use ($amount, $reason, $source) {
-            $user = static::whereKey($this->id)->lockForUpdate()->first();
+            // withTrashed() (audit externe — 7e audit), même raison que creditWallet().
+            $user = static::withTrashed()->whereKey($this->id)->lockForUpdate()->first();
 
             if ($user->wallet_balance < $amount) {
                 return false;

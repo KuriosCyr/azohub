@@ -8,9 +8,7 @@ use App\Notifications\AdminWarning;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -210,8 +208,47 @@ class UsersTable
                                 ->send();
                         })
                         ->deselectRecordsAfterCompletion(),
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
+
+                    // Remplace DeleteBulkAction + ForceDeleteBulkAction (audit externe — 7e audit)
+                    // : voir EditUser::getHeaderActions() pour le détail des deux problèmes
+                    // (cascade financière définitive, et suppression douce sans anonymisation ni
+                    // garde-fou) que ces actions standard ouvraient sur une sélection entière.
+                    BulkAction::make('anonymize_and_delete_selection')
+                        ->label('Supprimer (anonymiser)')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Supprimer les comptes sélectionnés')
+                        ->modalDescription('Anonymise et supprime chaque compte sélectionné. Un compte avec un solde non retiré, un retrait en cours ou une commande active est ignoré, pas supprimé.')
+                        ->action(function (Collection $records) {
+                            $deletedCount = 0;
+                            $skipped = [];
+
+                            foreach ($records as $record) {
+                                if ($record->trashed()) {
+                                    continue;
+                                }
+
+                                $blockers = $record->accountDeletionBlockers();
+
+                                if (!empty($blockers)) {
+                                    $skipped[] = $record->name;
+
+                                    continue;
+                                }
+
+                                $record->anonymizeAndDelete();
+                                $deletedCount++;
+                            }
+
+                            Notification::make()
+                                ->title($deletedCount . ' compte(s) supprimé(s) et anonymisé(s)')
+                                ->body($skipped !== [] ? 'Ignorés (solde, retrait en cours ou commande active) : ' . implode(', ', $skipped) : null)
+                                ->success()
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+
                     RestoreBulkAction::make(),
                 ]),
             ]);

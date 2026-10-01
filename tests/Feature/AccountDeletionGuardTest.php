@@ -83,4 +83,16 @@ class AccountDeletionGuardTest extends TestCase
         $response->assertRedirect('/');
         $this->assertNull(User::find($user->id), 'Le compte aurait dû être supprimé (soft delete).');
     }
+
+    // accountDeletionBlockers() déplacée de ProfileController (privée) vers User (publique) lors
+    // du 7e audit externe, pour être réutilisable par l'action de suppression admin dans
+    // Filament — elle doit rester directement appelable sur le modèle.
+    public function test_account_deletion_blockers_is_callable_directly_on_the_user_model(): void
+    {
+        $blockedUser = User::factory()->create(['wallet_balance' => 5000]);
+        $this->assertNotEmpty($blockedUser->accountDeletionBlockers());
+
+        $freeUser = User::factory()->create();
+        $this->assertEmpty($freeUser->accountDeletionBlockers());
+    }
 }
