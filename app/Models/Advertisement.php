@@ -65,13 +65,16 @@ class Advertisement extends Model
     }
 
     // Helpers
-    // Dédoublonné par visiteur (ou IP pour un invité) et par heure, même principe que
-    // ServiceView (audit externe — 6e audit) : sans ça, un rechargement de page, un robot ou un
-    // rafraîchissement automatique gonflait les impressions sans aucune limite, avec une écriture
-    // en base à chaque affichage de la bannière.
+    // Dédoublonné par visiteur (ou session pour un invité) et par heure, même principe que
+    // ServiceView (audit externe — 6e audit, clé invité passée à la session au 7e audit) : sans
+    // ça, un rechargement de page, un robot ou un rafraîchissement automatique gonflait les
+    // impressions sans aucune limite, avec une écriture en base à chaque affichage de la
+    // bannière. session()->getId() plutôt que request()->ip() pour un invité : au Bénin, de
+    // nombreux abonnés mobiles partagent la même IP publique (NAT opérateur), ce qui sous-comptait
+    // fortement les impressions/clics invités.
     public function recordImpression(): void
     {
-        $viewerKey = auth()->id() ?? 'guest:' . request()->ip();
+        $viewerKey = auth()->id() ?? 'guest:' . session()->getId();
         $throttleKey = "ad-impression:{$this->id}:{$viewerKey}";
 
         if (Cache::has($throttleKey)) {
@@ -88,7 +91,7 @@ class Advertisement extends Model
     // soit compté ou non.
     public function recordClick(): void
     {
-        $viewerKey = auth()->id() ?? 'guest:' . request()->ip();
+        $viewerKey = auth()->id() ?? 'guest:' . session()->getId();
         $throttleKey = "ad-click:{$this->id}:{$viewerKey}";
 
         if (Cache::has($throttleKey)) {

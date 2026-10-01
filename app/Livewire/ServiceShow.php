@@ -30,10 +30,14 @@ class ServiceShow extends Component
                 ->with('error', 'Ce service n\'est plus disponible.');
         }
 
-        // Une vue par visiteur (ou par IP pour un invité) et par heure — même principe que les
-        // vues de profil : sinon un rechargement de page fausse la statistique du prestataire.
+        // Une vue par visiteur (ou par session pour un invité) et par heure — même principe que
+        // les vues de profil : sinon un rechargement de page fausse la statistique du
+        // prestataire. session()->getId() plutôt que request()->ip() pour un invité (audit
+        // externe — 7e audit) : au Bénin, de nombreux abonnés mobiles partagent la même IP
+        // publique (NAT opérateur) — une clé par IP comptait alors tous ces visiteurs distincts
+        // comme un seul pendant l'heure de cache, sous-comptant fortement les vues invitées.
         if (auth()->id() !== $service->user_id) {
-            $viewerKey = auth()->id() ?? 'guest:' . request()->ip();
+            $viewerKey = auth()->id() ?? 'guest:' . session()->getId();
             $throttleKey = "service-view:{$service->id}:{$viewerKey}";
 
             if (!Cache::has($throttleKey)) {

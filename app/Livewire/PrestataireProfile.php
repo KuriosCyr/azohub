@@ -32,8 +32,11 @@ class PrestataireProfile extends Component
         // prestataire sur son propre profil, et une seule vue par visiteur et par heure —
         // sinon un simple rechargement de page gonflerait le compteur à l'infini (et le
         // rendrait trivialement manipulable, à la hausse comme pour nuire à un concurrent).
+        // session()->getId() plutôt que request()->ip() pour un invité (audit externe — 7e
+        // audit) : au Bénin, de nombreux abonnés mobiles partagent la même IP publique (NAT
+        // opérateur) — une clé par IP sous-comptait fortement les vues invitées.
         if (Auth::id() !== $this->prestataire->id) {
-            $viewerKey = Auth::id() ?? 'guest:' . request()->ip();
+            $viewerKey = Auth::id() ?? 'guest:' . session()->getId();
             $throttleKey = "profile-view:{$this->prestataire->id}:{$viewerKey}";
 
             if (!Cache::has($throttleKey)) {
