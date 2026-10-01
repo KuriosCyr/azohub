@@ -27,23 +27,31 @@ class ValidateExpiredOrders extends Command
         $count = 0;
 
         foreach ($orders as $order) {
-            // Ne notifie plus sans condition (audit externe — 2e audit) : un litige ouvert sur
-            // l'une de ces commandes pendant que la boucle tourne peut faire échouer
-            // releasePayment() en silence — sans cette vérification, les deux parties
-            // recevaient quand même un message "auto-validée" trompeur.
-            if (!$order->releasePayment(autoValidated: true)) {
-                continue;
+            // try/catch par commande (audit externe — 7e audit) : sans ça, une erreur imprévue
+            // sur UNE commande interrompait toute la boucle, laissant les commandes suivantes du
+            // lot non traitées à cette exécution (retentées seulement au prochain passage planifié).
+            try {
+                // Ne notifie plus sans condition (audit externe — 2e audit) : un litige ouvert sur
+                // l'une de ces commandes pendant que la boucle tourne peut faire échouer
+                // releasePayment() en silence — sans cette vérification, les deux parties
+                // recevaient quand même un message "auto-validée" trompeur.
+                if (!$order->releasePayment(autoValidated: true)) {
+                    continue;
+                }
+
+                // Ni le client ni le prestataire n'étaient prévenus dans ce cas (contrairement à
+                // une validation manuelle, cf. OrderController::validate()) : le prestataire
+                // découvrait le paiement crédité sans explication, et le client apprenait sa
+                // commande close seulement en rouvrant la page lui-même.
+                $order->client->notify(new OrderAutoValidated($order, forClient: true));
+                $order->prestataire->notify(new OrderAutoValidated($order, forClient: false));
+
+                $count++;
+                $this->line("  Commande #{$order->order_number} auto-validée.");
+            } catch (\Throwable $e) {
+                report($e);
+                $this->error("  Commande #{$order->order_number} : erreur lors de l'auto-validation, ignorée pour cette exécution.");
             }
-
-            // Ni le client ni le prestataire n'étaient prévenus dans ce cas (contrairement à
-            // une validation manuelle, cf. OrderController::validate()) : le prestataire
-            // découvrait le paiement crédité sans explication, et le client apprenait sa
-            // commande close seulement en rouvrant la page lui-même.
-            $order->client->notify(new OrderAutoValidated($order, forClient: true));
-            $order->prestataire->notify(new OrderAutoValidated($order, forClient: false));
-
-            $count++;
-            $this->line("  Commande #{$order->order_number} auto-validée.");
         }
 
         $this->info("{$count} commande(s) auto-validée(s) avec succès.");

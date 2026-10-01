@@ -338,14 +338,21 @@ class Order extends Model
     }
 
     // Relations
+    // withTrashed() (audit externe — 7e audit, même principe que Dispute::order()) : un compte
+    // peut être soft-deleted (suppression admin, ou anonymizeAndDelete()) alors qu'il a encore une
+    // commande active — sans ceci, la relation renvoyait null, et releasePayment() marquait la
+    // commande 'released' SANS créditer personne (if ($order->prestataire) ne s'exécutait jamais),
+    // tandis que $order->prestataire->notify(...) ailleurs (ex. ValidateExpiredOrders) plantait sur
+    // null. Avec withTrashed(), l'argent est toujours crédité au bon compte (même supprimé, restant
+    // en base) et notify() échoue silencieusement sur l'e-mail anonymisé plutôt que de planter.
     public function client()
     {
-        return $this->belongsTo(User::class, 'client_id');
+        return $this->belongsTo(User::class, 'client_id')->withTrashed();
     }
 
     public function prestataire()
     {
-        return $this->belongsTo(User::class, 'prestataire_id');
+        return $this->belongsTo(User::class, 'prestataire_id')->withTrashed();
     }
 
     public function service()
