@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Advertisement extends Model
 {
@@ -64,13 +65,38 @@ class Advertisement extends Model
     }
 
     // Helpers
+    // Dédoublonné par visiteur (ou IP pour un invité) et par heure, même principe que
+    // ServiceView (audit externe — 6e audit) : sans ça, un rechargement de page, un robot ou un
+    // rafraîchissement automatique gonflait les impressions sans aucune limite, avec une écriture
+    // en base à chaque affichage de la bannière.
     public function recordImpression(): void
     {
+        $viewerKey = auth()->id() ?? 'guest:' . request()->ip();
+        $throttleKey = "ad-impression:{$this->id}:{$viewerKey}";
+
+        if (Cache::has($throttleKey)) {
+            return;
+        }
+
+        Cache::put($throttleKey, true, now()->addHour());
+
         $this->increment('impressions');
     }
 
+    // Même dédoublonnage que recordImpression() (audit externe — 6e audit). Le clic redirige
+    // toujours vers le lien de l'annonceur (AdvertisementController::click()), que ce clic précis
+    // soit compté ou non.
     public function recordClick(): void
     {
+        $viewerKey = auth()->id() ?? 'guest:' . request()->ip();
+        $throttleKey = "ad-click:{$this->id}:{$viewerKey}";
+
+        if (Cache::has($throttleKey)) {
+            return;
+        }
+
+        Cache::put($throttleKey, true, now()->addHour());
+
         $this->increment('clicks');
     }
 }
