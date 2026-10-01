@@ -89,7 +89,13 @@ class Subscription extends Model
         $base = ($carryOverFrom && $carryOverFrom->isFuture()) ? $carryOverFrom->copy() : now();
 
         $this->starts_at = now();
-        $this->ends_at = $this->billing_period === 'yearly' ? $base->addYear() : $base->addMonth();
+        // *NoOverflow (audit externe — 6e audit) : addMonth()/addYear() débordent sur les mois
+        // plus courts quand $base tombe sur un jour 29-31 — testé en réel, Carbon::parse(
+        // '2026-01-31')->addMonth() donne '2026-03-03' au lieu du 28 février attendu. Un
+        // abonnement pris le 31 janvier aurait fini le 3 mars (environ 32 jours) au lieu du 28
+        // février (environ 28 jours) — même défaut que celui déjà corrigé côté StatsOverview/
+        // PrestataireStatistics (subMonth()), mais dans l'autre sens temporel ici.
+        $this->ends_at = $this->billing_period === 'yearly' ? $base->addYearNoOverflow() : $base->addMonthNoOverflow();
         $this->status = 'active';
         $this->reminded_at = null;
         $this->save();
