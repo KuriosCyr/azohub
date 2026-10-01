@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Livewire\Concerns\RateLimitsActions;
+use App\Models\Order;
 use App\Models\Proposal;
 use App\Models\ServiceRequest;
 use App\Notifications\NewProposalReceived;
@@ -104,6 +105,20 @@ class ServiceRequestShow extends Component
             ->where('id', $proposalId)
             ->where('status', 'pending')
             ->firstOrFail();
+
+        // ProposalAccept::confirm() crée la commande SANS jamais changer proposal.status (reste
+        // 'pending' tant que le paiement n'est pas confirmé) — un paiement peut donc déjà être en
+        // cours pour cette proposition au moment du rejet. Si le client paie ensuite, la commande
+        // s'active quand même (Payment::finalizeNegotiatedOrder() n'accepte que les propositions
+        // encore 'pending'), mais la demande reste 'open' à tort : les autres prestataires
+        // continuent d'y avoir accès, et le prestataire réellement payé n'a pas la proposition
+        // 'accepted' qui le protégerait (audit externe — 6e audit). Refuser le rejet dans ce cas
+        // plutôt que de laisser cet état incohérent se produire.
+        if (Order::where('proposal_id', $proposal->id)->where('status', 'pending_payment')->exists()) {
+            session()->flash('error', 'Un paiement est en cours pour cette proposition : elle ne peut plus être refusée pour le moment.');
+
+            return;
+        }
 
         $proposal->update(['status' => 'rejected']);
         $proposal->prestataire->notify(new ProposalRejected($proposal));
