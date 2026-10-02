@@ -72,8 +72,24 @@ class ConversationShow extends Component
         return Auth::id() === $this->conversation->prestataire_id;
     }
 
+    // Utilisée par la vue pour masquer le composer et afficher un signal visuel, et revérifiée
+    // côté serveur dans sendMessage()/sendOffer() : un compte désactivé ou supprimé ne doit plus
+    // pouvoir recevoir de NOUVEAU message — jusqu'ici, la messagerie n'avait aucune protection
+    // équivalente à celle déjà posée sur les commandes/propositions/offres (demande explicite de
+    // l'utilisateur, suite au 8e audit).
+    public function getOtherCanBeContactedProperty(): bool
+    {
+        return $this->conversation->otherParticipant(Auth::id())->canReceiveOrders();
+    }
+
     public function sendMessage()
     {
+        if (!$this->otherCanBeContacted) {
+            $this->addError('message', 'Ce compte a été désactivé : vous ne pouvez plus lui envoyer de message.');
+
+            return;
+        }
+
         if ($this->tooManyActions('conversation-message', maxAttempts: 20, field: 'message')) {
             return;
         }
@@ -125,6 +141,12 @@ class ConversationShow extends Component
     public function sendOffer()
     {
         abort_unless($this->isPrestataire, 403);
+
+        if (!$this->otherCanBeContacted) {
+            $this->addError('offerTitle', 'Ce client a été désactivé : vous ne pouvez plus lui envoyer d\'offre.');
+
+            return;
+        }
 
         if ($this->tooManyActions('custom-offer', maxAttempts: 10, decayMinutes: 60, field: 'offerTitle')) {
             return;

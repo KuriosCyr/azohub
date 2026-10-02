@@ -39,6 +39,13 @@
                 </div>
             </div>
 
+            @unless($this->otherCanBeContacted)
+                <div class="flex items-start gap-2 bg-red-50 border-b border-red-200 text-red-800 px-5 py-3 text-xs">
+                    <x-app-icon name="exclamation-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5 text-red-600" />
+                    <p>Ce compte a été désactivé. Vous pouvez encore consulter cette conversation, mais plus lui envoyer de nouveau message.</p>
+                </div>
+            @endunless
+
             {{-- Fil de discussion --}}
             <div class="flex-1 overflow-y-auto p-5 space-y-4">
                 @if($hasMoreMessages)
@@ -133,7 +140,7 @@
             </div>
 
             {{-- Formulaire d'offre personnalisée (prestataire uniquement) --}}
-            @if($this->isPrestataire && $showOfferForm)
+            @if($this->isPrestataire && $showOfferForm && $this->otherCanBeContacted)
                 <div class="p-5 border-t border-ink-100 bg-cream-100/60 space-y-3">
                     <p class="font-bold text-ink-900 text-sm">Nouvelle offre personnalisée</p>
                     <input type="text" wire:model="offerTitle" placeholder="Titre de l'offre"
@@ -177,6 +184,9 @@
 
             {{-- Composer --}}
             <div class="p-5 border-t border-ink-100">
+                @if(!$this->otherCanBeContacted)
+                    <p class="text-sm text-ink-400 text-center">Ce compte a été désactivé : l'envoi de nouveaux messages n'est plus possible.</p>
+                @else
                 @if(!empty($attachments))
                     <div class="mb-3 flex flex-wrap gap-2">
                         @foreach($attachments as $index => $file)
@@ -221,6 +231,7 @@
                         <x-app-icon name="exclamation-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5 text-ochre-700" />
                         <p>Votre message semble contenir un email, un numéro ou un lien. Pour votre sécurité, échangez et payez sur Azohub — c'est ce qui vous protège en cas de litige. (Une adresse reste normale pour certains services à domicile.)</p>
                     </div>
+                @endif
                 @endif
             </div>
         </div>

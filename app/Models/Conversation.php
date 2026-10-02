@@ -20,14 +20,17 @@ class Conversation extends Model
         'last_message_at' => 'datetime',
     ];
 
+    // withTrashed() : un participant peut être supprimé (anonymizeAndDelete()) alors que la
+    // conversation reste consultable par l'autre — sans ceci, la relation renvoyait null et
+    // $conversation->otherParticipant()->name (vue conversation-show) plantait à l'affichage.
     public function client()
     {
-        return $this->belongsTo(User::class, 'client_id');
+        return $this->belongsTo(User::class, 'client_id')->withTrashed();
     }
 
     public function prestataire()
     {
-        return $this->belongsTo(User::class, 'prestataire_id');
+        return $this->belongsTo(User::class, 'prestataire_id')->withTrashed();
     }
 
     public function service()
